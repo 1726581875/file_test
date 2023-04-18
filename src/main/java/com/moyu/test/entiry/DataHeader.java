@@ -37,6 +37,25 @@ public class DataHeader {
     }
 
 
+    public static DataHeader build(String headerStr) {
+        DataHeader dataHeader = new DataHeader();
+        String[] attributes = headerStr.split(";");
+        for (String attribute : attributes) {
+            String[] split = attribute.split("=");
+            if ("fileType".equals(split[0])) {
+                dataHeader.setFileType(split[1].trim());
+            }
+            if ("totalRow".equals(split[0])) {
+                dataHeader.setTotalRow(split[1].trim());
+            }
+            if ("dataBodyStartPos".equals(split[0])) {
+                dataHeader.setDataBodyStartPos(Long.valueOf(split[1].trim()));
+            }
+        }
+        return dataHeader;
+    }
+
+
     @Override
     public String toString() {
         return "DataHeader{" +

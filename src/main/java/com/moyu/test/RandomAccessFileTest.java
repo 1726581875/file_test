@@ -27,7 +27,7 @@ public class RandomAccessFileTest {
         int totalRow = 100;
         long dataBodyStartPos = 1024;
 
-        // 写入文件
+        // 写入文件头部信息
         String header = "fileType=xmz;totalRow=" + totalRow +";dataBodyStartPos=" + dataBodyStartPos;
         byte[] bytes = header.getBytes();
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
@@ -58,10 +58,8 @@ public class RandomAccessFileTest {
         ByteBuffer headerBuff = ByteBuffer.allocate(200);
         readDataChannel.read(headerBuff, 0);
         String headerStr = new String(headerBuff.array(), "UTF-8");
-        System.out.println(headerStr);
-
-        DataHeader dataHeader = getDataHeader(headerStr);
-
+        System.out.println("headerStr=" + headerStr);
+        DataHeader dataHeader = DataHeader.build(headerStr);
         System.out.println("dataHeader=" + dataHeader);
 
         long readerPos = dataHeader.getDataBodyStartPos();
@@ -76,25 +74,6 @@ public class RandomAccessFileTest {
         }
         readDataChannel.close();
         readDataRAF.close();
-    }
-
-
-    static DataHeader getDataHeader(String headerStr) {
-        DataHeader dataHeader = new DataHeader();
-        String[] attributes = headerStr.split(";");
-        for (String attribute : attributes) {
-            String[] split = attribute.split("=");
-            if ("fileType".equals(split[0])) {
-                dataHeader.setFileType(split[1].trim());
-            }
-            if ("totalRow".equals(split[0])) {
-                dataHeader.setTotalRow(split[1].trim());
-            }
-            if ("dataBodyStartPos".equals(split[0])) {
-                dataHeader.setDataBodyStartPos(Long.valueOf(split[1].trim()));
-            }
-        }
-        return dataHeader;
     }
 
 
