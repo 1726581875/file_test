@@ -26,9 +26,10 @@ public class RandomAccessFileTest {
 
         int totalRow = 100;
         long dataBodyStartPos = 1024;
+        long dataEndPos = 1024;
 
         // 写入文件头部信息
-        String header = "fileType=xmz;totalRow=" + totalRow +";dataBodyStartPos=" + dataBodyStartPos;
+        String header = "fileType=xmz;totalRow=" + totalRow +";dataBodyStartPos=" + dataBodyStartPos + ";dataEndPos=" + dataEndPos;
         byte[] bytes = header.getBytes();
         ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
         RandomAccessFile randomAccessFile = new RandomAccessFile(filePath,"rw");
@@ -48,6 +49,10 @@ public class RandomAccessFileTest {
         fileChannel.close();
         randomAccessFile.close();
 
+
+        // 更新文件头部信息，记录文件结束位置dataEndPos
+        dataEndPos = pos;
+        writeHeader(filePath, totalRow, dataBodyStartPos, dataEndPos);
 
 
         // 读取数据header
@@ -74,6 +79,18 @@ public class RandomAccessFileTest {
         }
         readDataChannel.close();
         readDataRAF.close();
+    }
+
+
+    private static void writeHeader(String filePath, int totalRow, long dataBodyStartPos, long dataEndPos) throws IOException {
+        String header = "fileType=xmz;totalRow=" + totalRow +";dataBodyStartPos=" + dataBodyStartPos + ";dataEndPos=" + dataEndPos;
+        byte[] bytes = header.getBytes();
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        RandomAccessFile randomAccessFile = new RandomAccessFile(filePath,"rw");
+        FileChannel fileChannel = randomAccessFile.getChannel();
+        fileChannel.write(byteBuffer, 0);
+        fileChannel.close();
+        randomAccessFile.close();
     }
 
 

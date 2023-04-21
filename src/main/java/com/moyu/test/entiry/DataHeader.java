@@ -12,6 +12,8 @@ public class DataHeader {
 
     private long dataBodyStartPos;
 
+    private long dataEndPos;
+
     public String getFileType() {
         return fileType;
     }
@@ -36,6 +38,13 @@ public class DataHeader {
         this.dataBodyStartPos = dataBodyStartPos;
     }
 
+    public long getDataEndPos() {
+        return dataEndPos;
+    }
+
+    public void setDataEndPos(long dataEndPos) {
+        this.dataEndPos = dataEndPos;
+    }
 
     public static DataHeader build(String headerStr) {
         DataHeader dataHeader = new DataHeader();
@@ -51,6 +60,9 @@ public class DataHeader {
             if ("dataBodyStartPos".equals(split[0])) {
                 dataHeader.setDataBodyStartPos(Long.valueOf(split[1].trim()));
             }
+            if ("dataEndPos".equals(split[0])) {
+                dataHeader.setDataEndPos(Long.valueOf(split[1].trim()));
+            }
         }
         return dataHeader;
     }
@@ -62,6 +74,7 @@ public class DataHeader {
                 "fileType='" + fileType + '\'' +
                 ", totalRow='" + totalRow + '\'' +
                 ", dataBodyStartPos=" + dataBodyStartPos +
+                ", dataEndPos=" + dataEndPos +
                 '}';
     }
 }

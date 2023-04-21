@@ -10,6 +10,7 @@ import java.nio.channels.FileChannel;
 /**
  * @author xiaomingzhang
  * @date 2023/4/18
+ * 多线程读，互不影响
  */
 public class MultiThreadReadFileTest {
 
