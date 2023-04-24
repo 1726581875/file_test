@@ -29,6 +29,12 @@ public class FileStore {
     }
 
 
+    /**
+     * 文件指定位置读取
+     * @param pos 开始位置
+     * @param len 读取的长度
+     * @return
+     */
     public ByteBuffer read(long pos, int len) {
         ByteBuffer dst = ByteBuffer.allocate(len);
         try {
@@ -48,6 +54,11 @@ public class FileStore {
     }
 
 
+    /**
+     * 文件指定位置写入
+     * @param byteBuffer 写入内容字节缓存数组
+     * @param startPos 写入开始位置
+     */
     public void write(ByteBuffer byteBuffer, long startPos) {
         try {
             int off = 0;
