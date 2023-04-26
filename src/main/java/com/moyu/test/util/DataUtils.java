@@ -63,11 +63,29 @@ public class DataUtils {
     }
 
 
+    public static void writeInt(ByteBuffer buff, int value) {
+        buff.put((byte) (value >> 24 & 0xff));
+        buff.put((byte) (value >> 16 & 0xff));
+        buff.put((byte) (value >> 8 & 0xff));
+        buff.put((byte) (value & 0xff));
+    }
+
+    public static int readInt(ByteBuffer buff) {
+        int i1 = (buff.get() & 0xff) << 24;
+        int i2 = (buff.get() & 0xff) << 16;
+        int i3 = (buff.get() & 0xff) << 8;
+        int i4 = (buff.get() & 0xff);
+        return i1 + i2 + i3 + i4;
+    }
+
+
     public static void main(String[] args) {
 
-       // writeTest1();
-
-        //writeTest2();
+        ByteBuffer intBufferTest = ByteBuffer.allocate(4);
+        writeInt(intBufferTest, 520);
+        intBufferTest.rewind();
+        int i = readInt(intBufferTest);
+        System.out.println(i);
     }
 
 
