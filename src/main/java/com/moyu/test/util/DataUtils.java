@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 /**
  * @author xiaomingzhang
  * @date 2023/4/23
- * 参考H2database的DataUtils类
  */
 public class DataUtils {
 
@@ -15,6 +14,12 @@ public class DataUtils {
     private static String filePath2 = "D:\\mytest\\fileTest\\2.xmz";
 
 
+    /**
+     * 参考H2database的DataUtils.writeStringData类
+     * @param buff
+     * @param s
+     * @param len
+     */
     public static void writeStringData(ByteBuffer buff, String s, int len) {
         for (int i = 0; i < len; i++) {
             int c = s.charAt(i);
@@ -37,6 +42,12 @@ public class DataUtils {
     }
 
 
+    /**
+     * 参考H2database的DataUtils.readString类
+     * @param buff
+     * @param len
+     * @return
+     */
     public static String readString(ByteBuffer buff, int len) {
         char[] chars = new char[len];
         for (int i = 0; i < len; i++) {
@@ -63,6 +74,11 @@ public class DataUtils {
     }
 
 
+    /**
+     * int转byte存储
+     * @param buff
+     * @param value
+     */
     public static void writeInt(ByteBuffer buff, int value) {
         buff.put((byte) (value >> 24 & 0xff));
         buff.put((byte) (value >> 16 & 0xff));
@@ -70,6 +86,11 @@ public class DataUtils {
         buff.put((byte) (value & 0xff));
     }
 
+    /**
+     * byte转int
+     * @param buff
+     * @return
+     */
     public static int readInt(ByteBuffer buff) {
         int i1 = (buff.get() & 0xff) << 24;
         int i2 = (buff.get() & 0xff) << 16;

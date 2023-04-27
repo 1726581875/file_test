@@ -21,11 +21,15 @@ public class FileStore {
 
     private RandomAccessFile randomAccessFile;
 
+    private long endPosition;
 
-    public FileStore(String fileFullPath) throws FileNotFoundException {
+
+    public FileStore(String fileFullPath) throws IOException {
         this.fileFullPath = fileFullPath;
         randomAccessFile = new RandomAccessFile(fileFullPath, "rw");
         fileChannel = randomAccessFile.getChannel();
+        // todo 待确认该方法是否会影响性能?是否应该在文件头部记录结束位置？
+        this.endPosition = fileChannel.size();
     }
 
 
@@ -73,6 +77,9 @@ public class FileStore {
     }
 
 
+    public long getEndPosition() {
+        return endPosition;
+    }
 
     public void close() {
         try {

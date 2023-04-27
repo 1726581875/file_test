@@ -23,6 +23,7 @@ public class Chunk {
     private int nextChunkPos;
     /**
      * 4字节
+     * todo 数据长度不准确，实际数据长度小于或等于dataLen，暂时为了方便读取假设每个字符都按3字节存储了
      */
     private int dataLen;
 
