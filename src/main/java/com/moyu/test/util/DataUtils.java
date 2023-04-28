@@ -117,7 +117,7 @@ public class DataUtils {
         int i = 8;
         while (i > 0) {
             i = i - 1;
-            buff.put((byte) (value >> (i << 3) & 0xff));
+            buff.put((byte) ((value >> (i << 3)) & 0xff));
         }
     }
 
@@ -131,7 +131,7 @@ public class DataUtils {
         int i = 8;
         while (i > 0) {
             i = i - 1;
-            result |=  (buff.get() & 0xff) << (i << 3);
+            result |=  ((long) buff.get() & 0xff) << (i << 3);
         }
         return result;
     }
