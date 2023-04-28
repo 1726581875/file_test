@@ -12,18 +12,17 @@ public class Chunk {
     /**
      * 4字节
      */
-    private int chunkStartPos;
+    private int chunkLen;
     /**
      * 4字节
      */
-    private int chunkLen;
+    private int chunkStartPos;
     /**
      * 下一个数据块开始位置，4字节
      */
     private int nextChunkPos;
     /**
      * 4字节
-     * todo 数据长度不准确，实际数据长度小于或等于dataLen，暂时为了方便读取假设每个字符都按3字节存储了
      */
     private int dataLen;
 
@@ -33,7 +32,7 @@ public class Chunk {
     public Chunk(int chunkStartPos, String data) {
         this.chunkStartPos = chunkStartPos;
         // chunkStartPos + chunkLen + nextChunkPos + dataLen = 16 再加上data的字节长度
-        this.dataLen = data.length() * 3;
+        this.dataLen = getDateStringByteLength(data);
         this.chunkLen = 16 + dataLen;
         this.nextChunkPos = chunkStartPos + chunkLen;
         this.data = data;
@@ -41,11 +40,26 @@ public class Chunk {
 
 
     public Chunk(ByteBuffer readBuff) {
-        this.chunkStartPos = DataUtils.readInt(readBuff);
         this.chunkLen = DataUtils.readInt(readBuff);
+        this.chunkStartPos = DataUtils.readInt(readBuff);
         this.nextChunkPos = DataUtils.readInt(readBuff);
         this.dataLen = DataUtils.readInt(readBuff);
         this.data = DataUtils.readString(readBuff, dataLen);
+    }
+
+    private int getDateStringByteLength(String dataStr) {
+        int len = 0;
+        for (int i = 0; i < dataStr.length(); i++) {
+            int c = dataStr.charAt(i);
+            if (c < 0x80) {
+                len++;
+            } else if (c >= 0x800) {
+                len += 3;
+            } else {
+                len += 2;
+            }
+        }
+        return len;
     }
 
 
@@ -92,8 +106,8 @@ public class Chunk {
 
     public ByteBuffer getByteBuff() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(chunkLen);
-        DataUtils.writeInt(byteBuffer, chunkStartPos);
         DataUtils.writeInt(byteBuffer, chunkLen);
+        DataUtils.writeInt(byteBuffer, chunkStartPos);
         DataUtils.writeInt(byteBuffer, nextChunkPos);
         DataUtils.writeInt(byteBuffer, dataLen);
         DataUtils.writeStringData(byteBuffer, data, data.length());
@@ -103,8 +117,8 @@ public class Chunk {
     @Override
     public String toString() {
         return "Chunk{" +
-                "chunkStartPos=" + chunkStartPos +
-                ", chunkLen=" + chunkLen +
+                "chunkLen=" + chunkLen +
+                ", chunkStartPos=" + chunkStartPos +
                 ", nextChunkPos=" + nextChunkPos +
                 ", dataLen=" + dataLen +
                 ", data='" + data + '\'' +

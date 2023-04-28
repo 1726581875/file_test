@@ -10,10 +10,6 @@ import java.nio.ByteBuffer;
  */
 public class DataUtils {
 
-    private static String filePath = "D:\\mytest\\fileTest\\1.xmz";
-    private static String filePath2 = "D:\\mytest\\fileTest\\2.xmz";
-
-
     /**
      * 参考H2database的DataUtils.writeStringData类
      * @param buff
@@ -100,68 +96,44 @@ public class DataUtils {
     }
 
 
-    public static void main(String[] args) {
-
-        ByteBuffer intBufferTest = ByteBuffer.allocate(4);
-        writeInt(intBufferTest, 520);
-        intBufferTest.rewind();
-        int i = readInt(intBufferTest);
-        System.out.println(i);
-    }
-
-
-
-
-    private static void writeTest1() {
-
-        FileUtil.createFileIfNotExists(filePath);
-        FileStore fileStore = null;
-        try {
-            fileStore = new FileStore(filePath);
-            // 写文件
-            String str = "Hello 啊World !";
-            ByteBuffer byteBuffer = ByteBuffer.allocate(str.length() * 3);
-
-            writeStringData(byteBuffer, str, str.length());
-            byteBuffer.rewind();
-            fileStore.write(byteBuffer, 0);
-
-            // 读文件
-            ByteBuffer readBuff = fileStore.read(0, str.length() * 3 - 1);
-            System.out.println(readString(readBuff, str.length()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (fileStore != null) {
-                fileStore.close();
-            }
+    /**
+     * long转byte存储
+     *
+     * 注：方法代码相当于，只是做了下取巧简化
+     *   buff.put((byte) (value >> 56 & 0xff));
+     *   buff.put((byte) (value >> 48 & 0xff));
+     *   buff.put((byte) (value >> 40 & 0xff));
+     *   buff.put((byte) (value >> 32 & 0xff));
+     *   buff.put((byte) (value >> 24 & 0xff));
+     *   buff.put((byte) (value >> 16 & 0xff));
+     *   buff.put((byte) (value >> 8 & 0xff));
+     *   buff.put((byte) (value & 0xff));
+     *
+     * @param buff
+     * @param value
+     */
+    public static void writeLong(ByteBuffer buff, long value) {
+        // long字长度8
+        int i = 8;
+        while (i > 0) {
+            i = i - 1;
+            buff.put((byte) (value >> (i << 3) & 0xff));
         }
     }
 
-
-    private static void writeTest2() {
-
-        FileUtil.createFileIfNotExists(filePath2);
-        FileStore fileStore = null;
-        try {
-            fileStore = new FileStore(filePath2);
-            // 写文件
-            String str = "Hello 啊World !";
-            ByteBuffer byteBuffer = ByteBuffer.wrap(str.getBytes());
-
-            byteBuffer.rewind();
-            fileStore.write(byteBuffer, 0);
-
-            // 读文件
-            ByteBuffer readBuff = fileStore.read(0, str.length());
-            System.out.println(new String(readBuff.array()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (fileStore != null) {
-                fileStore.close();
-            }
+    /**
+     * byte转long
+     * @param buff
+     * @return
+     */
+    public static long readLong(ByteBuffer buff) {
+        long result = 0;
+        int i = 8;
+        while (i > 0) {
+            i = i - 1;
+            result |=  (buff.get() & 0xff) << (i << 3);
         }
+        return result;
     }
 
 

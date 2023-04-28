@@ -15,5 +15,7 @@ public interface OperatorConstant {
     String NOT_IN = "NOT IN";
     String EXISTS = "EXISTS";
     String NOT_EXISTS = "NOT EXISTS";
+    String IS_NULL = "IS NULL";
+    String IS_NOT_NULL = "IS NOT NULL";
 
 }

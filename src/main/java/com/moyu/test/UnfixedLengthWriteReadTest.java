@@ -43,7 +43,7 @@ public class UnfixedLengthWriteReadTest {
             int startPos = 0;
             for (int i = 0; i < chunkList.size(); i++) {
                 // 读取块长度
-                int chunkLenAttrStartPos = startPos + 4;
+                int chunkLenAttrStartPos = startPos;
                 ByteBuffer chunkLenBuff = fileStore.read(chunkLenAttrStartPos, 4);
                 int chunkLen = DataUtils.readInt(chunkLenBuff);
 

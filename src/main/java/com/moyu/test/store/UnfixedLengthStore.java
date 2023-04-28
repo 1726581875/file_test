@@ -31,7 +31,7 @@ public class UnfixedLengthStore {
         }
         try {
             synchronized (this) {
-                int chunkLenAttrStartPos = currentPos + 4;
+                int chunkLenAttrStartPos = currentPos;
                 ByteBuffer chunkLenBuff = fileStore.read(chunkLenAttrStartPos, 4);
                 int chunkLen = DataUtils.readInt(chunkLenBuff);
                 ByteBuffer byteBuff = fileStore.read(currentPos, chunkLen);
@@ -45,7 +45,7 @@ public class UnfixedLengthStore {
         return null;
     }
 
-    public void close(){
+    public void close() {
         if (fileStore != null) {
             fileStore.close();
         }
