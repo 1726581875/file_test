@@ -3,7 +3,6 @@ package com.moyu.test.store;
 import com.moyu.test.exception.FileOperationException;
 
 import java.io.EOFException;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;

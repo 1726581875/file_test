@@ -14,26 +14,31 @@ public class Chunk {
      */
     private int chunkLen;
     /**
-     * 4字节
+     * 8字节
      */
-    private int chunkStartPos;
+    private long chunkStartPos;
     /**
-     * 下一个数据块开始位置，4字节
+     * 下一个数据块开始位置，8字节
      */
-    private int nextChunkPos;
+    private long nextChunkPos;
     /**
-     * 4字节
+     * 数据字节长度，4字节
      */
     private int dataLen;
+    /**
+     * 数据字符长度，4字节
+     */
+    private int charLen;
 
     private String data;
 
 
-    public Chunk(int chunkStartPos, String data) {
+    public Chunk(long chunkStartPos, String data) {
         this.chunkStartPos = chunkStartPos;
-        // chunkStartPos + chunkLen + nextChunkPos + dataLen = 16 再加上data的字节长度
+        this.charLen = data.length();
         this.dataLen = getDateStringByteLength(data);
-        this.chunkLen = 16 + dataLen;
+        // chunkStartPos + chunkLen + nextChunkPos + dataLen + charLen = 28 再加上data的字节长度
+        this.chunkLen = 28 + dataLen;
         this.nextChunkPos = chunkStartPos + chunkLen;
         this.data = data;
     }
@@ -41,10 +46,11 @@ public class Chunk {
 
     public Chunk(ByteBuffer readBuff) {
         this.chunkLen = DataUtils.readInt(readBuff);
-        this.chunkStartPos = DataUtils.readInt(readBuff);
-        this.nextChunkPos = DataUtils.readInt(readBuff);
+        this.chunkStartPos = DataUtils.readLong(readBuff);
+        this.nextChunkPos = DataUtils.readLong(readBuff);
         this.dataLen = DataUtils.readInt(readBuff);
-        this.data = DataUtils.readString(readBuff, dataLen);
+        this.charLen = DataUtils.readInt(readBuff);
+        this.data = DataUtils.readString(readBuff, charLen);
     }
 
     private int getDateStringByteLength(String dataStr) {
@@ -63,13 +69,18 @@ public class Chunk {
     }
 
 
-    public int getChunkStartPos() {
-        return chunkStartPos;
+    public ByteBuffer getByteBuff() {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(chunkLen);
+        DataUtils.writeInt(byteBuffer, chunkLen);
+        DataUtils.writeLong(byteBuffer, chunkStartPos);
+        DataUtils.writeLong(byteBuffer, nextChunkPos);
+        DataUtils.writeInt(byteBuffer, dataLen);
+        DataUtils.writeInt(byteBuffer, charLen);
+        DataUtils.writeStringData(byteBuffer, data, data.length());
+        byteBuffer.rewind();
+        return byteBuffer;
     }
 
-    public void setChunkStartPos(int chunkStartPos) {
-        this.chunkStartPos = chunkStartPos;
-    }
 
     public int getChunkLen() {
         return chunkLen;
@@ -79,11 +90,19 @@ public class Chunk {
         this.chunkLen = chunkLen;
     }
 
-    public int getNextChunkPos() {
+    public long getChunkStartPos() {
+        return chunkStartPos;
+    }
+
+    public void setChunkStartPos(long chunkStartPos) {
+        this.chunkStartPos = chunkStartPos;
+    }
+
+    public long getNextChunkPos() {
         return nextChunkPos;
     }
 
-    public void setNextChunkPos(int nextChunkPos) {
+    public void setNextChunkPos(long nextChunkPos) {
         this.nextChunkPos = nextChunkPos;
     }
 
@@ -101,17 +120,6 @@ public class Chunk {
 
     public void setData(String data) {
         this.data = data;
-    }
-
-
-    public ByteBuffer getByteBuff() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(chunkLen);
-        DataUtils.writeInt(byteBuffer, chunkLen);
-        DataUtils.writeInt(byteBuffer, chunkStartPos);
-        DataUtils.writeInt(byteBuffer, nextChunkPos);
-        DataUtils.writeInt(byteBuffer, dataLen);
-        DataUtils.writeStringData(byteBuffer, data, data.length());
-        return byteBuffer;
     }
 
     @Override
