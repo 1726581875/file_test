@@ -17,6 +17,8 @@ import java.util.List;
  */
 public class DatabaseMetadataStore {
 
+    private static final String defaultPath = "D:\\mytest\\fileTest\\";
+
     private String filePath;
 
     private String DATABASE_META_FILE_NAME = "database.meta";
@@ -26,6 +28,9 @@ public class DatabaseMetadataStore {
     private List<DatabaseMetadata> databaseMetadataList = new ArrayList<>();
 
 
+    public DatabaseMetadataStore() throws IOException {
+        this(defaultPath);
+    }
 
     public DatabaseMetadataStore(String filePath) throws IOException {
         this.filePath = filePath;

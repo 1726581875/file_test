@@ -31,7 +31,6 @@ public class QueryCommand implements Command {
         this.fileName = fileName;
     }
 
-    @Override
     public List<Chunk> execute() {
         List<Chunk> resultChunk = new ArrayList<>();
         UnfixedLengthStore unfixedLenStore = null;
