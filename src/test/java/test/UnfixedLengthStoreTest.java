@@ -2,6 +2,7 @@ package test;
 
 import com.moyu.test.store.Chunk;
 import com.moyu.test.store.UnfixedLengthStore;
+import com.moyu.test.util.FileUtil;
 
 import java.io.IOException;
 
@@ -11,7 +12,12 @@ import java.io.IOException;
  */
 public class UnfixedLengthStoreTest {
 
+    private static final String filePath = "D:\\mytest\\fileTest\\unfixLen_test.xmz";
+
     public static void main(String[] args) throws IOException {
+        if (!FileUtil.exists(filePath)) {
+            UnfixedLengthStore.createAndInitFile(filePath);
+        }
         testWriteChunk();
         testReadChunk();
     }
@@ -20,7 +26,6 @@ public class UnfixedLengthStoreTest {
     private static void testReadChunk() {
         UnfixedLengthStore unfixedLengthStore = null;
         try {
-            String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
             unfixedLengthStore = new UnfixedLengthStore(filePath);
             Chunk nextChunk = null;
             while ((nextChunk = unfixedLengthStore.getNextChunk()) != null) {
@@ -40,7 +45,6 @@ public class UnfixedLengthStoreTest {
     private static void testWriteChunk() {
         UnfixedLengthStore unfixedLengthStore = null;
         try {
-            String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
             unfixedLengthStore = new UnfixedLengthStore(filePath);
             unfixedLengthStore.writeData("摸鱼啊啊啊");
         } catch (Exception e) {

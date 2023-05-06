@@ -23,4 +23,9 @@ public class FileUtil {
         }
     }
 
+    public static boolean exists(String fullPath) {
+        File file = new File(fullPath);
+        return file.exists();
+    }
+
 }

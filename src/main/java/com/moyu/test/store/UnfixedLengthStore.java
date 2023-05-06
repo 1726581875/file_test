@@ -1,6 +1,7 @@
 package com.moyu.test.store;
 
 import com.moyu.test.util.DataUtils;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -50,7 +51,7 @@ public class UnfixedLengthStore {
     public void writeData(String data) {
         try {
             Chunk chunk = new Chunk(fileHeader.getFileEndPos(), data);
-            synchronized (fileFullPath) {
+            synchronized (fileFullPath.intern()) {
                 // write chunk
                 ByteBuffer byteBuffer = chunk.getByteBuff();
                 fileStore.write(byteBuffer, fileHeader.getFileEndPos());
@@ -63,6 +64,29 @@ public class UnfixedLengthStore {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public static void createAndInitFile(String fileFullPath) throws IOException {
+        File file = new File(fileFullPath);
+        if (!file.exists()) {
+            file.createNewFile();
+        } else {
+            throw new RuntimeException("文件已存在");
+        }
+
+        FileStore fileStore = new FileStore(fileFullPath);
+        try {
+            // init header
+            FileHeader fileHeader = new FileHeader(FileHeader.HEADER_LENGTH,
+                    0, 0, FileHeader.HEADER_LENGTH);
+            ByteBuffer headerBuff = fileHeader.getByteBuff();
+            fileStore.write(headerBuff, 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fileStore.close();
         }
     }
 

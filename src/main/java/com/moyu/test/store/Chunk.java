@@ -36,7 +36,7 @@ public class Chunk {
     public Chunk(long chunkStartPos, String data) {
         this.chunkStartPos = chunkStartPos;
         this.charLen = data.length();
-        this.dataLen = getDateStringByteLength(data);
+        this.dataLen = DataUtils.getDateStringByteLength(data);
         // chunkStartPos + chunkLen + nextChunkPos + dataLen + charLen = 28 再加上data的字节长度
         this.chunkLen = 28 + dataLen;
         this.nextChunkPos = chunkStartPos + chunkLen;
@@ -51,21 +51,6 @@ public class Chunk {
         this.dataLen = DataUtils.readInt(readBuff);
         this.charLen = DataUtils.readInt(readBuff);
         this.data = DataUtils.readString(readBuff, charLen);
-    }
-
-    private int getDateStringByteLength(String dataStr) {
-        int len = 0;
-        for (int i = 0; i < dataStr.length(); i++) {
-            int c = dataStr.charAt(i);
-            if (c < 0x80) {
-                len++;
-            } else if (c >= 0x800) {
-                len += 3;
-            } else {
-                len += 2;
-            }
-        }
-        return len;
     }
 
 

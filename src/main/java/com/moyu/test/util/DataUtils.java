@@ -1,7 +1,5 @@
 package com.moyu.test.util;
 
-import com.moyu.test.store.FileStore;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -68,6 +66,24 @@ public class DataUtils {
         }
         return new String(chars);
     }
+
+
+    public static int getDateStringByteLength(String dataStr) {
+        int len = 0;
+        for (int i = 0; i < dataStr.length(); i++) {
+            int c = dataStr.charAt(i);
+            if (c < 0x80) {
+                len++;
+            } else if (c >= 0x800) {
+                len += 3;
+            } else {
+                len += 2;
+            }
+        }
+        return len;
+    }
+
+
 
 
     /**
