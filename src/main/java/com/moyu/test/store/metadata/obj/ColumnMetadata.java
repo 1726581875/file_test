@@ -24,18 +24,26 @@ public class ColumnMetadata {
 
     private byte columnType;
 
+    private int columnIndex;
+
     private int columnLength;
 
 
-    public ColumnMetadata(int tableId, long startPos, String columnName, byte columnType, int columnLength) {
+    public ColumnMetadata(int tableId,
+                          long startPos,
+                          String columnName,
+                          byte columnType,
+                          int columnIndex,
+                          int columnLength) {
         this.startPos = startPos;
         this.tableId = tableId;
         this.columnName = columnName;
         this.columnNameByteLen = DataUtils.getDateStringByteLength(columnName);
         this.columnNameCharLen = columnName.length();
         this.columnType = columnType;
+        this.columnIndex = columnIndex;
         this.columnLength = columnLength;
-        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + this.columnNameByteLen + 1 + 4;
+        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + this.columnNameByteLen + 1 + 4 + 4;
     }
 
     public ColumnMetadata(ByteBuffer byteBuffer) {
@@ -46,6 +54,7 @@ public class ColumnMetadata {
         this.columnNameCharLen = DataUtils.readInt(byteBuffer);
         this.columnName = DataUtils.readString(byteBuffer, this.columnNameCharLen);
         this.columnType = byteBuffer.get();
+        this.columnIndex = DataUtils.readInt(byteBuffer);
         this.columnLength = DataUtils.readInt(byteBuffer);
     }
 
@@ -61,6 +70,7 @@ public class ColumnMetadata {
         DataUtils.writeStringData(byteBuffer, columnName, columnName.length());
 
         byteBuffer.put(columnType);
+        DataUtils.writeInt(byteBuffer, columnIndex);
         DataUtils.writeInt(byteBuffer, columnLength);
         byteBuffer.rewind();
         return byteBuffer;
@@ -131,6 +141,14 @@ public class ColumnMetadata {
         this.columnLength = columnLength;
     }
 
+    public int getColumnIndex() {
+        return columnIndex;
+    }
+
+    public void setColumnIndex(int columnIndex) {
+        this.columnIndex = columnIndex;
+    }
+
     @Override
     public String toString() {
         return "ColumnMetadata{" +
@@ -141,6 +159,7 @@ public class ColumnMetadata {
                 ", columnNameCharLen=" + columnNameCharLen +
                 ", columnName='" + columnName + '\'' +
                 ", columnType=" + columnType +
+                ", columnIndex=" + columnIndex +
                 ", columnLength=" + columnLength +
                 '}';
     }

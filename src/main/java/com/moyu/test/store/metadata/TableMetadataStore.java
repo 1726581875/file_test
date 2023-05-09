@@ -10,7 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -19,11 +21,11 @@ import java.util.List;
 public class TableMetadataStore {
 
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\";
+    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
 
     private String filePath;
 
-    private String TABLE_META_FILE_NAME = "table.meta";
+    public static final String TABLE_META_FILE_NAME = "table.meta";
 
     private FileStore fileStore;
 
@@ -31,8 +33,12 @@ public class TableMetadataStore {
 
     private List<TableMetadata> tableMetadataList = new ArrayList<>();
 
-    private List<ColumnMetadata> columnMetadataList = new ArrayList<>();
+    private Map<Integer, List<ColumnMetadata>> columnMap = new HashMap<>();
 
+
+    public TableMetadataStore(Integer databaseId) throws IOException {
+        this(databaseId, defaultPath);
+    }
 
 
     public TableMetadataStore(Integer databaseId, String filePath) throws IOException {
@@ -44,25 +50,14 @@ public class TableMetadataStore {
 
     public void createTable(String tableName) {
         synchronized (TableMetadataStore.class) {
-            synchronized (DatabaseMetadataStore.class) {
-                checkTableName(tableName);
-                TableMetadata metadata = null;
-                TableMetadata lastData = getLastTable();
-
-                int nextTableId = 0;
-                long startPos = 0L;
-                if (lastData == null) {
-                    metadata = new TableMetadata(tableName, nextTableId,databaseId, startPos, "NULL");
-                } else {
-                    nextTableId = lastData.getDatabaseId() + 1;
-                    startPos = lastData.getStartPos() + lastData.getTotalByteLen();
-                    metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");;
-                }
-
-                ByteBuffer byteBuffer = metadata.getByteBuffer();
-                fileStore.write(byteBuffer, startPos);
-                tableMetadataList.add(metadata);
-            }
+            checkTableName(tableName);
+            TableMetadata lastData = getLastTable();
+            int nextTableId = lastData == null ? 0 : lastData.getDatabaseId() + 1;
+            long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
+            TableMetadata metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
+            ByteBuffer byteBuffer = metadata.getByteBuffer();
+            fileStore.write(byteBuffer, startPos);
+            tableMetadataList.add(metadata);
         }
     }
 

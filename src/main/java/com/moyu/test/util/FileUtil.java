@@ -23,6 +23,18 @@ public class FileUtil {
         }
     }
 
+
+    public static void deleteOnExists(String fullPath) {
+        try {
+            File file = new File(fullPath);
+            file.deleteOnExit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new FileOperationException("删除文件发生异常");
+        }
+    }
+
+
     public static boolean exists(String fullPath) {
         File file = new File(fullPath);
         return file.exists();

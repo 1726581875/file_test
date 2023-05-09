@@ -17,11 +17,11 @@ import java.util.List;
  */
 public class DatabaseMetadataStore {
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\";
+    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
 
     private String filePath;
 
-    private String DATABASE_META_FILE_NAME = "database.meta";
+    public static final String DATABASE_META_FILE_NAME = "database.meta";
 
     private FileStore fileStore;
 
@@ -41,19 +41,10 @@ public class DatabaseMetadataStore {
     public void createDatabase(String databaseName) {
         synchronized (DatabaseMetadataStore.class) {
             checkDbName(databaseName);
-            DatabaseMetadata metadata = null;
             DatabaseMetadata lastData = getLastData();
-
-            int nextDatabaseId = 0;
-            long startPos = 0L;
-            if (lastData == null) {
-                metadata = new DatabaseMetadata(databaseName, nextDatabaseId, startPos);
-            } else {
-                nextDatabaseId = lastData.getDatabaseId() + 1;
-                startPos = lastData.getStartPos() + lastData.getTotalByteLen();
-                metadata = new DatabaseMetadata(databaseName, nextDatabaseId, startPos);
-            }
-
+            int nextDatabaseId = lastData == null ? 0 : lastData.getDatabaseId() + 1;
+            long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
+            DatabaseMetadata metadata = new DatabaseMetadata(databaseName, nextDatabaseId, startPos);
             ByteBuffer byteBuffer = metadata.getByteBuffer();
             fileStore.write(byteBuffer, startPos);
             databaseMetadataList.add(metadata);

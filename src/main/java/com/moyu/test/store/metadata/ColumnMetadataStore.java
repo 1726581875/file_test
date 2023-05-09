@@ -2,6 +2,7 @@ package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
+import com.moyu.test.store.metadata.obj.ColumnDto;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.util.DataUtils;
 
@@ -9,7 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -18,31 +21,53 @@ import java.util.List;
 public class ColumnMetadataStore {
 
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\";
+    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
 
     private String filePath;
 
-    private String COLUMN_META_FILE_NAME = "column.meta";
+    public static final String COLUMN_META_FILE_NAME = "column.meta";
 
     private FileStore fileStore;
-
-    private Integer tableId;
 
 
     private List<ColumnMetadata> columnMetadataList = new ArrayList<>();
 
+    private Map<Integer, List<ColumnMetadata>> columnMap = new HashMap<>();
 
 
-    public ColumnMetadataStore(Integer tableId, String filePath) throws IOException {
+    public ColumnMetadataStore() throws IOException {
+        this(defaultPath);
+    }
+
+    public ColumnMetadataStore(String filePath) throws IOException {
         this.filePath = filePath;
-        this.tableId = tableId;
         init();
     }
 
 
-    public void createColumn(List<ColumnMetadata> columnMetadata) {
-        synchronized (DatabaseMetadataStore.class) {
+    public void createColumn(Integer tableId, List<ColumnDto> columnDtoList) {
+        synchronized (ColumnMetadataStore.class) {
+            ColumnMetadata lastData = getLastColumn();
+            long startPos = lastData == null ? 0 : lastData.getStartPos() + lastData.getTotalByteLen();
+            for (int i = 0; i < columnDtoList.size(); i++) {
+                // 写入磁盘文件
+                ColumnDto columnDto = columnDtoList.get(i);
+                ColumnMetadata metadata = new ColumnMetadata(tableId, startPos, columnDto.getColumnName(),
+                        columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
+                ByteBuffer byteBuffer = metadata.getByteBuffer();
+                fileStore.write(byteBuffer, startPos);
+                startPos += metadata.getTotalByteLen();
 
+                // 添加到内存
+                columnMetadataList.add(metadata);
+                List<ColumnMetadata> columns = columnMap.get(tableId);
+                if (columns == null) {
+                    columns = new ArrayList<>();
+                    columnMap.put(tableId, columns);
+                }
+                columns.add(metadata);
+
+            }
         }
     }
 
@@ -50,14 +75,10 @@ public class ColumnMetadataStore {
         return columnMetadataList;
     }
 
-
-    private void checkColumn(String columnName) {
-        for (ColumnMetadata metadata : columnMetadataList) {
-            if (columnName.equals(metadata.getColumnName())) {
-                throw new RuntimeException("字段" + columnName + "已存在");
-            }
-        }
+    public Map<Integer, List<ColumnMetadata>> getColumnMap() {
+        return columnMap;
     }
+
 
     private ColumnMetadata getLastColumn() {
         if (columnMetadataList.size() > 0) {
@@ -84,10 +105,17 @@ public class ColumnMetadataStore {
                 ByteBuffer readBuffer = fileStore.read(currPos, dataByteLen);
                 ColumnMetadata dbMetadata = new ColumnMetadata(readBuffer);
                 // 只初始化当前数据库的表到内存
-                if(tableId.equals(dbMetadata.getTableId())) {
-                    columnMetadataList.add(dbMetadata);
-                }
+                columnMetadataList.add(dbMetadata);
                 currPos += dataByteLen;
+            }
+
+            for (ColumnMetadata metadata : columnMetadataList) {
+                List<ColumnMetadata> columns = columnMap.get(metadata.getTableId());
+                if (columns == null) {
+                    columns = new ArrayList<>();
+                    columnMap.put(metadata.getTableId(), columns);
+                }
+                columns.add(metadata);
             }
         }
     }
