@@ -27,7 +27,6 @@ public class FileStore {
         this.fileFullPath = fileFullPath;
         randomAccessFile = new RandomAccessFile(fileFullPath, "rw");
         fileChannel = randomAccessFile.getChannel();
-        // todo 待确认该方法是否会影响性能?是否应该在文件头部记录结束位置？
         this.endPosition = fileChannel.size();
     }
 
@@ -72,6 +71,15 @@ public class FileStore {
         } catch (IOException e) {
             e.printStackTrace();
             throw new FileOperationException("写文件发生异常");
+        }
+    }
+
+    public void truncate(long size) {
+        try {
+            fileChannel.truncate(size);
+            endPosition = Math.min(endPosition, size);
+        } catch (IOException e) {
+            throw new FileOperationException("truncate文件发生异常");
         }
     }
 

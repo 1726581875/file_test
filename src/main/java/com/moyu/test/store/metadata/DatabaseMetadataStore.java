@@ -51,6 +51,50 @@ public class DatabaseMetadataStore {
         }
     }
 
+    public void dropDatabase(String databaseName) {
+        synchronized (DatabaseMetadataStore.class) {
+            Integer index = getDatabaseIndex(databaseName);
+            if (index == null) {
+                throw new RuntimeException("数据库" + databaseName + "不存在");
+            }
+            DatabaseMetadata metadata = databaseMetadataList.get(index);
+            long startPos = metadata.getStartPos();
+            // 如果数据是最后一个，直接清除
+            if (index == databaseMetadataList.size() - 1) {
+                fileStore.truncate(startPos);
+            } else {
+                // 非最后一个，后面数据都往前挪
+                int i = index + 1;
+                long writeStartPos = startPos;
+                do {
+                    DatabaseMetadata meta = databaseMetadataList.get(i);
+                    meta.setStartPos(writeStartPos);
+                    fileStore.write(meta.getByteBuffer(), writeStartPos);
+                    writeStartPos += meta.getTotalByteLen();
+                    i++;
+                } while (i < databaseMetadataList.size());
+
+                // 内存列表移除
+                databaseMetadataList.remove(index.intValue());
+                DatabaseMetadata lastData = getLastData();
+                // 清除后面多余的磁盘数据
+                fileStore.truncate(lastData.getStartPos() + lastData.getTotalByteLen());
+            }
+        }
+    }
+
+    public Integer getDatabaseIndex(String databaseName) {
+        int idx = 0;
+        while (idx < databaseMetadataList.size()) {
+            if (databaseName.equals(databaseMetadataList.get(idx).getName())) {
+                return idx;
+            }
+            idx++;
+        }
+        return null;
+    }
+
+
     public List<DatabaseMetadata> getAllData(){
         return databaseMetadataList;
     }
