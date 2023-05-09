@@ -11,18 +11,23 @@ public class CreateDatabaseCommand extends AbstractCommand {
 
     private String databaseName;
 
-    public void execute() {
+    @Override
+    public String execute() {
+
+        boolean success = true;
         DatabaseMetadataStore metadataStore = null;
         try {
             metadataStore = new DatabaseMetadataStore();
             metadataStore.createDatabase(databaseName);
         } catch (Exception e) {
             e.printStackTrace();
+            success = false;
         } finally {
             if (metadataStore != null) {
                 metadataStore.close();
             }
         }
+        return success ? "ok" : "error";
     }
 
     public String getDatabaseName() {

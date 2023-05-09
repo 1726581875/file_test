@@ -48,21 +48,42 @@ public class TableMetadataStore {
     }
 
 
-    public void createTable(String tableName) {
+    public TableMetadata createTable(String tableName) {
+        TableMetadata metadata = null;
         synchronized (TableMetadataStore.class) {
             checkTableName(tableName);
             TableMetadata lastData = getLastTable();
             int nextTableId = lastData == null ? 0 : lastData.getDatabaseId() + 1;
             long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
-            TableMetadata metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
+            metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
             ByteBuffer byteBuffer = metadata.getByteBuffer();
             fileStore.write(byteBuffer, startPos);
             tableMetadataList.add(metadata);
         }
+        return metadata;
     }
 
     public List<TableMetadata> getAllTable() {
         return tableMetadataList;
+    }
+
+
+    public List<ColumnMetadata> getColumnList(Integer tableId) {
+        ColumnMetadataStore columnMetadataStore = null;
+        try {
+            columnMetadataStore = new ColumnMetadataStore();
+            List<ColumnMetadata> columnMetadataList = columnMetadataStore.getColumnMap().get(tableId);
+            if (columnMetadataList != null) {
+                return columnMetadataList;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (columnMetadataStore != null) {
+                columnMetadataStore.close();
+            }
+        }
+        return new ArrayList<>();
     }
 
 

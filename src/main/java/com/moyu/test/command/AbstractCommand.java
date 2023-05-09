@@ -8,5 +8,11 @@ package com.moyu.test.command;
 public abstract class AbstractCommand implements Command {
 
 
+    /**
+     * 执行命令
+     * @param
+     * @return
+     */
+    abstract public String execute();
 
 }

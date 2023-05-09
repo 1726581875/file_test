@@ -53,7 +53,15 @@ public class MetadataStoreTest {
         try {
             metadataStore = new TableMetadataStore(0, filePath);
             metadataStore.createTable("xmz_table1");
-            metadataStore.getAllTable().forEach(System.out::println);
+            TableMetadataStore finalMetadataStore = metadataStore;
+            metadataStore.getAllTable().forEach(tableMetadata -> {
+                System.out.println("==== table ==== ");
+                System.out.println(tableMetadata);
+                List<ColumnMetadata> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
+                columnList.forEach(System.out::println);
+                System.out.println("==== table ==== ");
+            });
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
