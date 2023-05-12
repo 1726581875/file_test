@@ -1,4 +1,4 @@
-package com.moyu.test;
+package test.readwrite;
 
 /**
  * @author xiaomingzhang

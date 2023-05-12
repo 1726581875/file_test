@@ -1,4 +1,4 @@
-package test;
+package test.store;
 
 import com.moyu.test.store.Chunk;
 import com.moyu.test.store.UnfixedLengthStore;

@@ -1,4 +1,4 @@
-package test.metadata;
+package test.store.metadata;
 
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.store.metadata.ColumnMetadataStore;

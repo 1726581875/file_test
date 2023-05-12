@@ -68,6 +68,13 @@ public class DataChunkStore {
         if (result == true) {
             return true;
         }
+        // 创建一个数据块
+        createChunk();
+        result = writeRow(row);
+        if (result == true) {
+            return true;
+        }
+
         throw new RuntimeException("块空间不足");
     }
 

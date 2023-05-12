@@ -1,4 +1,4 @@
-package com.moyu.test;
+package test.readwrite;
 
 import com.moyu.test.store.FileStore;
 import com.moyu.test.util.FileUtil;

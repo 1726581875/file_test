@@ -1,11 +1,8 @@
-package test.data;
+package test.store.data;
 
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.DataRow;
 import com.moyu.test.util.FileUtil;
-
-import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -17,11 +14,6 @@ public class DataChunkStoreTest {
     public static void main(String[] args) {
         testWriteRow();
     }
-
-
-
-
-
 
     private static void testWriteRow() {
         String filePath = "D:\\mytest\\fileTest\\test.d";
