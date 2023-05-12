@@ -2,7 +2,7 @@ package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
-import com.moyu.test.store.metadata.obj.ColumnDto;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.util.DataUtils;
 
@@ -45,13 +45,13 @@ public class ColumnMetadataStore {
     }
 
 
-    public void createColumn(Integer tableId, List<ColumnDto> columnDtoList) {
+    public void createColumn(Integer tableId, List<Column> columnDtoList) {
         synchronized (ColumnMetadataStore.class) {
             ColumnMetadata lastData = getLastColumn();
             long startPos = lastData == null ? 0 : lastData.getStartPos() + lastData.getTotalByteLen();
             for (int i = 0; i < columnDtoList.size(); i++) {
                 // 写入磁盘文件
-                ColumnDto columnDto = columnDtoList.get(i);
+                Column columnDto = columnDtoList.get(i);
                 ColumnMetadata metadata = new ColumnMetadata(tableId, startPos, columnDto.getColumnName(),
                         columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
                 ByteBuffer byteBuffer = metadata.getByteBuffer();

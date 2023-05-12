@@ -4,7 +4,7 @@ package com.moyu.test.store.metadata.obj;
  * @author xiaomingzhang
  * @date 2023/5/9
  */
-public class ColumnDto {
+public class Column {
 
     private String columnName;
 
@@ -14,8 +14,10 @@ public class ColumnDto {
 
     private int columnLength;
 
+    private Object value;
 
-    public ColumnDto(String columnName, byte columnType, int columnIndex, int columnLength) {
+
+    public Column(String columnName, byte columnType, int columnIndex, int columnLength) {
         this.columnName = columnName;
         this.columnType = columnType;
         this.columnIndex = columnIndex;
@@ -52,5 +54,25 @@ public class ColumnDto {
 
     public void setColumnLength(int columnLength) {
         this.columnLength = columnLength;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Column{" +
+                "columnName='" + columnName + '\'' +
+                ", columnType=" + columnType +
+                ", columnIndex=" + columnIndex +
+                ", columnLength=" + columnLength +
+                ", value=" + value +
+                '}';
     }
 }

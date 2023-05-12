@@ -4,7 +4,7 @@ import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.ColumnDto;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.util.FileUtil;
 
@@ -73,9 +73,9 @@ public class MetadataStoreTest {
         ColumnMetadataStore metadataStore = null;
         try {
             metadataStore = new ColumnMetadataStore(filePath);
-            List<ColumnDto> columnDtoList = new ArrayList<>();
+            List<Column> columnDtoList = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
-                ColumnDto columnDto = new ColumnDto("column_" + i, DbColumnTypeConstant.VARCHAR, i, 64);
+                Column columnDto = new Column("column_" + i, DbColumnTypeConstant.VARCHAR, i, 64);
                 columnDtoList.add(columnDto);
             }
             metadataStore.createColumn(0, columnDtoList);

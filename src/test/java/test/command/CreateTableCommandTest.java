@@ -3,7 +3,7 @@ package test.command;
 import com.moyu.test.command.ddl.CreateTableCommand;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.ColumnDto;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 
 import java.util.ArrayList;
@@ -28,9 +28,9 @@ public class CreateTableCommandTest {
         command.setDatabaseId(0);
         command.setTableName("haofan");
 
-        List<ColumnDto> columnDtoList = new ArrayList<>();
+        List<Column> columnDtoList = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            ColumnDto columnDto = new ColumnDto("hf_" + i, DbColumnTypeConstant.VARCHAR, i, 64);
+            Column columnDto = new Column("hf_" + i, DbColumnTypeConstant.VARCHAR, i, 64);
             columnDtoList.add(columnDto);
         }
         command.setColumnDtoList(columnDtoList);

@@ -8,8 +8,12 @@ public interface DbColumnTypeConstant {
 
     byte INT_4 = 1;
 
-    byte CHAR = 2;
+    byte INT_8 = 2;
 
-    byte VARCHAR = 3;
+    byte CHAR = 10;
+
+    byte VARCHAR = 11;
+
+
 
 }

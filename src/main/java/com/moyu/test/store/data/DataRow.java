@@ -1,9 +1,13 @@
 package com.moyu.test.store.data;
 
+import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.type.ColumnType;
+import com.moyu.test.store.type.ColumnTypeFactory;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -44,6 +48,29 @@ public class DataRow {
         byteBuffer.put(this.row);
         byteBuffer.rewind();
         return byteBuffer;
+    }
+
+
+    public static byte[] toRowByteData(List<Column> columnList) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(16);
+        for (Column column : columnList) {
+            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            columnType.write(byteBuffer, column.getValue());
+        }
+        byteBuffer.flip();
+        byte[] result = new byte[byteBuffer.limit()];
+        byteBuffer.get(result);
+        return result;
+    }
+
+    public List<Column> getColumnList(List<Column> columnList) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(row);
+        for (Column column : columnList) {
+            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            Object value = columnType.read(byteBuffer);
+            column.setValue(value);
+        }
+        return columnList;
     }
 
 

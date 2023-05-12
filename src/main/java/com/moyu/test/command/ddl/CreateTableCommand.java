@@ -3,7 +3,7 @@ package com.moyu.test.command.ddl;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.ColumnDto;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 
 import java.util.List;
@@ -18,7 +18,7 @@ public class CreateTableCommand extends AbstractCommand {
 
     private String tableName;
 
-    private List<ColumnDto> columnDtoList;
+    private List<Column> columnDtoList;
 
     @Override
     public String execute() {
@@ -60,11 +60,11 @@ public class CreateTableCommand extends AbstractCommand {
         this.tableName = tableName;
     }
 
-    public List<ColumnDto> getColumnDtoList() {
+    public List<Column> getColumnDtoList() {
         return columnDtoList;
     }
 
-    public void setColumnDtoList(List<ColumnDto> columnDtoList) {
+    public void setColumnDtoList(List<Column> columnDtoList) {
         this.columnDtoList = columnDtoList;
     }
 }
