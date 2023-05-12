@@ -72,6 +72,13 @@ public class FileStore {
             e.printStackTrace();
             throw new FileOperationException("写文件发生异常");
         }
+
+        // TODO 可优化
+        try {
+            endPosition = fileChannel.size();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void truncate(long size) {
