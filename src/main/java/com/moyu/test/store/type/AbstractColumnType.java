@@ -1,5 +1,6 @@
 package com.moyu.test.store.type;
 
+import com.moyu.test.store.WriteBuffer;
 import java.nio.ByteBuffer;
 
 /**
@@ -11,21 +12,13 @@ public abstract class AbstractColumnType<T> implements ColumnType<T> {
 
     @Override
     public T read(ByteBuffer byteBuffer) {
-        expand(byteBuffer);
         return readValue(byteBuffer);
     }
 
     @Override
-    public void write(ByteBuffer byteBuffer, T value) {
-        expand(byteBuffer);
-        writeValue(byteBuffer, value);
+    public void write(WriteBuffer writeBuffer, T value) {
+        writeValue(writeBuffer, value);
     }
-
-    /**
-     * 如果byteBuffer长度不够，需要扩容
-     * @param byteBuffer
-     */
-    protected abstract void expand(ByteBuffer byteBuffer);
 
     /**
      * 把值写入ByteBuffer
@@ -33,20 +26,7 @@ public abstract class AbstractColumnType<T> implements ColumnType<T> {
      */
     protected abstract T readValue(ByteBuffer byteBuffer);
 
-    protected abstract void writeValue(ByteBuffer byteBuffer, T value);
-
-
-    /**
-     * 按固定长度增加容量
-     * @param byteBuffer
-     * @param len
-     */
-    protected void expand(ByteBuffer byteBuffer, int len) {
-        ByteBuffer newBuffer = ByteBuffer.allocate(byteBuffer.capacity() + len);
-        byteBuffer.flip();
-        newBuffer.put(byteBuffer);
-        byteBuffer = newBuffer;
-    }
+    protected abstract void writeValue(WriteBuffer writeBuffer, T value);
 
 
 }

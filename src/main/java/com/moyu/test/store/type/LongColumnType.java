@@ -1,5 +1,6 @@
 package com.moyu.test.store.type;
 
+import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -11,20 +12,13 @@ import java.nio.ByteBuffer;
 public class LongColumnType extends AbstractColumnType<Long> {
 
     @Override
-    protected void expand(ByteBuffer byteBuffer) {
-        if(byteBuffer.remaining() < 8) {
-            expand(byteBuffer, 8);
-        }
-    }
-
-    @Override
     protected Long readValue(ByteBuffer byteBuffer) {
         return DataUtils.readLong(byteBuffer);
     }
 
     @Override
-    protected void writeValue(ByteBuffer byteBuffer, Long value) {
-        DataUtils.writeLong(byteBuffer, value);
+    protected void writeValue(WriteBuffer writeBuffer, Long value) {
+        writeBuffer.putLong(value);
     }
 
 

@@ -1,5 +1,7 @@
 package com.moyu.test.store.type;
 
+import com.moyu.test.store.WriteBuffer;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -10,6 +12,6 @@ public interface ColumnType<T> {
 
     T read(ByteBuffer byteBuffer);
 
-    void write(ByteBuffer byteBuffer, T value);
+    void write(WriteBuffer writeBuffer, T value);
 
 }

@@ -1,5 +1,6 @@
 package com.moyu.test.store.data;
 
+import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.ColumnType;
 import com.moyu.test.store.type.ColumnTypeFactory;
@@ -52,14 +53,14 @@ public class DataRow {
 
 
     public static byte[] toRowByteData(List<Column> columnList) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(16);
+        WriteBuffer writeBuffer = new WriteBuffer(16);
         for (Column column : columnList) {
             ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
-            columnType.write(byteBuffer, column.getValue());
+            columnType.write(writeBuffer, column.getValue());
         }
-        byteBuffer.flip();
-        byte[] result = new byte[byteBuffer.limit()];
-        byteBuffer.get(result);
+        writeBuffer.getBuffer().flip();
+        byte[] result = new byte[writeBuffer.limit()];
+        writeBuffer.get(result);
         return result;
     }
 

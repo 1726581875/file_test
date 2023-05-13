@@ -1,5 +1,6 @@
 package com.moyu.test.store.type;
 
+import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -10,9 +11,6 @@ import java.nio.ByteBuffer;
  */
 public class StringColumnType extends AbstractColumnType<String> {
 
-    @Override
-    protected void expand(ByteBuffer byteBuffer) {
-    }
 
     @Override
     protected String readValue(ByteBuffer byteBuffer) {
@@ -21,14 +19,9 @@ public class StringColumnType extends AbstractColumnType<String> {
     }
 
     @Override
-    protected void writeValue(ByteBuffer byteBuffer, String value) {
-        int length = value.length();
-        int maxCharLen = length * 3 + 4;
-        if (byteBuffer.remaining() < maxCharLen) {
-            expand(byteBuffer, maxCharLen);
-        }
-        DataUtils.writeInt(byteBuffer, length);
-        DataUtils.writeStringData(byteBuffer, value, length);
+    protected void writeValue(WriteBuffer writeBuffer, String value) {
+        writeBuffer.putInt(value.length());
+        writeBuffer.putStringData(value, value.length());
     }
 
 }
