@@ -13,8 +13,9 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/5/11
+ * 行数据，每一行数据(元组)的所有字节
  */
-public class DataRow {
+public class RowData {
 
     private long totalByteLen;
 
@@ -22,16 +23,20 @@ public class DataRow {
 
     private int rowByteLen;
 
+    /**
+     * 包含该行所有字段的数据
+     */
     private byte[] row;
 
-    public DataRow(long startPos, byte[] row) {
+
+    public RowData(long startPos, byte[] row) {
         this.startPos = startPos;
         this.rowByteLen = row.length;
         this.row = row;
         this.totalByteLen = 20 + row.length;
     }
 
-    public DataRow(ByteBuffer byteBuffer) {
+    public RowData(ByteBuffer byteBuffer) {
         this.totalByteLen = DataUtils.readLong(byteBuffer);
         this.startPos = DataUtils.readLong(byteBuffer);
         this.rowByteLen = DataUtils.readInt(byteBuffer);
@@ -53,8 +58,13 @@ public class DataRow {
 
 
     public static byte[] toRowByteData(List<Column> columnList) {
+        Column[] columns = columnList.toArray(new Column[0]);
+        return toRowByteData(columns);
+    }
+
+    public static byte[] toRowByteData(Column[] columns) {
         WriteBuffer writeBuffer = new WriteBuffer(16);
-        for (Column column : columnList) {
+        for (Column column : columns) {
             ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             columnType.write(writeBuffer, column.getValue());
         }

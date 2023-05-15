@@ -7,5 +7,6 @@ package com.moyu.test.command;
  */
 public interface Command {
 
+    String[] exec();
 
 }

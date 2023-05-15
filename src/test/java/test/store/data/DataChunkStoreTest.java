@@ -3,7 +3,7 @@ package test.store.data;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.DataRow;
+import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.FileUtil;
 
@@ -58,8 +58,8 @@ public class DataChunkStoreTest {
             // write data
             for (int i = 0; i < 1; i++) {
                 try {
-                    byte[] bytes = DataRow.toRowByteData(columnList);
-                    dataChunkStore.addRow(bytes);
+                    byte[] bytes = RowData.toRowByteData(columnList);
+                    dataChunkStore.storeRow(bytes);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -101,7 +101,7 @@ public class DataChunkStoreTest {
             // write data
             for (int i = 0; i < 1024; i++) {
                 try {
-                    dataChunkStore.addRow("hello world!hello world!啊啊啊啊".getBytes());
+                    dataChunkStore.storeRow("hello world!hello world!啊啊啊啊".getBytes());
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();

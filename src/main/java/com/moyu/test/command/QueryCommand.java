@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * @author xiaomingzhang
  * @date 2023/4/27
  */
-public class QueryCommand implements Command {
+public class QueryCommand {
 
     private String fileName;
 

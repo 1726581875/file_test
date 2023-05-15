@@ -1,6 +1,7 @@
 package com.moyu.test.store.data;
 
 import com.moyu.test.store.FileStore;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.FileUtil;
 
 import java.io.IOException;
@@ -18,8 +19,6 @@ public class DataChunkStore {
     private static final String fileName = "data.m";
 
     private FileStore fileStore;
-
-    private List<DataRow> dataRowList;
 
     private DataChunk lastChunk;
 
@@ -63,7 +62,7 @@ public class DataChunkStore {
     }
 
 
-    public boolean addRow(byte[] row) {
+    public boolean storeRow(byte[] row) {
         boolean result = writeRow(row);
         if (result == true) {
             return true;
@@ -78,6 +77,11 @@ public class DataChunkStore {
         throw new RuntimeException("块空间不足");
     }
 
+    public boolean storeRow(Column[] columns) {
+        byte[] rowBytes = RowData.toRowByteData(columns);
+        return storeRow(rowBytes);
+    }
+
 
     private boolean writeRow(byte[] row) {
         long endPosition = fileStore.getEndPosition();
@@ -86,7 +90,7 @@ public class DataChunkStore {
             while (currPos < endPosition) {
                 ByteBuffer readBuffer = fileStore.read(currPos, DataChunk.DATA_CHUNK_LEN);
                 DataChunk dataChunk = new DataChunk(readBuffer);
-                DataRow dataRow = new DataRow(dataChunk.getNextRowStartPos(), row);
+                RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
                 // 当前块剩余空间足够，直接存储到该块
                 if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
                     dataChunk.addRow(dataRow);

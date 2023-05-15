@@ -9,6 +9,7 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/5/11
+ * 固定大小为1024字节的数据块，一个数据块里面包含多行数据
  */
 public class DataChunk {
 
@@ -38,8 +39,10 @@ public class DataChunk {
      * 下一个数据行开始位置
      */
     private long nextRowStartPos;
-
-    private List<DataRow> dataRowList;
+    /**
+     * 行数据
+     */
+    private List<RowData> dataRowList;
 
     public DataChunk(int chunkIndex, long startPos) {
         // 4(usedByteLen) + 4(chunkIndex) + 4(rowNum) + 8(startPos) + 8(dataStartPos) + 8(nextRowStartPos) = 36
@@ -62,7 +65,7 @@ public class DataChunk {
 
         this.dataRowList = new ArrayList<>();
         for (int i = 0; i < this.rowNum; i++) {
-            this.dataRowList.add(new DataRow(byteBuffer));
+            this.dataRowList.add(new RowData(byteBuffer));
         }
     }
 
@@ -96,7 +99,7 @@ public class DataChunk {
     }
 
 
-    public void addRow(DataRow dataRow) {
+    public void addRow(RowData dataRow) {
         this.rowNum++;
         this.usedByteLen += dataRow.getTotalByteLen();
         this.nextRowStartPos = this.nextRowStartPos + dataRow.getTotalByteLen();
@@ -148,11 +151,11 @@ public class DataChunk {
         this.rowStartPos = rowStartPos;
     }
 
-    public List<DataRow> getDataRowList() {
+    public List<RowData> getDataRowList() {
         return dataRowList;
     }
 
-    public void setDataRowList(List<DataRow> dataRowList) {
+    public void setDataRowList(List<RowData> dataRowList) {
         this.dataRowList = dataRowList;
     }
 

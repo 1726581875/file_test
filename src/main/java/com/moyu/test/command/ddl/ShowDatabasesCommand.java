@@ -1,5 +1,6 @@
 package com.moyu.test.command.ddl;
 
+import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 
@@ -10,9 +11,11 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/6
  */
-public class ShowDatabasesCommand {
+public class ShowDatabasesCommand extends AbstractCommand {
 
-    public List<String> execute() {
+
+    @Override
+    public String[] exec() {
         List<String> list = new ArrayList<>();
         DatabaseMetadataStore metadataStore = null;
         try {
@@ -29,7 +32,18 @@ public class ShowDatabasesCommand {
                 metadataStore.close();
             }
         }
-        return list;
+        return list.toArray(new String[0]);
+    }
+
+    @Override
+    public String execute() {
+        String[] result = exec();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String str : result) {
+            stringBuilder.append(str);
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
     }
 
 }
