@@ -29,7 +29,7 @@ public class CreateTableCommand extends AbstractCommand {
             tableMetadataStore = new TableMetadataStore(databaseId);
             columnMetadataStore = new ColumnMetadataStore();
             TableMetadata table = tableMetadataStore.createTable(tableName);
-            columnMetadataStore.createColumn(table.getTableId(), columnDtoList);
+            columnMetadataStore.createColumnBlock(table.getTableId(), columnDtoList);
         } catch (Exception e) {
             isSuccess = false;
             e.printStackTrace();

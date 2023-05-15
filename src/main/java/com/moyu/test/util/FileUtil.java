@@ -27,7 +27,9 @@ public class FileUtil {
     public static void deleteOnExists(String fullPath) {
         try {
             File file = new File(fullPath);
-            file.deleteOnExit();
+            if (file.exists()) {
+                file.delete();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new FileOperationException("删除文件发生异常");

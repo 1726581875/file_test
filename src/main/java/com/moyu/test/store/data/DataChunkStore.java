@@ -6,7 +6,6 @@ import com.moyu.test.util.FileUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * @author xiaomingzhang

@@ -3,6 +3,7 @@ package com.moyu.test.store.metadata;
 import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
+import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 import com.moyu.test.util.DataUtils;
 
@@ -63,6 +64,45 @@ public class TableMetadataStore {
         return metadata;
     }
 
+
+    public void dropTable(String tableName) {
+        TableMetadata tableMetadata = null;
+        int dropIndex = 0;
+        for (int i = 0; i < tableMetadataList.size(); i++) {
+            TableMetadata metadata = tableMetadataList.get(i);
+            if (tableName.equals(metadata.getTableName())) {
+                tableMetadata = metadata;
+                dropIndex = i;
+                break;
+            }
+        }
+
+        if(tableMetadata == null) {
+            throw new RuntimeException("表" + tableName + "不存在");
+        }
+
+        long startPos = tableMetadata.getStartPos();
+        long endPos = tableMetadata.getStartPos() + tableMetadata.getTotalByteLen();
+        if(endPos >= fileStore.getEndPosition()) {
+            fileStore.truncate(startPos);
+        } else {
+            long oldNextStarPos = endPos;
+            while (oldNextStarPos < fileStore.getEndPosition()) {
+                int dataByteLen = DataUtils.readInt(fileStore.read(oldNextStarPos, JavaTypeConstant.INT_LENGTH));
+                ByteBuffer readBuffer = fileStore.read(oldNextStarPos, dataByteLen);
+                fileStore.write(readBuffer, startPos);
+                startPos += dataByteLen;
+                oldNextStarPos += dataByteLen;
+            }
+            fileStore.truncate(startPos);
+        }
+
+        tableMetadataList.remove(dropIndex);
+
+    }
+
+
+
     public List<TableMetadata> getAllTable() {
         return tableMetadataList;
     }
@@ -71,10 +111,10 @@ public class TableMetadataStore {
     public List<ColumnMetadata> getColumnList(Integer tableId) {
         ColumnMetadataStore columnMetadataStore = null;
         try {
-            columnMetadataStore = new ColumnMetadataStore();
-            List<ColumnMetadata> columnMetadataList = columnMetadataStore.getColumnMap().get(tableId);
-            if (columnMetadataList != null) {
-                return columnMetadataList;
+            columnMetadataStore = new ColumnMetadataStore(filePath);
+            TableColumnBlock columnBlock = columnMetadataStore.getColumnMap().get(tableId);
+            if (columnBlock != null) {
+                return columnBlock.getColumnMetadataList();
             }
         } catch (Exception e) {
             e.printStackTrace();

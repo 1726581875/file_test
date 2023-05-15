@@ -4,6 +4,8 @@ import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
+import com.moyu.test.store.metadata.obj.TableColumnBlock;
+import com.moyu.test.store.metadata.obj.TableMetadata;
 import com.moyu.test.util.DataUtils;
 
 import java.io.File;
@@ -30,9 +32,9 @@ public class ColumnMetadataStore {
     private FileStore fileStore;
 
 
-    private List<ColumnMetadata> columnMetadataList = new ArrayList<>();
+    private List<TableColumnBlock> columnBlockList = new ArrayList<>();
 
-    private Map<Integer, List<ColumnMetadata>> columnMap = new HashMap<>();
+    private Map<Integer, TableColumnBlock> columnBlockMap = new HashMap<>();
 
 
     public ColumnMetadataStore() throws IOException {
@@ -45,44 +47,80 @@ public class ColumnMetadataStore {
     }
 
 
-    public void createColumn(Integer tableId, List<Column> columnDtoList) {
+    public void createColumnBlock(Integer tableId, List<Column> columnDtoList) {
         synchronized (ColumnMetadataStore.class) {
-            ColumnMetadata lastData = getLastColumn();
-            long startPos = lastData == null ? 0 : lastData.getStartPos() + lastData.getTotalByteLen();
+            TableColumnBlock lastData = getLastColumnBlock();
+            long startPos = lastData == null ? 0 : lastData.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+            int blockIndex = lastData == null ? 0 : lastData.getBlockIndex() + 1;
+
+            TableColumnBlock columnBlock = new TableColumnBlock(blockIndex, startPos, tableId);
+            long columnStartPos = columnBlock.getStartPos();
             for (int i = 0; i < columnDtoList.size(); i++) {
-                // 写入磁盘文件
                 Column columnDto = columnDtoList.get(i);
-                ColumnMetadata metadata = new ColumnMetadata(tableId, startPos, columnDto.getColumnName(),
+                ColumnMetadata column = new ColumnMetadata(tableId, columnStartPos, columnDto.getColumnName(),
                         columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
-                ByteBuffer byteBuffer = metadata.getByteBuffer();
-                fileStore.write(byteBuffer, startPos);
-                startPos += metadata.getTotalByteLen();
-
-                // 添加到内存
-                columnMetadataList.add(metadata);
-                List<ColumnMetadata> columns = columnMap.get(tableId);
-                if (columns == null) {
-                    columns = new ArrayList<>();
-                    columnMap.put(tableId, columns);
-                }
-                columns.add(metadata);
-
+                columnBlock.addColumn(column);
+                columnStartPos += column.getTotalByteLen();
             }
+            fileStore.write(columnBlock.getByteBuffer(), startPos);
+
+            columnBlockMap.put(columnBlock.getTableId(), columnBlock);
+            columnBlockList.add(columnBlock);
         }
     }
 
-    public List<ColumnMetadata> getAllTable() {
-        return columnMetadataList;
+
+    public void dropColumnBlock(Integer tableId) {
+        TableColumnBlock columnBlock = columnBlockMap.get(tableId);
+
+        if (columnBlock == null) {
+            throw new RuntimeException("删除失败，不存在tableId:" + tableId);
+        }
+
+        long startPos = columnBlock.getStartPos();
+        long endPos = columnBlock.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+        if (endPos >= fileStore.getEndPosition()) {
+            fileStore.truncate(startPos);
+        } else {
+            int blockIndex = columnBlock.getBlockIndex();
+            long oldNextStarPos = endPos;
+            while (oldNextStarPos < fileStore.getEndPosition()) {
+                ByteBuffer readBuffer = fileStore.read(oldNextStarPos, TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE);
+                TableColumnBlock block = new TableColumnBlock(readBuffer);
+                block.setBlockIndex(blockIndex);
+
+                fileStore.write(block.getByteBuffer(), startPos);
+                startPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+                oldNextStarPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+                blockIndex++;
+            }
+            fileStore.truncate(startPos);
+        }
+
+        try {
+            init();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("init error");
+        }
+
     }
 
-    public Map<Integer, List<ColumnMetadata>> getColumnMap() {
-        return columnMap;
+
+
+
+    public List<TableColumnBlock> getAllTable() {
+        return columnBlockList;
+    }
+
+    public Map<Integer, TableColumnBlock> getColumnMap() {
+        return columnBlockMap;
     }
 
 
-    private ColumnMetadata getLastColumn() {
-        if (columnMetadataList.size() > 0) {
-            return columnMetadataList.get(columnMetadataList.size() - 1);
+    private TableColumnBlock getLastColumnBlock() {
+        if (columnBlockList.size() > 0) {
+            return columnBlockList.get(columnBlockList.size() - 1);
         } else {
             return null;
         }
@@ -90,6 +128,9 @@ public class ColumnMetadataStore {
 
 
     private void init() throws IOException {
+        this.columnBlockList = new ArrayList<>();
+        this.columnBlockMap = new HashMap<>();
+
         // 初始化table的元数据文件，不存在会创建文件，并把所有表信息读取到内存
         String columnPath = filePath + File.separator + COLUMN_META_FILE_NAME;
         File dbFile = new File(columnPath);
@@ -98,24 +139,17 @@ public class ColumnMetadataStore {
         }
         fileStore = new FileStore(columnPath);
         long endPosition = fileStore.getEndPosition();
-        if (endPosition > JavaTypeConstant.INT_LENGTH) {
+        if (endPosition >= TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE) {
             long currPos = 0;
             while (currPos < endPosition) {
-                int dataByteLen = DataUtils.readInt(fileStore.read(currPos, JavaTypeConstant.INT_LENGTH));
-                ByteBuffer readBuffer = fileStore.read(currPos, dataByteLen);
-                ColumnMetadata dbMetadata = new ColumnMetadata(readBuffer);
-                // 只初始化当前数据库的表到内存
-                columnMetadataList.add(dbMetadata);
-                currPos += dataByteLen;
+                ByteBuffer readBuffer = fileStore.read(currPos, TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE);
+                TableColumnBlock columnBlock = new TableColumnBlock(readBuffer);
+                columnBlockList.add(columnBlock);
+                currPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
             }
 
-            for (ColumnMetadata metadata : columnMetadataList) {
-                List<ColumnMetadata> columns = columnMap.get(metadata.getTableId());
-                if (columns == null) {
-                    columns = new ArrayList<>();
-                    columnMap.put(metadata.getTableId(), columns);
-                }
-                columns.add(metadata);
+            for (TableColumnBlock columnBlock : columnBlockList) {
+                columnBlockMap.put(columnBlock.getTableId(), columnBlock);
             }
         }
     }
