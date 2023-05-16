@@ -18,7 +18,7 @@ public class CreateTableCommand extends AbstractCommand {
 
     private String tableName;
 
-    private List<Column> columnDtoList;
+    private List<Column> columnList;
 
     @Override
     public String execute() {
@@ -29,7 +29,7 @@ public class CreateTableCommand extends AbstractCommand {
             tableMetadataStore = new TableMetadataStore(databaseId);
             columnMetadataStore = new ColumnMetadataStore();
             TableMetadata table = tableMetadataStore.createTable(tableName);
-            columnMetadataStore.createColumnBlock(table.getTableId(), columnDtoList);
+            columnMetadataStore.createColumnBlock(table.getTableId(), columnList);
         } catch (Exception e) {
             isSuccess = false;
             e.printStackTrace();
@@ -60,11 +60,21 @@ public class CreateTableCommand extends AbstractCommand {
         this.tableName = tableName;
     }
 
-    public List<Column> getColumnDtoList() {
-        return columnDtoList;
+    public List<Column> getColumnList() {
+        return columnList;
     }
 
-    public void setColumnDtoList(List<Column> columnDtoList) {
-        this.columnDtoList = columnDtoList;
+    public void setColumnList(List<Column> columnList) {
+        this.columnList = columnList;
+    }
+
+
+    @Override
+    public String toString() {
+        return "CreateTableCommand{" +
+                "databaseId=" + databaseId +
+                ", tableName='" + tableName + '\'' +
+                ", columnList=" + columnList +
+                '}';
     }
 }

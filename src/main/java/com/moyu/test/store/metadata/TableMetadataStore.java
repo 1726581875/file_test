@@ -65,7 +65,7 @@ public class TableMetadataStore {
     }
 
 
-    public void dropTable(String tableName) {
+    public TableMetadata dropTable(String tableName) {
         TableMetadata tableMetadata = null;
         int dropIndex = 0;
         for (int i = 0; i < tableMetadataList.size(); i++) {
@@ -99,6 +99,7 @@ public class TableMetadataStore {
 
         tableMetadataList.remove(dropIndex);
 
+        return tableMetadata;
     }
 
 

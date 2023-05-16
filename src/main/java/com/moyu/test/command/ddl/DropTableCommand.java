@@ -1,6 +1,9 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.store.metadata.ColumnMetadataStore;
+import com.moyu.test.store.metadata.TableMetadataStore;
+import com.moyu.test.store.metadata.obj.TableMetadata;
 
 /**
  * @author xiaomingzhang
@@ -16,7 +19,27 @@ public class DropTableCommand extends AbstractCommand {
     public String execute() {
 
 
+        boolean result = false;
 
-        return null;
+        TableMetadataStore tableMetadataStore = null;
+        ColumnMetadataStore columnMetadataStore = null;
+        try{
+            tableMetadataStore = new TableMetadataStore(databaseId);
+            columnMetadataStore = new ColumnMetadataStore();
+            // 删除表元数据
+            TableMetadata tableMetadata = tableMetadataStore.dropTable(tableName);
+            // 删除字段元数据
+            columnMetadataStore.dropColumnBlock(tableMetadata.getTableId());
+            // TODO 删除数据
+
+            result = true;
+        } catch (Exception e){
+            result = false;
+            e.printStackTrace();
+        } finally {
+            tableMetadataStore.close();
+            columnMetadataStore.close();
+        }
+        return result ? "ok" : "error";
     }
 }

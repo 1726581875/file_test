@@ -33,7 +33,7 @@ public class CreateTableCommandTest {
             Column columnDto = new Column("hf_" + i, DbColumnTypeConstant.VARCHAR, i, 64);
             columnDtoList.add(columnDto);
         }
-        command.setColumnDtoList(columnDtoList);
+        command.setColumnList(columnDtoList);
 
         String execute = command.execute();
         System.out.println(execute);
