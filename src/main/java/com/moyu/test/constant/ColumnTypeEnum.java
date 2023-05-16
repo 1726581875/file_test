@@ -30,6 +30,15 @@ public enum ColumnTypeEnum {
         return null;
     }
 
+    public static String getNameByType(Byte columnType){
+        for (ColumnTypeEnum typeEnum : ColumnTypeEnum.values()) {
+            if(typeEnum.getColumnType().equals(columnType)) {
+                return typeEnum.getTypeName();
+            }
+        }
+        return null;
+    }
+
     public String getTypeName() {
         return typeName;
     }

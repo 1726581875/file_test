@@ -14,8 +14,20 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        testExecSQL("create table xmz_aaa (id int, name varchar(10))");
+        //testExecSQL("create table xmz_aaa (id int, name varchar(10))");
+
+        System.out.println("=== show databases ===");
+        testExecSQL("show databases");
+
+        testExecSQL("drop table xmz_aaa");
+
+        System.out.println("=== show tables ===");
         testExecSQL("show tables");
+
+        System.out.println("=== desc table ===");
+        testExecSQL("desc xmz_aaa");
+
+
     }
 
 

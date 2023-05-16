@@ -44,6 +44,7 @@ public class SqlParser implements Parser {
 
     private static final String DROP = "DROP";
     private static final String SHOW = "SHOW";
+    private static final String DESC = "DESC";
 
     private static final String DATABASE = "DATABASE";
     private static final String TABLE = "TABLE";
@@ -94,17 +95,18 @@ public class SqlParser implements Parser {
                     // drop database
                     case DATABASE:
                         skipSpace();
-                        String databaseName = getNextKeyWord();
+                        String databaseName = getNextOriginalWord();
                         DropDatabaseCommand command = new DropDatabaseCommand();
                         command.setDatabaseName(databaseName);
                         return command;
                         // drop table
                     case TABLE:
-                        break;
+                        skipSpace();
+                        String tableName = getNextOriginalWord();
+                        return new DropTableCommand(this.connectSession.getDatabaseId(), tableName);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
-                break;
             case SHOW:
                 skipSpace();
                 String word11 = getNextKeyWord();
@@ -116,6 +118,10 @@ public class SqlParser implements Parser {
                     return new ShowTablesCommand(this.connectSession.getDatabaseId());
                 }
                 break;
+            case DESC:
+                skipSpace();
+                String word12 = getNextOriginalWord();
+                return new DescTableCommand(this.connectSession.getDatabaseId(), word12);
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
@@ -283,6 +289,22 @@ public class SqlParser implements Parser {
         return word;
     }
 
+    private String getNextOriginalWord() {
+        int i = currStartIndex;
+        while (i < sqlCharArr.length) {
+            if (sqlCharArr[i] == ' ') {
+                break;
+            }
+            if (sqlCharArr[i] == ';') {
+                break;
+            }
+            i++;
+        }
+        String word = originalSql.substring(currStartIndex, i);
+        currStartIndex = i;
+        return word;
+    }
+
 
     private void skipSpace() {
         while (currStartIndex < sqlCharArr.length) {
@@ -291,25 +313,6 @@ public class SqlParser implements Parser {
             }
             currStartIndex++;
         }
-    }
-
-
-    public static void main(String[] args) {
-
-        ConnectSession connectSession = new ConnectSession("xmz", 0);
-/*        SqlParser sqlParser = new SqlParser(connectSession);
-        Command command1 = sqlParser.prepareCommand("drop database xmz");
-        command1.exec();
-
-        Command command2 = sqlParser.prepareCommand("show databases");
-        String[] exec = command2.exec();
-        Arrays.asList(exec).forEach(System.out::println);*/
-
-
-        SqlParser sqlParser = new SqlParser(connectSession);
-        Command command1 = sqlParser.prepareCommand("create table xmz_table(id int, name varchar(10))");
-        command1.exec();
-        System.out.println(command1);
     }
 
 

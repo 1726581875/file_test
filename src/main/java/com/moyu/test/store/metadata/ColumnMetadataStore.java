@@ -34,6 +34,10 @@ public class ColumnMetadataStore {
 
     private List<TableColumnBlock> columnBlockList = new ArrayList<>();
 
+    /**
+     * key: tableId
+     * value: TableColumnBlock
+     */
     private Map<Integer, TableColumnBlock> columnBlockMap = new HashMap<>();
 
 
@@ -109,8 +113,12 @@ public class ColumnMetadataStore {
 
 
 
-    public List<TableColumnBlock> getAllTable() {
+    public List<TableColumnBlock> getAllColumnBlock() {
         return columnBlockList;
+    }
+
+    public TableColumnBlock getColumnBlock(Integer tableId) {
+        return columnBlockMap.get(tableId);
     }
 
     public Map<Integer, TableColumnBlock> getColumnMap() {

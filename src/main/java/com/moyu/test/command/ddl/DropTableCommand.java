@@ -15,6 +15,12 @@ public class DropTableCommand extends AbstractCommand {
 
     private String tableName;
 
+
+    public DropTableCommand(Integer databaseId, String tableName) {
+        this.databaseId = databaseId;
+        this.tableName = tableName;
+    }
+
     @Override
     public String execute() {
 
