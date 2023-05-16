@@ -108,6 +108,16 @@ public class TableMetadataStore {
         return tableMetadataList;
     }
 
+    public TableMetadata getTable(String tableName) {
+        for (TableMetadata metadata : tableMetadataList) {
+            if(metadata.getTableName().equals(tableName)) {
+                return metadata;
+            }
+        }
+        return null;
+    }
+
+
 
     public List<ColumnMetadata> getColumnList(Integer tableId) {
         ColumnMetadataStore columnMetadataStore = null;

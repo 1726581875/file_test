@@ -14,12 +14,12 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        //testExecSQL("create table xmz_aaa (id int, name varchar(10))");
 
-        System.out.println("=== show databases ===");
+/*        System.out.println("=== show databases ===");
         testExecSQL("show databases");
 
-        testExecSQL("drop table xmz_aaa");
+        System.out.println("=== create table ===");
+        testExecSQL("create table xmz_aaa (id int, name varchar(10))");
 
         System.out.println("=== show tables ===");
         testExecSQL("show tables");
@@ -27,7 +27,19 @@ public class SqlParserTest {
         System.out.println("=== desc table ===");
         testExecSQL("desc xmz_aaa");
 
+        System.out.println("=== drop table ===");
+        testExecSQL("drop table xmz_aaa");
 
+        System.out.println("=== show tables ===");
+        testExecSQL("show tables");
+
+
+        System.out.println("=== create table ===");
+        testExecSQL("create table xmz_aaa (id int, name varchar(10))");*/
+
+
+        System.out.println("=== insert into table ===");
+        testExecSQL("insert into  xmz_table (id, name) value (2, '啊啊啊啊');");
     }
 
 

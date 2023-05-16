@@ -1,14 +1,22 @@
 package com.moyu.test.command;
 
 import com.moyu.test.command.ddl.*;
+import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.store.metadata.ColumnMetadataStore;
+import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.ColumnMetadata;
+import com.moyu.test.store.metadata.obj.TableColumnBlock;
+import com.moyu.test.store.metadata.obj.TableMetadata;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -41,6 +49,7 @@ public class SqlParser implements Parser {
     private static final String UPDATE = "UPDATE";
     private static final String DELETE = "DELETE";
     private static final String SELECT = "SELECT";
+    private static final String INSERT = "INSERT";
 
     private static final String DROP = "DROP";
     private static final String SHOW = "SHOW";
@@ -88,6 +97,8 @@ public class SqlParser implements Parser {
                 break;
             case SELECT:
                 break;
+            case INSERT:
+                return getInsertCommand();
             case DROP:
                 skipSpace();
                 String keyWord = getNextKeyWord();
@@ -129,6 +140,147 @@ public class SqlParser implements Parser {
     }
 
 
+    /**
+     * insert into xmz_table(id, name) value (1, 'xmz');
+     * @return
+     */
+    private InsertCommand getInsertCommand() {
+
+        skipSpace();
+
+        String word = getNextKeyWord();
+        if(!"INTO".equals(word)) {
+            throw new SqlIllegalException("sql语法有误," + word);
+        }
+
+        // 解析tableName
+        String tableName = null;
+        skipSpace();
+        int i = currStartIndex;
+        while (true) {
+            if(i >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if (sqlCharArr[i] == ' ' || sqlCharArr[i] == '(') {
+                tableName = originalSql.substring(currStartIndex, i);
+                currStartIndex = i;
+                break;
+            }
+            i++;
+        }
+
+        // ==== 读取字段 ====
+        // 括号开始
+        int columnStart = 0;
+        // 括号结束
+        int columnEnd = 0;
+        while (true) {
+            if(i >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if (sqlCharArr[i] == '(') {
+                columnStart = i;
+            }
+            if (sqlCharArr[i] == ')') {
+                columnEnd = i;
+                currStartIndex = i + 1;
+                break;
+            }
+            i++;
+        }
+
+        String columnStr = originalSql.substring(columnStart + 1, columnEnd);
+        String[] columnNameList = columnStr.split(",");
+
+        // ==== 读字段值 ===
+        skipSpace();
+        String valueKeyWord = getNextKeyWord();
+        if(!"VALUE".equals(valueKeyWord)) {
+            throw new SqlIllegalException("sql语法有误," + valueKeyWord);
+        }
+
+        int i2 = currStartIndex;
+        // 括号开始
+        int valueStart = 0;
+        // 括号结束
+        int valueEnd = 0;
+        while (true) {
+            if(i2 >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if (sqlCharArr[i2] == '(') {
+                valueStart = i2;
+            }
+            if (sqlCharArr[i2] == ')') {
+                valueEnd = i2;
+                currStartIndex = i2 + 1;
+                break;
+            }
+            i2++;
+        }
+
+        String valueStr = originalSql.substring(valueStart + 1, valueEnd);
+        String[] valueList = valueStr.split(",");
+
+
+        if(columnNameList.length != valueList.length) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+        Map<String, String> columnValueMap = new HashMap<>();
+        for (int j = 0; j < columnNameList.length; j++) {
+            columnValueMap.put(columnNameList[j].trim(), valueList[j].trim());
+        }
+
+
+        // TODO 读缓存
+        List<ColumnMetadata> columnMetadataList = null;
+        TableMetadataStore tableMetadata = null;
+        ColumnMetadataStore columnStore = null;
+        try {
+            tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
+            columnStore = new ColumnMetadataStore();
+            TableMetadata table = tableMetadata.getTable(tableName);
+            TableColumnBlock columnBlock = columnStore.getColumnBlock(table.getTableId());
+            columnMetadataList = columnBlock.getColumnMetadataList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            columnStore.close();
+        }
+
+
+        List<Column> columnList = new ArrayList<>();
+        if (columnMetadataList != null && columnMetadataList.size() > 0) {
+            for (ColumnMetadata metadata : columnMetadataList) {
+                Column column = new Column(metadata.getColumnName(),
+                        metadata.getColumnType(),
+                        metadata.getColumnIndex(), metadata.getColumnLength());
+
+                String value = columnValueMap.get(metadata.getColumnName());
+                switch (metadata.getColumnType()) {
+                    case DbColumnTypeConstant.INT_4:
+                        column.setValue(Integer.valueOf(value));
+                        break;
+                    case DbColumnTypeConstant.VARCHAR:
+                        column.setValue(value);
+                        break;
+                    default:
+                        throw new SqlIllegalException("不支持该类型");
+                }
+                columnList.add(column);
+            }
+        }
+
+        Column[] columns =columnList.toArray(new Column[0]);
+        InsertCommand command = new InsertCommand(tableName, columns);
+        return command;
+    }
+
+
+    /**
+     * create table xmz_table (id int, name varchar(10));
+     * @return
+     */
     private CreateTableCommand getCreateTableCommand() {
         // 解析tableName
         String tableName = null;
