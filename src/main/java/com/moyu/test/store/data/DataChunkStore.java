@@ -21,6 +21,9 @@ public class DataChunkStore {
 
     private DataChunk lastChunk;
 
+    /**
+     * 块数量
+     */
     private int dataChunkNum;
 
 
@@ -129,5 +132,9 @@ public class DataChunkStore {
 
     public void setLastChunk(DataChunk lastChunk) {
         this.lastChunk = lastChunk;
+    }
+
+    public int getDataChunkNum() {
+        return dataChunkNum;
     }
 }

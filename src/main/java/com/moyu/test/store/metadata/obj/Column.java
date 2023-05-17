@@ -24,6 +24,13 @@ public class Column {
         this.columnLength = columnLength;
     }
 
+
+    public Column createNullValueColumn() {
+        Column column = new Column(columnName, columnType, columnIndex, columnLength);
+        column.setValue(null);
+        return column;
+    }
+
     public String getColumnName() {
         return columnName;
     }

@@ -2,6 +2,7 @@ package com.moyu.test.command;
 
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.InsertCommand;
+import com.moyu.test.command.dml.SelectCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -96,7 +97,7 @@ public class SqlParser implements Parser {
             case DELETE:
                 break;
             case SELECT:
-                break;
+                return getSelectCommand();
             case INSERT:
                 return getInsertCommand();
             case DROP:
@@ -141,6 +142,36 @@ public class SqlParser implements Parser {
 
 
     /**
+     * TODO 当前直接查询全部，待优化
+     * @return
+     */
+    private SelectCommand getSelectCommand() {
+
+        skipSpace();
+        String tableName = null;
+        while (true) {
+            skipSpace();
+            if(currStartIndex >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            String word = getNextKeyWord();
+            if("FROM".equals(word)) {
+                skipSpace();
+                tableName = getNextOriginalWord();
+                break;
+            }
+        }
+
+        if(tableName == null) {
+            throw new SqlIllegalException("sql语法有误,tableName为空");
+        }
+
+        Column[] columns = getColumns(tableName);
+        return new SelectCommand(tableName, columns);
+    }
+
+
+    /**
      * insert into xmz_table(id, name) value (1, 'xmz');
      * @return
      */
@@ -149,7 +180,7 @@ public class SqlParser implements Parser {
         skipSpace();
 
         String word = getNextKeyWord();
-        if(!"INTO".equals(word)) {
+        if (!"INTO".equals(word)) {
             throw new SqlIllegalException("sql语法有误," + word);
         }
 
@@ -158,7 +189,7 @@ public class SqlParser implements Parser {
         skipSpace();
         int i = currStartIndex;
         while (true) {
-            if(i >= sqlCharArr.length) {
+            if (i >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
             if (sqlCharArr[i] == ' ' || sqlCharArr[i] == '(') {
@@ -175,7 +206,7 @@ public class SqlParser implements Parser {
         // 括号结束
         int columnEnd = 0;
         while (true) {
-            if(i >= sqlCharArr.length) {
+            if (i >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
             if (sqlCharArr[i] == '(') {
@@ -195,7 +226,7 @@ public class SqlParser implements Parser {
         // ==== 读字段值 ===
         skipSpace();
         String valueKeyWord = getNextKeyWord();
-        if(!"VALUE".equals(valueKeyWord)) {
+        if (!"VALUE".equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
 
@@ -205,7 +236,7 @@ public class SqlParser implements Parser {
         // 括号结束
         int valueEnd = 0;
         while (true) {
-            if(i2 >= sqlCharArr.length) {
+            if (i2 >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
             if (sqlCharArr[i2] == '(') {
@@ -223,7 +254,7 @@ public class SqlParser implements Parser {
         String[] valueList = valueStr.split(",");
 
 
-        if(columnNameList.length != valueList.length) {
+        if (columnNameList.length != valueList.length) {
             throw new SqlIllegalException("sql语法有误");
         }
         Map<String, String> columnValueMap = new HashMap<>();
@@ -231,8 +262,31 @@ public class SqlParser implements Parser {
             columnValueMap.put(columnNameList[j].trim(), valueList[j].trim());
         }
 
+        // 插入字段赋值
+        Column[] columns = getColumns(tableName);
+        for (Column column : columns) {
+            String value = columnValueMap.get(column.getColumnName());
+            switch (column.getColumnType()) {
+                case DbColumnTypeConstant.INT_4:
+                    column.setValue(Integer.valueOf(value));
+                    break;
+                case DbColumnTypeConstant.VARCHAR:
+                    if (value.startsWith("'") && value.endsWith("'")) {
+                        column.setValue(value.substring(1, value.length() - 1));
+                    } else {
+                        throw new SqlIllegalException("sql不合法，" + value);
+                    }
+                    break;
+                default:
+                    throw new SqlIllegalException("不支持该类型");
+            }
+        }
 
-        // TODO 读缓存
+        return new InsertCommand(tableName, columns);
+    }
+
+
+    private Column[] getColumns(String tableName) {
         List<ColumnMetadata> columnMetadataList = null;
         TableMetadataStore tableMetadata = null;
         ColumnMetadataStore columnStore = null;
@@ -248,32 +302,22 @@ public class SqlParser implements Parser {
             columnStore.close();
         }
 
-
-        List<Column> columnList = new ArrayList<>();
-        if (columnMetadataList != null && columnMetadataList.size() > 0) {
-            for (ColumnMetadata metadata : columnMetadataList) {
-                Column column = new Column(metadata.getColumnName(),
-                        metadata.getColumnType(),
-                        metadata.getColumnIndex(), metadata.getColumnLength());
-
-                String value = columnValueMap.get(metadata.getColumnName());
-                switch (metadata.getColumnType()) {
-                    case DbColumnTypeConstant.INT_4:
-                        column.setValue(Integer.valueOf(value));
-                        break;
-                    case DbColumnTypeConstant.VARCHAR:
-                        column.setValue(value);
-                        break;
-                    default:
-                        throw new SqlIllegalException("不支持该类型");
-                }
-                columnList.add(column);
-            }
+        if(columnMetadataList == null || columnMetadataList.size() == 0) {
+            throw new SqlIllegalException("表缺少字段");
         }
 
-        Column[] columns =columnList.toArray(new Column[0]);
-        InsertCommand command = new InsertCommand(tableName, columns);
-        return command;
+        Column[] columns = new Column[columnMetadataList.size()];
+
+        for (int i = 0; i < columnMetadataList.size(); i++) {
+            ColumnMetadata metadata = columnMetadataList.get(i);
+            Column column = new Column(metadata.getColumnName(),
+                    metadata.getColumnType(),
+                    metadata.getColumnIndex(),
+                    metadata.getColumnLength());
+            columns[i] = column;
+        }
+
+        return columns;
     }
 
 

@@ -84,6 +84,21 @@ public class RowData {
         return columnList;
     }
 
+    public Column[] getColumnData(Column[] columns) {
+        Column[] resultColumns = new Column[columns.length];
+        ByteBuffer byteBuffer = ByteBuffer.wrap(row);
+        for (int i = 0; i < columns.length; i++) {
+            Column column = columns[i];
+            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            Object value = columnType.read(byteBuffer);
+
+            Column valueColumn = column.createNullValueColumn();
+            valueColumn.setValue(value);
+            resultColumns[i] = valueColumn;
+        }
+        return resultColumns;
+    }
+
 
     public long getTotalByteLen() {
         return totalByteLen;

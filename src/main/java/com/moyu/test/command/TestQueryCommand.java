@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * @author xiaomingzhang
  * @date 2023/4/27
  */
-public class QueryCommand {
+public class TestQueryCommand {
 
     private String fileName;
 
@@ -27,7 +27,7 @@ public class QueryCommand {
      */
     private Condition condition;
 
-    public QueryCommand(String fileName) {
+    public TestQueryCommand(String fileName) {
         this.fileName = fileName;
     }
 

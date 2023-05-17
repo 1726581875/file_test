@@ -38,8 +38,11 @@ public class SqlParserTest {
         testExecSQL("create table xmz_aaa (id int, name varchar(10))");*/
 
 
-        System.out.println("=== insert into table ===");
-        testExecSQL("insert into  xmz_table (id, name) value (2, '啊啊啊啊');");
+/*        System.out.println("=== insert into table ===");
+        testExecSQL("insert into  xmz_table (id, name) value (2, '啊啊啊啊22');");*/
+
+        System.out.println("=== select * from table ===");
+        testExecSQL("select * from xmz_table");
     }
 
 

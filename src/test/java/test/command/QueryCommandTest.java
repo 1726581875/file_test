@@ -1,6 +1,6 @@
 package test.command;
 
-import com.moyu.test.command.QueryCommand;
+import com.moyu.test.command.TestQueryCommand;
 import com.moyu.test.command.condition.Condition;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.store.Chunk;
@@ -16,7 +16,7 @@ public class QueryCommandTest {
 
     public static void main(String[] args) {
         String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
-        QueryCommand queryCommand = new QueryCommand(filePath);
+        TestQueryCommand queryCommand = new TestQueryCommand(filePath);
         queryCommand.setOffset(10);
         queryCommand.setLimit(100);
 
