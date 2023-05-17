@@ -5,6 +5,8 @@ import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.util.PathUtil;
+
 import java.util.List;
 
 /**
@@ -13,7 +15,7 @@ import java.util.List;
  */
 public class SelectCommand extends AbstractCommand {
 
-    private static final String filePath = "D:\\mytest\\fileTest\\";
+    private static final String FILE_PATH = PathUtil.getBaseDirPath();
 
     private String tableName;
 
@@ -40,7 +42,7 @@ public class SelectCommand extends AbstractCommand {
 
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = filePath + tableName + ".d";
+            String fileFullPath = FILE_PATH + tableName + ".d";
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             for (int i = 0; i < dataChunkNum; i++) {

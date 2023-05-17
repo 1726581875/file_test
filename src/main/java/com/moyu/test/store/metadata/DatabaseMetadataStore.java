@@ -4,6 +4,7 @@ import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 import com.moyu.test.util.DataUtils;
+import com.moyu.test.util.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.util.List;
  */
 public class DatabaseMetadataStore {
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
+    private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
 
     private String filePath;
 
@@ -29,7 +30,7 @@ public class DatabaseMetadataStore {
 
 
     public DatabaseMetadataStore() throws IOException {
-        this(defaultPath);
+        this(DEFAULT_META_PATH);
     }
 
     public DatabaseMetadataStore(String filePath) throws IOException {

@@ -6,6 +6,7 @@ import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 import com.moyu.test.util.DataUtils;
+import com.moyu.test.util.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +23,7 @@ import java.util.Map;
 public class TableMetadataStore {
 
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
+    private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
 
     private String filePath;
 
@@ -38,7 +39,7 @@ public class TableMetadataStore {
 
 
     public TableMetadataStore(Integer databaseId) throws IOException {
-        this(databaseId, defaultPath);
+        this(databaseId, DEFAULT_META_PATH);
     }
 
 

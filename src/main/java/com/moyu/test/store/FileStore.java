@@ -25,7 +25,7 @@ public class FileStore {
 
     public FileStore(String fileFullPath) throws IOException {
         this.fileFullPath = fileFullPath;
-        randomAccessFile = new RandomAccessFile(fileFullPath, "rw");
+        randomAccessFile = new RandomAccessFile(this.fileFullPath, "rw");
         fileChannel = randomAccessFile.getChannel();
         this.endPosition = fileChannel.size();
     }

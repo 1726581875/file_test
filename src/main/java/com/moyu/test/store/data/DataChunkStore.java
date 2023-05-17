@@ -3,6 +3,7 @@ package com.moyu.test.store.data;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.FileUtil;
+import com.moyu.test.util.PathUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,9 +14,9 @@ import java.nio.ByteBuffer;
  */
 public class DataChunkStore {
 
-    private static final String defaultPath = "D:\\mytest\\fileTest\\";
+    private static final String defaultPath = PathUtil.getBaseDirPath();
 
-    private static final String fileName = "data.m";
+    private static final String fileName = "data.yan";
 
     private FileStore fileStore;
 
@@ -47,7 +48,7 @@ public class DataChunkStore {
 
 
     public DataChunkStore() throws IOException {
-
+        this(defaultPath + fileName);
     }
 
 
@@ -62,6 +63,20 @@ public class DataChunkStore {
             this.dataChunkNum++;
         }
     }
+
+    public void updateChunk(DataChunk dataChunk) {
+        synchronized (this) {
+            ByteBuffer byteBuffer = dataChunk.getByteBuffer();
+            fileStore.write(byteBuffer, dataChunk.getStartPos());
+        }
+    }
+
+    public void truncateTable() {
+        synchronized (this) {
+            fileStore.truncate(0);
+        }
+    }
+
 
 
     public boolean storeRow(byte[] row) {

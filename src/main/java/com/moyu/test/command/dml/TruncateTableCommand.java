@@ -2,24 +2,20 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.PathUtil;
-
 /**
  * @author xiaomingzhang
- * @date 2023/5/16
+ * @date 2023/5/17
  */
-public class InsertCommand extends AbstractCommand {
+public class TruncateTableCommand extends AbstractCommand {
+
 
     private static final String FILE_PATH = PathUtil.getBaseDirPath();
 
     private String tableName;
 
-    private Column[] columns;
-
-    public InsertCommand(String tableName, Column[] columns) {
+    public TruncateTableCommand(String tableName) {
         this.tableName = tableName;
-        this.columns = columns;
     }
 
     @Override
@@ -28,13 +24,13 @@ public class InsertCommand extends AbstractCommand {
         try {
             String fileFullPath = FILE_PATH + tableName + ".d";
             dataChunkStore = new DataChunkStore(fileFullPath);
-            dataChunkStore.storeRow(columns);
+            dataChunkStore.truncateTable();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             dataChunkStore.close();
         }
-        return null;
+        return "ok";
     }
 
 }

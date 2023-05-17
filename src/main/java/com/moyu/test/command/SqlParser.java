@@ -3,6 +3,7 @@ package com.moyu.test.command;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.SelectCommand;
+import com.moyu.test.command.dml.TruncateTableCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -51,6 +52,7 @@ public class SqlParser implements Parser {
     private static final String DELETE = "DELETE";
     private static final String SELECT = "SELECT";
     private static final String INSERT = "INSERT";
+    private static final String TRUNCATE = "TRUNCATE";
 
     private static final String DROP = "DROP";
     private static final String SHOW = "SHOW";
@@ -134,6 +136,16 @@ public class SqlParser implements Parser {
                 skipSpace();
                 String word12 = getNextOriginalWord();
                 return new DescTableCommand(this.connectSession.getDatabaseId(), word12);
+            case TRUNCATE:
+                skipSpace();
+                String word = getNextKeyWord();
+                if(!"TABLE".endsWith(word)) {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+                skipSpace();
+                // tableName
+                String word13 = getNextOriginalWord();
+                return new TruncateTableCommand(word13);
             default:
                 throw new SqlIllegalException("sql语法有误");
         }

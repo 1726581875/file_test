@@ -1,12 +1,10 @@
 package com.moyu.test.store.metadata;
 
-import com.moyu.test.constant.JavaTypeConstant;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
-import com.moyu.test.store.metadata.obj.TableMetadata;
-import com.moyu.test.util.DataUtils;
+import com.moyu.test.util.PathUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +20,7 @@ import java.util.Map;
  */
 public class ColumnMetadataStore {
 
-
-    private static final String defaultPath = "D:\\mytest\\fileTest\\meta\\";
+    private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
 
     private String filePath;
 
@@ -42,7 +39,7 @@ public class ColumnMetadataStore {
 
 
     public ColumnMetadataStore() throws IOException {
-        this(defaultPath);
+        this(DEFAULT_META_PATH);
     }
 
     public ColumnMetadataStore(String filePath) throws IOException {
