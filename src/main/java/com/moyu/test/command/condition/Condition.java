@@ -10,12 +10,13 @@ public class Condition {
 
     private String key;
 
-    private List<String> value;
-
     /**
      * @see com.moyu.test.constant.OperatorConstant
      */
     private String operator;
+
+    private List<String> value;
+
 
     public String getKey() {
         return key;

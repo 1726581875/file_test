@@ -38,27 +38,29 @@ public class SqlParserTest {
         testExecSQL("create table xmz_aaa (id int, name varchar(10))");*/
 
 
-        System.out.println("=== insert into table ===");
-        testExecSQL("insert into  xmz_table (id, name) value (2, '啊啊啊啊22');");
+        //testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼');");
 
-        System.out.println("=== select * from table ===");
-        testExecSQL("select * from xmz_table");
+        testExecSQL("select * from xmz_table where id = 3");
 
-        System.out.println("=== truncate table ===");
+/*
         testExecSQL("truncate table xmz_table");
 
-        System.out.println("=== select * from table ===");
-        testExecSQL("select * from xmz_table");
+
+        testExecSQL("select * from xmz_table");*/
 
     }
 
 
     private static void testExecSQL(String sql) {
+        System.out.println("====================================");
+        System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession("xmz", 0);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
         String[] exec = command.exec();
+        System.out.println("执行结果:");
         Arrays.asList(exec).forEach(System.out::println);
+        System.out.println("====================================");
     }
 
 }

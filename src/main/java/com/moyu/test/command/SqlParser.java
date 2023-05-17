@@ -1,5 +1,6 @@
 package com.moyu.test.command;
 
+import com.moyu.test.command.condition.Condition;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.SelectCommand;
@@ -15,10 +16,7 @@ import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author xiaomingzhang
@@ -178,8 +176,37 @@ public class SqlParser implements Parser {
             throw new SqlIllegalException("sql语法有误,tableName为空");
         }
 
+        // 解析条件
+        Condition condition = null;
+        skipSpace();
+        String nextKeyWord = getNextKeyWord();
+        if("WHERE".equals(nextKeyWord)) {
+            skipSpace();
+            String columnName = getNextOriginalWord();
+            skipSpace();
+            String operator = getNextKeyWord();
+            skipSpace();
+            String value = getNextOriginalWord();
+            if(value.startsWith("'") && value.endsWith("'")) {
+                value = value.substring(1, value.length() - 1);
+            }
+            condition = new Condition();
+            condition.setKey(columnName);
+            condition.setOperator(operator);
+            condition.setValue(Arrays.asList(value));
+
+
+        } else if("LIMIT".equals(nextKeyWord)) {
+
+        } else if ("ORDER".equals(nextKeyWord)) {
+
+        } else {
+            // TODO
+        }
+
+
         Column[] columns = getColumns(tableName);
-        return new SelectCommand(tableName, columns);
+        return new SelectCommand(tableName, columns, condition);
     }
 
 

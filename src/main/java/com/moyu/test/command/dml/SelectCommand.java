@@ -1,12 +1,16 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
+import com.moyu.test.command.condition.Condition;
+import com.moyu.test.command.condition.ConditionComparator;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.PathUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,25 +25,82 @@ public class SelectCommand extends AbstractCommand {
 
     private Column[] columns;
 
+    private Condition condition;
 
-    public SelectCommand(String tableName, Column[] columns) {
+    private QueryResult queryResult;
+
+
+    public SelectCommand(String tableName, Column[] columns, Condition condition) {
         this.tableName = tableName;
         this.columns = columns;
+        this.condition = condition;
     }
 
     @Override
     public String execute() {
+        long queryStartTime = System.currentTimeMillis();
+        // 执行查询
+        QueryResult queryResult = execQuery();
+        long queryEndTime = System.currentTimeMillis();
 
+        // 解析结果，打印拼接结果字符串
+        return getResultPrintStr(queryResult, queryStartTime, queryEndTime);
+    }
+
+    private void appendLine(StringBuilder stringBuilder) {
+        stringBuilder.append(" ");
+        for (Column column : columns) {
+            int length = column.getColumnName().length();
+            while (length > 0) {
+                stringBuilder.append("--");
+                length--;
+            }
+        }
+        stringBuilder.append("\n");
+    }
+
+
+    private String getResultPrintStr(QueryResult queryResult, long queryStartTime,long queryEndTime) {
+        // 解析结果，打印拼接结果字符串
         StringBuilder stringBuilder = new StringBuilder();
+        // 分界线
+        appendLine(stringBuilder);
 
+        // 表头
         String tableHeaderStr = "";
         for (Column column : columns) {
             String value = column.getColumnName();
             tableHeaderStr = tableHeaderStr + " | " + value;
         }
         stringBuilder.append(tableHeaderStr + " | " + "\n");
-        stringBuilder.append("--------------" + "\n");
 
+        // 分界线
+        appendLine(stringBuilder);
+
+        // 值
+        List<Object[]> resultRows = queryResult.getResultRows();
+        for (int i = 0; i < resultRows.size(); i++) {
+            Object[] rowValues = resultRows.get(i);
+            String rowStr = "";
+            for (int j = 0; j < rowValues.length; j++) {
+                // 按照条件过滤
+                Object value = rowValues[j];
+                rowStr = rowStr + " | " + value;
+            }
+            stringBuilder.append(rowStr + " | " + "\n");
+        }
+
+        stringBuilder.append("查询结果行数:" +  resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms");
+
+        return stringBuilder.toString();
+    }
+
+
+
+    public QueryResult execQuery() {
+        QueryResult result = new QueryResult();
+        result.setColumns(columns);
+        result.setResultRows(new ArrayList<>());
         DataChunkStore dataChunkStore = null;
         try {
             String fileFullPath = FILE_PATH + tableName + ".d";
@@ -57,12 +118,15 @@ public class SelectCommand extends AbstractCommand {
                 for (int j = 0; j < dataRowList.size(); j++) {
                     RowData rowData = dataRowList.get(j);
                     Column[] columnData = rowData.getColumnData(columns);
-                    String resultStr = "";
-                    for (Column column : columnData) {
-                        Object value = column.getValue();
-                        resultStr = resultStr + " | " + value;
+                    // 按照条件过滤
+                    if(condition == null) {
+                        result.addRow(columnData);
+                    } else {
+                        boolean isConditionRow = ConditionComparator.compareCondition(condition, columnData);
+                        if(isConditionRow) {
+                            result.addRow(columnData);
+                        }
                     }
-                    stringBuilder.append(resultStr + " | " + "\n");
                 }
             }
         } catch (Exception e) {
@@ -70,6 +134,13 @@ public class SelectCommand extends AbstractCommand {
         } finally {
             dataChunkStore.close();
         }
-        return stringBuilder.toString();
+
+        this.queryResult = result;
+        return this.queryResult;
+    }
+
+
+    public QueryResult getQueryResult() {
+        return queryResult;
     }
 }
