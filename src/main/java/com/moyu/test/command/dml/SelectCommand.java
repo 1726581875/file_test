@@ -2,8 +2,10 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.condition.Condition;
 import com.moyu.test.command.condition.ConditionComparator;
+import com.moyu.test.command.condition.ConditionTree;
+import com.moyu.test.constant.ConditionConstant;
+import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
@@ -25,15 +27,15 @@ public class SelectCommand extends AbstractCommand {
 
     private Column[] columns;
 
-    private Condition condition;
+    private ConditionTree conditionTree;
 
     private QueryResult queryResult;
 
 
-    public SelectCommand(String tableName, Column[] columns, Condition condition) {
+    public SelectCommand(String tableName, Column[] columns, ConditionTree conditionTree) {
         this.tableName = tableName;
         this.columns = columns;
-        this.condition = condition;
+        this.conditionTree = conditionTree;
     }
 
     @Override
@@ -119,10 +121,10 @@ public class SelectCommand extends AbstractCommand {
                     RowData rowData = dataRowList.get(j);
                     Column[] columnData = rowData.getColumnData(columns);
                     // 按照条件过滤
-                    if(condition == null) {
+                    if(conditionTree == null) {
                         result.addRow(columnData);
                     } else {
-                        boolean isConditionRow = ConditionComparator.compareCondition(condition, columnData);
+                        boolean isConditionRow = analyzeConditionTree(conditionTree, columnData);
                         if(isConditionRow) {
                             result.addRow(columnData);
                         }
@@ -138,6 +140,52 @@ public class SelectCommand extends AbstractCommand {
         this.queryResult = result;
         return this.queryResult;
     }
+
+
+    private boolean analyzeConditionTree(ConditionTree node, Column[] columnData) {
+        boolean result;
+        if (node.isLeaf()) {
+            result = ConditionComparator.compareCondition(node.getCondition(), columnData);
+        } else {
+            result = true;
+            List<ConditionTree> childNodes = node.getChildNodes();
+
+            for (int i = 0; i < childNodes.size(); i++) {
+
+                ConditionTree conditionNode = childNodes.get(i);
+
+                String joinType = conditionNode.getJoinType();
+                boolean childResult = analyzeConditionTree(conditionNode, columnData);
+                // 第一个条件
+                if (i == 0) {
+                    result = childResult;
+                    continue;
+                }
+                // AND条件
+                if (ConditionConstant.AND.equals(joinType)) {
+                    result = result && childResult;
+                    //如果存在一个false，直接返回false.不需要再判断后面条件
+                    if (!result) {
+                        node.setResult(false);
+                        return false;
+                    }
+                } else if (ConditionConstant.OR.equals(joinType)) {
+                    // OR 条件
+                    result = result || childResult;
+                    if (result) {
+                        node.setResult(true);
+                        return true;
+                    }
+                } else {
+                    throw new SqlIllegalException("sql条件异常，只支持and或者or");
+                }
+            }
+        }
+        node.setResult(result);
+        return result;
+    }
+
+
 
 
     public QueryResult getQueryResult() {

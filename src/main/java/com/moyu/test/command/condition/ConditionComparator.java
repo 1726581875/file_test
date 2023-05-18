@@ -69,32 +69,32 @@ public class ConditionComparator {
                 break;
             case OperatorConstant.NOT_EQUAL_1:
             case OperatorConstant.NOT_EQUAL_2:
-                String value2 = String.valueOf(value);;
+                String value2 = String.valueOf(value);
                 if(value2 != null && !value2.equals(conditionValueList.get(0))){
                     result = true;
                 }
                 break;
             case OperatorConstant.LIKE:
-                String value3 = String.valueOf(value);;
+                String value3 = String.valueOf(value);
                 if(value3 != null && value3.contains(conditionValueList.get(0))){
                     result = true;
                 }
                 break;
             case OperatorConstant.NOT_LIKE:
-                String value4 = String.valueOf(value);;
+                String value4 = String.valueOf(value);
                 if(value4 != null && !value4.contains(conditionValueList.get(0))){
                     result = true;
                 }
                 break;
             case OperatorConstant.IN:
-                String value5 = String.valueOf(value);;
+                String value5 = String.valueOf(value);
                 Set<String> valueSet = conditionValueList.stream().collect(Collectors.toSet());
                 if(value != null && valueSet.contains(value5)){
                     result = true;
                 }
                 break;
             case OperatorConstant.NOT_IN:
-                String value6 = String.valueOf(value);;
+                String value6 = String.valueOf(value);
                 Set<String> valueSet2 = conditionValueList.stream().collect(Collectors.toSet());
                 if(value != null && !valueSet2.contains(value6)){
                     result = true;

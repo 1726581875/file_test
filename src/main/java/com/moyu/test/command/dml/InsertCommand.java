@@ -34,7 +34,7 @@ public class InsertCommand extends AbstractCommand {
         } finally {
             dataChunkStore.close();
         }
-        return null;
+        return "ok";
     }
 
 }

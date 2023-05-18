@@ -38,9 +38,9 @@ public class SqlParserTest {
         testExecSQL("create table xmz_aaa (id int, name varchar(10))");*/
 
 
-        //testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼');");
+       // testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼1');");
 
-        testExecSQL("select * from xmz_table where id = 3");
+       // testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼')");
 
 /*
         testExecSQL("truncate table xmz_table");
@@ -48,6 +48,20 @@ public class SqlParserTest {
 
         testExecSQL("select * from xmz_table");*/
 
+
+        testCondition();
+
+    }
+
+
+
+    private static void testCondition(){
+        testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
+        testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼123')");
+        testExecSQL("select * from xmz_table where (name = '摸鱼' or name = '摸鱼')");
+        testExecSQL("select * from xmz_table");
+        testExecSQL("select * from xmz_table where name = '摸鱼' or (id = 1)");
+        testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
     }
 
 
