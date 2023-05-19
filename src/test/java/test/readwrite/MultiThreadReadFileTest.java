@@ -1,6 +1,6 @@
 package test.readwrite;
 
-import com.moyu.test.entiry.DataHeader;
+import test.readwrite.entity.DataHeader;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

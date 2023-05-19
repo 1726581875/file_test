@@ -1,4 +1,4 @@
-package com.moyu.test.entiry;
+package test.readwrite.entity;
 
 /**
  * @author xiaomingzhang
