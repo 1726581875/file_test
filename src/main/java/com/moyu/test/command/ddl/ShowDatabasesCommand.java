@@ -14,8 +14,7 @@ import java.util.List;
 public class ShowDatabasesCommand extends AbstractCommand {
 
 
-    @Override
-    public String[] exec() {
+    public String[] execAndGetResult() {
         List<String> list = new ArrayList<>();
         DatabaseMetadataStore metadataStore = null;
         try {
@@ -37,12 +36,19 @@ public class ShowDatabasesCommand extends AbstractCommand {
 
     @Override
     public String execute() {
-        String[] result = exec();
+        String[] result = execAndGetResult();
         StringBuilder stringBuilder = new StringBuilder();
+
+
+        stringBuilder.append("--------\n");
+        stringBuilder.append("| 数据库 |\n");
+        stringBuilder.append("--------\n");
         for (String str : result) {
-            stringBuilder.append(str);
+            stringBuilder.append("| " +str + " |");
             stringBuilder.append("\n");
         }
+        stringBuilder.append("--------\n");
+        stringBuilder.append("总数:"+ result.length +"\n");
         return stringBuilder.toString();
     }
 

@@ -11,6 +11,7 @@ import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.OperatorConstant;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
@@ -88,7 +89,7 @@ public class SqlParser implements Parser {
                     // create database
                     case DATABASE:
                         skipSpace();
-                        String databaseName = getNextKeyWord();
+                        String databaseName = getNextOriginalWord();
                         CreateDatabaseCommand command = new CreateDatabaseCommand();
                         command.setDatabaseName(databaseName);
                         return command;
@@ -590,7 +591,8 @@ public class SqlParser implements Parser {
             String value = columnValueMap.get(column.getColumnName());
             switch (column.getColumnType()) {
                 case DbColumnTypeConstant.INT_4:
-                    column.setValue(Integer.valueOf(value));
+                    Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
+                    column.setValue(intValue);
                     break;
                 case DbColumnTypeConstant.INT_8:
                     column.setValue(Long.valueOf(value));
@@ -598,7 +600,7 @@ public class SqlParser implements Parser {
                 case DbColumnTypeConstant.VARCHAR:
                     if (value.startsWith("'") && value.endsWith("'")) {
                         column.setValue(value.substring(1, value.length() - 1));
-                    } else if("null".equals(value) || "NULL".equals(value)) {
+                    } else if(isNullValue(value)) {
                         column.setValue(null);
                     }else {
                         throw new SqlIllegalException("sql不合法，" + value);
@@ -616,7 +618,7 @@ public class SqlParser implements Parser {
                             throw new SqlIllegalException("日期格式不正确，格式必须是:yyyy-MM-dd HH:mm:ss。当前值:" + dateStr);
                         }
 
-                    } else if("null".equals(value) || "NULL".equals(value)) {
+                    } else if(isNullValue(value)) {
                         column.setValue(null);
                     }else {
                         throw new SqlIllegalException("sql不合法，" + value);
@@ -631,6 +633,10 @@ public class SqlParser implements Parser {
         return new InsertCommand(tableName, columns);
     }
 
+    private boolean isNullValue(String value) {
+        return "null".equals(value) || "NULL".equals(value);
+    }
+
 
     private Column[] getColumns(String tableName) {
         List<ColumnMetadata> columnMetadataList = null;
@@ -640,8 +646,13 @@ public class SqlParser implements Parser {
             tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
             columnStore = new ColumnMetadataStore();
             TableMetadata table = tableMetadata.getTable(tableName);
+            if(table == null) {
+                throw new SqlExecutionException("表" + tableName + "不存在");
+            }
             TableColumnBlock columnBlock = columnStore.getColumnBlock(table.getTableId());
             columnMetadataList = columnBlock.getColumnMetadataList();
+        } catch (SqlExecutionException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

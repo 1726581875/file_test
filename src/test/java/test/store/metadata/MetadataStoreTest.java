@@ -61,7 +61,7 @@ public class MetadataStoreTest {
             metadataStore = new TableMetadataStore(0, filePath);
             metadataStore.createTable(tableName);
             TableMetadataStore finalMetadataStore = metadataStore;
-            metadataStore.getAllTable().forEach(tableMetadata -> {
+            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println("==== table ==== ");
                 System.out.println(tableMetadata);
                 List<ColumnMetadata> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
@@ -84,7 +84,7 @@ public class MetadataStoreTest {
             metadataStore.dropTable(tableName);
             TableMetadataStore finalMetadataStore = metadataStore;
             System.out.println("==== drop table ==== ");
-            metadataStore.getAllTable().forEach(tableMetadata -> {
+            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println(tableMetadata);
                 List<ColumnMetadata> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
                 columnList.forEach(System.out::println);

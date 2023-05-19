@@ -20,13 +20,12 @@ public class ShowTablesCommand extends AbstractCommand {
         this.databaseId = databaseId;
     }
 
-    @Override
-    public String[] exec() {
+    public String[] execAndGetResult() {
         List<String> list = new ArrayList<>();
         TableMetadataStore metadataStore = null;
         try {
             metadataStore = new TableMetadataStore(databaseId);
-            List<TableMetadata> allData = metadataStore.getAllTable();
+            List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
 
             for (int i = 0; i < allData.size(); i++) {
                 list.add(allData.get(i).getTableName());
@@ -41,14 +40,21 @@ public class ShowTablesCommand extends AbstractCommand {
         return list.toArray(new String[0]);
     }
 
+
     @Override
     public String execute() {
-        String[] result = exec();
+        String[] result = execAndGetResult();
         StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder.append("-------\n");
+        stringBuilder.append("| 数据表 |\n");
+        stringBuilder.append("-------\n");
         for (String str : result) {
-            stringBuilder.append(str);
+            stringBuilder.append("| " +str + " |");
             stringBuilder.append("\n");
         }
+        stringBuilder.append("--------\n");
+        stringBuilder.append("总数:"+ result.length +"\n");
         return stringBuilder.toString();
     }
 

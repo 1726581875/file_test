@@ -46,7 +46,7 @@ public class CreateTableCommandTest {
         try {
             metadataStore = new TableMetadataStore(0);
             TableMetadataStore finalMetadataStore = metadataStore;
-            metadataStore.getAllTable().forEach(tableMetadata -> {
+            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println("==== table ==== ");
                 System.out.println(tableMetadata);
                 List<ColumnMetadata> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());

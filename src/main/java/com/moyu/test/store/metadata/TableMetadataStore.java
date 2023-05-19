@@ -1,6 +1,7 @@
 package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
@@ -12,9 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -34,8 +33,6 @@ public class TableMetadataStore {
     private Integer databaseId;
 
     private List<TableMetadata> tableMetadataList = new ArrayList<>();
-
-    private Map<Integer, List<ColumnMetadata>> columnMap = new HashMap<>();
 
 
     public TableMetadataStore(Integer databaseId) throws IOException {
@@ -105,13 +102,20 @@ public class TableMetadataStore {
 
 
 
-    public List<TableMetadata> getAllTable() {
-        return tableMetadataList;
+    public List<TableMetadata> getCurrDbAllTable() {
+        List<TableMetadata> currDbTables = new ArrayList<>();
+        for (TableMetadata table : tableMetadataList) {
+            if(databaseId.equals(table.getDatabaseId())) {
+                currDbTables.add(table);
+            }
+        }
+        return currDbTables;
     }
 
     public TableMetadata getTable(String tableName) {
         for (TableMetadata metadata : tableMetadataList) {
-            if(metadata.getTableName().equals(tableName)) {
+            if(databaseId.equals(metadata.getDatabaseId())
+                    && metadata.getTableName().equals(tableName)) {
                 return metadata;
             }
         }
@@ -141,8 +145,9 @@ public class TableMetadataStore {
 
     private void checkTableName(String tableName) {
         for (TableMetadata metadata : tableMetadataList) {
-            if (tableName.equals(metadata.getTableName())) {
-                throw new RuntimeException("表" + tableName + "已存在");
+            if (tableName.equals(metadata.getTableName())
+                    && databaseId.equals(metadata.getDatabaseId())) {
+                throw new SqlExecutionException("表" + tableName + "已存在");
             }
         }
     }
@@ -171,10 +176,7 @@ public class TableMetadataStore {
                 int dataByteLen = DataUtils.readInt(fileStore.read(currPos, JavaTypeConstant.INT_LENGTH));
                 ByteBuffer readBuffer = fileStore.read(currPos, dataByteLen);
                 TableMetadata dbMetadata = new TableMetadata(readBuffer);
-                // 只初始化当前数据库的表到内存
-                if(databaseId.equals(dbMetadata.getDatabaseId())) {
-                    tableMetadataList.add(dbMetadata);
-                }
+                tableMetadataList.add(dbMetadata);
                 currPos += dataByteLen;
             }
         }

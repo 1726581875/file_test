@@ -36,7 +36,7 @@ public class DescTableCommand extends AbstractCommand {
         try {
             metadataStore = new TableMetadataStore(databaseId);
             columnMetadataStore = new ColumnMetadataStore();
-            List<TableMetadata> allData = metadataStore.getAllTable();
+            List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
 
             TableMetadata table = null;
             for (int i = 0; i < allData.size(); i++) {
