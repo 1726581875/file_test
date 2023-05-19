@@ -14,9 +14,14 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        testExecSQL("select * from xmz_table");
+        //testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("desc table_1");
 
-        testExecSQL("select * from xmz_table where name is not null");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("select * from table_1");
+
+        testExecSQL("select * from table_1 where name is not null");
     }
 
     private static void testDelete(){

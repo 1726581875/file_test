@@ -15,5 +15,8 @@ public interface DbColumnTypeConstant {
     byte VARCHAR = 11;
 
 
+    byte TIMESTAMP = 12;
+
+
 
 }

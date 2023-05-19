@@ -20,6 +20,8 @@ import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -590,14 +592,36 @@ public class SqlParser implements Parser {
                 case DbColumnTypeConstant.INT_4:
                     column.setValue(Integer.valueOf(value));
                     break;
+                case DbColumnTypeConstant.INT_8:
+                    column.setValue(Long.valueOf(value));
+                    break;
                 case DbColumnTypeConstant.VARCHAR:
                     if (value.startsWith("'") && value.endsWith("'")) {
                         column.setValue(value.substring(1, value.length() - 1));
-                    }else if("null".equals(value) || "NULL".equals(value)) {
+                    } else if("null".equals(value) || "NULL".equals(value)) {
                         column.setValue(null);
                     }else {
                         throw new SqlIllegalException("sql不合法，" + value);
                     }
+                    break;
+                case DbColumnTypeConstant.TIMESTAMP:
+                    if (value.startsWith("'") && value.endsWith("'")) {
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        String dateStr = value.substring(1, value.length() - 1);
+                        try {
+                            Date date = dateFormat.parse(dateStr);
+                            column.setValue(date);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                            throw new SqlIllegalException("日期格式不正确，格式必须是:yyyy-MM-dd HH:mm:ss。当前值:" + dateStr);
+                        }
+
+                    } else if("null".equals(value) || "NULL".equals(value)) {
+                        column.setValue(null);
+                    }else {
+                        throw new SqlIllegalException("sql不合法，" + value);
+                    }
+
                     break;
                 default:
                     throw new SqlIllegalException("不支持该类型");

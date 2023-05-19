@@ -4,15 +4,14 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.condition.ConditionComparator;
 import com.moyu.test.command.condition.ConditionTree;
-import com.moyu.test.constant.ConditionConstant;
-import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.PathUtil;
-
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -97,7 +96,7 @@ public class SelectCommand extends AbstractCommand {
             for (int j = 0; j < rowValues.length; j++) {
                 // 按照条件过滤
                 Object value = rowValues[j];
-                String valueStr = (value == null ? "" : value.toString());
+                String valueStr = (value == null ? "" : valueToString(value));
                 int length = resultColumns[j].getColumnName().length();
                 if(length > valueStr.length()) {
                     int spaceNum = (length - valueStr.length()) / 2;
@@ -112,6 +111,15 @@ public class SelectCommand extends AbstractCommand {
         stringBuilder.append("查询结果行数:" +  resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms");
 
         return stringBuilder.toString();
+    }
+
+    private String valueToString(Object value) {
+        if (value instanceof Date) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return dateFormat.format((Date) value);
+        } else {
+            return value.toString();
+        }
     }
 
 

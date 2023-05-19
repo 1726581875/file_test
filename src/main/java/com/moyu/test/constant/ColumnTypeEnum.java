@@ -9,7 +9,8 @@ public enum ColumnTypeEnum {
     INT_4("int4", DbColumnTypeConstant.INT_4),
     BIGINT("bigint", DbColumnTypeConstant.INT_8),
     CHAR("char", DbColumnTypeConstant.CHAR),
-    VARCHAR("varchar", DbColumnTypeConstant.VARCHAR)
+    VARCHAR("varchar", DbColumnTypeConstant.VARCHAR),
+    TIMESTAMP("timestamp", DbColumnTypeConstant.TIMESTAMP)
     ;
     private String typeName;
 

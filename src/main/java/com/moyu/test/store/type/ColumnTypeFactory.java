@@ -19,6 +19,7 @@ public class ColumnTypeFactory {
         columnTypeMap.put(DbColumnTypeConstant.INT_8, new LongColumnType());
         columnTypeMap.put(DbColumnTypeConstant.VARCHAR, new StringColumnType());
         columnTypeMap.put(DbColumnTypeConstant.CHAR, new StringColumnType());
+        columnTypeMap.put(DbColumnTypeConstant.TIMESTAMP, new DateColumnType());
     }
 
     public static ColumnType getColumnType(Byte type) {
