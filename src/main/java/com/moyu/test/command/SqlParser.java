@@ -3,6 +3,7 @@ package com.moyu.test.command;
 import com.moyu.test.command.condition.Condition;
 import com.moyu.test.command.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
+import com.moyu.test.command.dml.DeleteCommand;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.SelectCommand;
 import com.moyu.test.command.dml.TruncateTableCommand;
@@ -98,7 +99,7 @@ public class SqlParser implements Parser {
             case UPDATE:
                 break;
             case DELETE:
-                break;
+                return getDeleteCommand();
             case SELECT:
                 return getSelectCommand();
             case INSERT:
@@ -153,6 +154,41 @@ public class SqlParser implements Parser {
         return null;
     }
 
+
+    private DeleteCommand getDeleteCommand() {
+        skipSpace();
+        String tableName = null;
+        while (true) {
+            skipSpace();
+            if(currIndex >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            String word = getNextKeyWord();
+            if("FROM".equals(word)) {
+                skipSpace();
+                tableName = getNextOriginalWord();
+                break;
+            }
+        }
+
+        if(tableName == null) {
+            throw new SqlIllegalException("sql语法有误,tableName为空");
+        }
+
+        ConditionTree root = null;
+        skipSpace();
+        String nextKeyWord = getNextKeyWord();
+        if("WHERE".equals(nextKeyWord)) {
+            skipSpace();
+            root = new ConditionTree();
+            root.setLeaf(false);
+            root.setJoinType(ConditionConstant.AND);
+            root.setChildNodes(new ArrayList<>());
+            parseWhereCondition(root);
+        }
+        Column[] columns = getColumns(tableName);
+        return new DeleteCommand(tableName, columns, root);
+    }
 
     /**
      * TODO 当前直接查询全部，待优化

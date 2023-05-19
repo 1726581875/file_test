@@ -1,5 +1,6 @@
 package com.moyu.test.store.data;
 
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -45,6 +46,10 @@ public class DataChunk {
     private List<RowData> dataRowList;
 
     public DataChunk(int chunkIndex, long startPos) {
+        initDataChunk(chunkIndex, startPos);
+    }
+
+    private void initDataChunk(int chunkIndex, long startPos) {
         // 4(usedByteLen) + 4(chunkIndex) + 4(rowNum) + 8(startPos) + 8(dataStartPos) + 8(nextRowStartPos) = 36
         this.usedByteLen = 36;
         this.chunkIndex = chunkIndex;
@@ -104,6 +109,21 @@ public class DataChunk {
         this.usedByteLen += dataRow.getTotalByteLen();
         this.nextRowStartPos = this.nextRowStartPos + dataRow.getTotalByteLen();
         this.dataRowList.add(dataRow);
+    }
+
+    public void removeRow(int index) {
+        if(index >= dataRowList.size()) {
+           throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
+        }
+        RowData rowData = dataRowList.get(index);
+        this.rowNum--;
+        this.usedByteLen = this.usedByteLen - (int) rowData.getTotalByteLen();
+        this.nextRowStartPos = this.nextRowStartPos - (int) rowData.getTotalByteLen();
+        this.dataRowList.remove(index);
+    }
+
+    public void clear() {
+        initDataChunk(this.chunkIndex, this.getStartPos());
     }
 
 

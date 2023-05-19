@@ -1,6 +1,8 @@
 package com.moyu.test.command.condition;
 
+import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.OperatorConstant;
+import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.exception.SqlQueryException;
 import com.moyu.test.store.metadata.obj.Column;
 
@@ -38,6 +40,56 @@ public class ConditionComparator {
         for (int i = 0; i < arr.length; i++) {
             result = result || arr[i];
         }
+        return result;
+    }
+
+
+    /**
+     * 分析条件树，判断行数据是否满足条件
+     * @param node
+     * @param columnData
+     * @return
+     */
+    public static boolean analyzeConditionTree(ConditionTree node, Column[] columnData) {
+        boolean result;
+        if (node.isLeaf()) {
+            result = ConditionComparator.compareCondition(node.getCondition(), columnData);
+        } else {
+            result = true;
+            List<ConditionTree> childNodes = node.getChildNodes();
+
+            for (int i = 0; i < childNodes.size(); i++) {
+
+                ConditionTree conditionNode = childNodes.get(i);
+
+                String joinType = conditionNode.getJoinType();
+                boolean childResult = analyzeConditionTree(conditionNode, columnData);
+                // 第一个条件
+                if (i == 0) {
+                    result = childResult;
+                    continue;
+                }
+                // AND条件
+                if (ConditionConstant.AND.equals(joinType)) {
+                    result = result && childResult;
+                    //如果存在一个false，直接返回false.不需要再判断后面条件
+                    if (!result) {
+                        node.setResult(false);
+                        return false;
+                    }
+                } else if (ConditionConstant.OR.equals(joinType)) {
+                    // OR 条件
+                    result = result || childResult;
+                    if (result) {
+                        node.setResult(true);
+                        return true;
+                    }
+                } else {
+                    throw new SqlIllegalException("sql条件异常，只支持and或者or");
+                }
+            }
+        }
+        node.setResult(result);
         return result;
     }
 

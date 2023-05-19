@@ -14,48 +14,43 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        testInsertSQL();
+        testExecSQL("delete from xmz_table where name like '摸鱼'");
+        //testExecSQL("delete from xmz_table");
+        testExecSQL("select * from xmz_table");
+    }
 
-/*        System.out.println("=== show databases ===");
+
+    private static void testDDLSQL() {
         testExecSQL("show databases");
 
-        System.out.println("=== create table ===");
         testExecSQL("create table xmz_aaa (id int, name varchar(10))");
 
-        System.out.println("=== show tables ===");
         testExecSQL("show tables");
 
-        System.out.println("=== desc table ===");
         testExecSQL("desc xmz_aaa");
 
-        System.out.println("=== drop table ===");
         testExecSQL("drop table xmz_aaa");
 
-        System.out.println("=== show tables ===");
         testExecSQL("show tables");
 
+        testExecSQL("create table xmz_aaa (id int, name varchar(10))");
+    }
 
-        System.out.println("=== create table ===");
-        testExecSQL("create table xmz_aaa (id int, name varchar(10))");*/
+    private static void testInsertSQL() {
 
+         testExecSQL("insert into  xmz_table (id, name) value (1, '摸鱼1');");
+         testExecSQL("insert into  xmz_table (id, name) value (2, '摸鱼2');");
+         testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼3');");
+         testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼4');");
 
-       // testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼1');");
-
-       // testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼')");
-
-/*
-        testExecSQL("truncate table xmz_table");
-
-
-        testExecSQL("select * from xmz_table");*/
-
-
-        testCondition();
+         testExecSQL("insert into  xmz_table (id, name) value (5, 'aaaa');");
+         testExecSQL("insert into  xmz_table (id, name) value (6, '啊啊啊');");
 
     }
 
 
-
-    private static void testCondition(){
+    private static void testSelectCondition(){
         testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
         testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼123')");
         testExecSQL("select * from xmz_table where (name = '摸鱼' or name = '摸鱼')");

@@ -108,11 +108,13 @@ public class SelectCommand extends AbstractCommand {
             String fileFullPath = FILE_PATH + tableName + ".d";
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
+            // 遍历数据块
             for (int i = 0; i < dataChunkNum; i++) {
                 DataChunk chunk = dataChunkStore.getChunk(i);
                 if (chunk == null) {
                     break;
                 }
+                // 获取数据块包含的数据行
                 List<RowData> dataRowList = chunk.getDataRowList();
                 if (dataRowList == null || dataRowList.size() == 0) {
                     continue;
@@ -124,8 +126,8 @@ public class SelectCommand extends AbstractCommand {
                     if(conditionTree == null) {
                         result.addRow(columnData);
                     } else {
-                        boolean isConditionRow = analyzeConditionTree(conditionTree, columnData);
-                        if(isConditionRow) {
+                        boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                        if(compareResult) {
                             result.addRow(columnData);
                         }
                     }
@@ -139,50 +141,6 @@ public class SelectCommand extends AbstractCommand {
 
         this.queryResult = result;
         return this.queryResult;
-    }
-
-
-    private boolean analyzeConditionTree(ConditionTree node, Column[] columnData) {
-        boolean result;
-        if (node.isLeaf()) {
-            result = ConditionComparator.compareCondition(node.getCondition(), columnData);
-        } else {
-            result = true;
-            List<ConditionTree> childNodes = node.getChildNodes();
-
-            for (int i = 0; i < childNodes.size(); i++) {
-
-                ConditionTree conditionNode = childNodes.get(i);
-
-                String joinType = conditionNode.getJoinType();
-                boolean childResult = analyzeConditionTree(conditionNode, columnData);
-                // 第一个条件
-                if (i == 0) {
-                    result = childResult;
-                    continue;
-                }
-                // AND条件
-                if (ConditionConstant.AND.equals(joinType)) {
-                    result = result && childResult;
-                    //如果存在一个false，直接返回false.不需要再判断后面条件
-                    if (!result) {
-                        node.setResult(false);
-                        return false;
-                    }
-                } else if (ConditionConstant.OR.equals(joinType)) {
-                    // OR 条件
-                    result = result || childResult;
-                    if (result) {
-                        node.setResult(true);
-                        return true;
-                    }
-                } else {
-                    throw new SqlIllegalException("sql条件异常，只支持and或者or");
-                }
-            }
-        }
-        node.setResult(result);
-        return result;
     }
 
 
