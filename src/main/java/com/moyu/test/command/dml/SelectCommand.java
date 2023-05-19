@@ -61,6 +61,15 @@ public class SelectCommand extends AbstractCommand {
         stringBuilder.append("\n");
     }
 
+    private String getStr(char c, int num) {
+        StringBuilder stringBuilder = new StringBuilder();
+        while (num > 0) {
+            stringBuilder.append(c);
+            num--;
+        }
+        return stringBuilder.toString();
+    }
+
 
     private String getResultPrintStr(QueryResult queryResult, long queryStartTime,long queryEndTime) {
         // 解析结果，打印拼接结果字符串
@@ -79,6 +88,7 @@ public class SelectCommand extends AbstractCommand {
         // 分界线
         appendLine(stringBuilder);
 
+        Column[] resultColumns = queryResult.getColumns();
         // 值
         List<Object[]> resultRows = queryResult.getResultRows();
         for (int i = 0; i < resultRows.size(); i++) {
@@ -87,7 +97,14 @@ public class SelectCommand extends AbstractCommand {
             for (int j = 0; j < rowValues.length; j++) {
                 // 按照条件过滤
                 Object value = rowValues[j];
-                rowStr = rowStr + " | " + value;
+                String valueStr = (value == null ? "" : value.toString());
+                int length = resultColumns[j].getColumnName().length();
+                if(length > valueStr.length()) {
+                    int spaceNum = (length - valueStr.length()) / 2;
+                    rowStr = rowStr + " | "+ getStr(' ',spaceNum) + valueStr + getStr(' ',spaceNum);
+                } else {
+                    rowStr = rowStr + " | " + valueStr;
+                }
             }
             stringBuilder.append(rowStr + " | " + "\n");
         }

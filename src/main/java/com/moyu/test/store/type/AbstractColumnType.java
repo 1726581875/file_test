@@ -12,12 +12,26 @@ public abstract class AbstractColumnType<T> implements ColumnType<T> {
 
     @Override
     public T read(ByteBuffer byteBuffer) {
-        return readValue(byteBuffer);
+        // 判断标记位，0表示值为null、1不为null
+        byte flag = byteBuffer.get();
+        if (flag == (byte) 0) {
+            return null;
+        } else {
+            return readValue(byteBuffer);
+        }
     }
 
     @Override
     public void write(WriteBuffer writeBuffer, T value) {
-        writeValue(writeBuffer, value);
+        // 如果是空值(null)，写入标记位值0
+        if (value == null) {
+            byte flag = 0;
+            writeBuffer.put(flag);
+        } else {
+            byte flag = 1;
+            writeBuffer.put(flag);
+            writeValue(writeBuffer, value);
+        }
     }
 
     /**

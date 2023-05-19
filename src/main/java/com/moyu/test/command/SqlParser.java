@@ -445,8 +445,13 @@ public class SqlParser implements Parser {
             currIndex++;
         }
 
-        // 构造condition
-        if (columnName == null || operator == null || values.size() == 0) {
+        // 校验是否合法
+        if (columnName == null || operator == null) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+        if(!OperatorConstant.IS_NULL.equals(operator)
+                && !OperatorConstant.IS_NOT_NULL.equals(operator)
+                && values.size() == 0) {
             throw new SqlIllegalException("sql语法有误");
         }
 
@@ -588,7 +593,9 @@ public class SqlParser implements Parser {
                 case DbColumnTypeConstant.VARCHAR:
                     if (value.startsWith("'") && value.endsWith("'")) {
                         column.setValue(value.substring(1, value.length() - 1));
-                    } else {
+                    }else if("null".equals(value) || "NULL".equals(value)) {
+                        column.setValue(null);
+                    }else {
                         throw new SqlIllegalException("sql不合法，" + value);
                     }
                     break;

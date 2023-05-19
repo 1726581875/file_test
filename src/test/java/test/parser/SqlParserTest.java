@@ -14,9 +14,15 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        testExecSQL("select * from xmz_table");
+
+        testExecSQL("select * from xmz_table where name is not null");
+    }
+
+    private static void testDelete(){
+        testExecSQL("delete from xmz_table");
         testInsertSQL();
         testExecSQL("delete from xmz_table where name like '摸鱼'");
-        //testExecSQL("delete from xmz_table");
         testExecSQL("select * from xmz_table");
     }
 
@@ -39,7 +45,7 @@ public class SqlParserTest {
 
     private static void testInsertSQL() {
 
-         testExecSQL("insert into  xmz_table (id, name) value (1, '摸鱼1');");
+         testExecSQL("insert into  xmz_table (id, name) value (1, null);");
          testExecSQL("insert into  xmz_table (id, name) value (2, '摸鱼2');");
          testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼3');");
          testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼4');");
