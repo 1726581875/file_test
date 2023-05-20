@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class DeleteCommand extends AbstractCommand {
 
-    private static final String FILE_PATH = PathUtil.getBaseDirPath();
+    private Integer databaseId;
 
     private String tableName;
 
@@ -26,7 +26,8 @@ public class DeleteCommand extends AbstractCommand {
     private ConditionTree conditionTree;
 
 
-    public DeleteCommand(String tableName, Column[] columns, ConditionTree conditionTree) {
+    public DeleteCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree conditionTree) {
+        this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
         this.conditionTree = conditionTree;
@@ -37,7 +38,7 @@ public class DeleteCommand extends AbstractCommand {
         int deleteRowNum = 0;
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = FILE_PATH + tableName + ".d";
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             // 遍历数据块

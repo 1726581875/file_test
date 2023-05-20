@@ -10,11 +10,12 @@ import com.moyu.test.util.PathUtil;
 public class TruncateTableCommand extends AbstractCommand {
 
 
-    private static final String FILE_PATH = PathUtil.getBaseDirPath();
+    private Integer databaseId;
 
     private String tableName;
 
-    public TruncateTableCommand(String tableName) {
+    public TruncateTableCommand(Integer databaseId, String tableName) {
+        this.databaseId = databaseId;
         this.tableName = tableName;
     }
 
@@ -22,7 +23,7 @@ public class TruncateTableCommand extends AbstractCommand {
     public String execute() {
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = FILE_PATH + tableName + ".d";
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             dataChunkStore.truncateTable();
         } catch (Exception e) {

@@ -11,13 +11,14 @@ import com.moyu.test.util.PathUtil;
  */
 public class InsertCommand extends AbstractCommand {
 
-    private static final String FILE_PATH = PathUtil.getBaseDirPath();
+    private Integer databaseId;
 
     private String tableName;
 
     private Column[] columns;
 
-    public InsertCommand(String tableName, Column[] columns) {
+    public InsertCommand(Integer databaseId, String tableName, Column[] columns) {
+        this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
     }
@@ -26,7 +27,7 @@ public class InsertCommand extends AbstractCommand {
     public String execute() {
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = FILE_PATH + tableName + ".d";
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             dataChunkStore.storeRow(columns);
         } catch (Exception e) {

@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class SelectCommand extends AbstractCommand {
 
-    private static final String FILE_PATH = PathUtil.getBaseDirPath();
+    private Integer databaseId;
 
     private String tableName;
 
@@ -31,7 +31,8 @@ public class SelectCommand extends AbstractCommand {
     private QueryResult queryResult;
 
 
-    public SelectCommand(String tableName, Column[] columns, ConditionTree conditionTree) {
+    public SelectCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree conditionTree) {
+        this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
         this.conditionTree = conditionTree;
@@ -130,7 +131,7 @@ public class SelectCommand extends AbstractCommand {
         result.setResultRows(new ArrayList<>());
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = FILE_PATH + tableName + ".d";
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             // 遍历数据块

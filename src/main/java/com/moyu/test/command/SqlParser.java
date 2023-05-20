@@ -3,10 +3,7 @@ package com.moyu.test.command;
 import com.moyu.test.command.condition.Condition;
 import com.moyu.test.command.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
-import com.moyu.test.command.dml.DeleteCommand;
-import com.moyu.test.command.dml.InsertCommand;
-import com.moyu.test.command.dml.SelectCommand;
-import com.moyu.test.command.dml.TruncateTableCommand;
+import com.moyu.test.command.dml.*;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
@@ -100,7 +97,7 @@ public class SqlParser implements Parser {
                         throw new SqlIllegalException("sql语法有误");
                 }
             case UPDATE:
-                break;
+                return getUpdateCommand();
             case DELETE:
                 return getDeleteCommand();
             case SELECT:
@@ -150,11 +147,91 @@ public class SqlParser implements Parser {
                 skipSpace();
                 // tableName
                 String word13 = getNextOriginalWord();
-                return new TruncateTableCommand(word13);
+                return new TruncateTableCommand(connectSession.getDatabaseId() ,word13);
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
         return null;
+    }
+
+
+    private UpdateCommand getUpdateCommand() {
+        skipSpace();
+        String tableName = getNextOriginalWord();
+        if(tableName == null) {
+            throw new SqlIllegalException("sql语法有误,tableName为空");
+        }
+
+        Column[] columns = getColumns(tableName);
+        Map<String, Column> columnMap = new HashMap<>();
+        for (Column c : columns) {
+            columnMap.put(c.getColumnName(), c);
+        }
+
+        skipSpace();
+        String keyword = getNextKeyWord();
+        if(!"SET".equals(keyword)) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+
+        // 解析更新字段
+        int start = currIndex;
+        int end = currIndex;
+        while (true) {
+            skipSpace();
+            if (currIndex >= sqlCharArr.length) {
+                end = sqlCharArr.length;
+                break;
+            }
+            end = currIndex;
+            String word = getNextKeyWord();
+            if ("WHERE".equals(word)) {
+                break;
+            }
+        }
+
+        currIndex = end;
+
+        List<Column> updateColumnList = new ArrayList<>();
+        String updateColumnStr = originalSql.substring(start, end).trim();
+        String[] updateColumnStrArr = updateColumnStr.split(",");
+        for (int i = 0; i < updateColumnStrArr.length; i++) {
+            String columnStr = updateColumnStrArr[i];
+            String[] split = columnStr.split("=");
+            if(split.length != 2) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            String columnNameStr = split[0].trim();
+            String columnValueStr = split[1].trim();
+            Column column = columnMap.get(columnNameStr);
+            if(column == null) {
+                throw new SqlIllegalException("表"+ tableName + "不存在字段" + columnNameStr);
+            }
+
+            Column updateColumn = column.createNullValueColumn();
+            setColumnValue(updateColumn, columnValueStr);
+            updateColumnList.add(updateColumn);
+        }
+
+
+        // 解析where条件
+        ConditionTree root = null;
+        skipSpace();
+        String nextKeyWord = getNextKeyWord();
+        if("WHERE".equals(nextKeyWord)) {
+            skipSpace();
+            root = new ConditionTree();
+            root.setLeaf(false);
+            root.setJoinType(ConditionConstant.AND);
+            root.setChildNodes(new ArrayList<>());
+            parseWhereCondition(root);
+        }
+
+        return new UpdateCommand(this.connectSession.getDatabaseId(),
+                tableName,
+                columns,
+                updateColumnList.toArray(new Column[0]),
+                root);
     }
 
 
@@ -190,7 +267,7 @@ public class SqlParser implements Parser {
             parseWhereCondition(root);
         }
         Column[] columns = getColumns(tableName);
-        return new DeleteCommand(tableName, columns, root);
+        return new DeleteCommand(connectSession.getDatabaseId(), tableName, columns, root);
     }
 
     /**
@@ -240,7 +317,7 @@ public class SqlParser implements Parser {
 
 
         Column[] columns = getColumns(tableName);
-        return new SelectCommand(tableName, columns, root);
+        return new SelectCommand(connectSession.getDatabaseId(), tableName, columns, root);
     }
 
 
@@ -589,49 +666,57 @@ public class SqlParser implements Parser {
         Column[] columns = getColumns(tableName);
         for (Column column : columns) {
             String value = columnValueMap.get(column.getColumnName());
-            switch (column.getColumnType()) {
-                case DbColumnTypeConstant.INT_4:
-                    Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
-                    column.setValue(intValue);
-                    break;
-                case DbColumnTypeConstant.INT_8:
-                    column.setValue(Long.valueOf(value));
-                    break;
-                case DbColumnTypeConstant.VARCHAR:
-                    if (value.startsWith("'") && value.endsWith("'")) {
-                        column.setValue(value.substring(1, value.length() - 1));
-                    } else if(isNullValue(value)) {
-                        column.setValue(null);
-                    }else {
-                        throw new SqlIllegalException("sql不合法，" + value);
-                    }
-                    break;
-                case DbColumnTypeConstant.TIMESTAMP:
-                    if (value.startsWith("'") && value.endsWith("'")) {
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        String dateStr = value.substring(1, value.length() - 1);
-                        try {
-                            Date date = dateFormat.parse(dateStr);
-                            column.setValue(date);
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            throw new SqlIllegalException("日期格式不正确，格式必须是:yyyy-MM-dd HH:mm:ss。当前值:" + dateStr);
-                        }
-
-                    } else if(isNullValue(value)) {
-                        column.setValue(null);
-                    }else {
-                        throw new SqlIllegalException("sql不合法，" + value);
-                    }
-
-                    break;
-                default:
-                    throw new SqlIllegalException("不支持该类型");
-            }
+            setColumnValue(column, value);
         }
 
-        return new InsertCommand(tableName, columns);
+        return new InsertCommand(connectSession.getDatabaseId(),tableName, columns);
     }
+
+
+    private void setColumnValue(Column column, String value) {
+        switch (column.getColumnType()) {
+            case DbColumnTypeConstant.INT_4:
+                Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
+                column.setValue(intValue);
+                break;
+            case DbColumnTypeConstant.INT_8:
+                column.setValue(Long.valueOf(value));
+                break;
+            case DbColumnTypeConstant.VARCHAR:
+                if (value.startsWith("'") && value.endsWith("'")) {
+                    column.setValue(value.substring(1, value.length() - 1));
+                } else if(isNullValue(value)) {
+                    column.setValue(null);
+                }else {
+                    throw new SqlIllegalException("sql不合法，" + value);
+                }
+                break;
+            case DbColumnTypeConstant.TIMESTAMP:
+                if (value.startsWith("'") && value.endsWith("'")) {
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String dateStr = value.substring(1, value.length() - 1);
+                    try {
+                        Date date = dateFormat.parse(dateStr);
+                        column.setValue(date);
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                        throw new SqlIllegalException("日期格式不正确，格式必须是:yyyy-MM-dd HH:mm:ss。当前值:" + dateStr);
+                    }
+
+                } else if(isNullValue(value)) {
+                    column.setValue(null);
+                }else {
+                    throw new SqlIllegalException("sql不合法，" + value);
+                }
+
+                break;
+            default:
+                throw new SqlIllegalException("不支持该类型");
+        }
+    }
+
+
+
 
     private boolean isNullValue(String value) {
         return "null".equals(value) || "NULL".equals(value);

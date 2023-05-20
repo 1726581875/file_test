@@ -14,7 +14,28 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        //testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("desc table_1");
+
+        testExecSQL("insert into table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (3,'333','2023-05-19 00:00:00')");
+
+        testExecSQL("select * from table_1");
+
+        testExecSQL("update table_1 set name = 'aaa' where id = 1");
+
+        testExecSQL("select * from table_1");
+
+        testExecSQL("truncate table table_1");
+
+
+
+    }
+
+
+    private static void testInsertTimeTypeValue(){
+        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("desc table_1");
 
         testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
@@ -23,6 +44,8 @@ public class SqlParserTest {
 
         testExecSQL("select * from table_1 where name is not null");
     }
+
+
 
     private static void testDelete(){
         testExecSQL("delete from xmz_table");

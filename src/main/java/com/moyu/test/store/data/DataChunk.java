@@ -111,6 +111,18 @@ public class DataChunk {
         this.dataRowList.add(dataRow);
     }
 
+    public void updateRow(int index, RowData newRow) {
+        if(index >= dataRowList.size()) {
+            throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
+        }
+        RowData oldRow = dataRowList.get(index);
+        long needLen = newRow.getTotalByteLen() - oldRow.getTotalByteLen();
+        this.usedByteLen += needLen;
+        this.nextRowStartPos = needLen;
+        dataRowList.set(index, newRow);
+    }
+
+
     public void removeRow(int index) {
         if(index >= dataRowList.size()) {
            throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);

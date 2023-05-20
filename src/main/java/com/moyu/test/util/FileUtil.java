@@ -24,6 +24,20 @@ public class FileUtil {
     }
 
 
+    public static void createDirIfNotExists(String fullPath) {
+        try {
+            File file = new File(fullPath);
+            if (!file.exists()) {
+                file.mkdirs();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new FileOperationException("创建文件发生异常");
+        }
+    }
+
+
+
     public static void deleteOnExists(String fullPath) {
         try {
             File file = new File(fullPath);
