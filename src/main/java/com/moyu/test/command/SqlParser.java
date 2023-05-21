@@ -132,8 +132,9 @@ public class SqlParser implements Parser {
                     // show tables
                 } else if ("TABLES".equals(word11)) {
                     return new ShowTablesCommand(this.connectSession.getDatabaseId());
+                } else {
+                    throw new SqlIllegalException("sql语法有误");
                 }
-                break;
             case DESC:
                 skipSpace();
                 String word12 = getNextOriginalWord();
@@ -151,7 +152,6 @@ public class SqlParser implements Parser {
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
-        return null;
     }
 
 
@@ -589,15 +589,14 @@ public class SqlParser implements Parser {
         skipSpace();
         int i = currIndex;
         while (true) {
-            if (i >= sqlCharArr.length) {
+            if (currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
-            if (sqlCharArr[i] == ' ' || sqlCharArr[i] == '(') {
-                tableName = originalSql.substring(currIndex, i);
-                currIndex = i;
+            if (sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '(') {
+                tableName = originalSql.substring(i, currIndex);
                 break;
             }
-            i++;
+            currIndex++;
         }
 
         // ==== 读取字段 ====
@@ -606,18 +605,18 @@ public class SqlParser implements Parser {
         // 括号结束
         int columnEnd = 0;
         while (true) {
-            if (i >= sqlCharArr.length) {
+            if (currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
-            if (sqlCharArr[i] == '(') {
-                columnStart = i;
+            if (sqlCharArr[currIndex] == '(') {
+                columnStart = currIndex;
             }
-            if (sqlCharArr[i] == ')') {
-                columnEnd = i;
-                currIndex = i + 1;
+            if (sqlCharArr[currIndex] == ')') {
+                columnEnd = currIndex;
+                currIndex = currIndex + 1;
                 break;
             }
-            i++;
+            currIndex++;
         }
 
         String columnStr = originalSql.substring(columnStart + 1, columnEnd);
@@ -625,29 +624,39 @@ public class SqlParser implements Parser {
 
         // ==== 读字段值 ===
         skipSpace();
-        String valueKeyWord = getNextKeyWord();
+        String valueKeyWord = null;
+        i = currIndex;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if (sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '(') {
+                valueKeyWord = upperCaseSql.substring(i, currIndex);
+                break;
+            }
+            currIndex++;
+        }
         if (!"VALUE".equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
 
-        int i2 = currIndex;
         // 括号开始
         int valueStart = 0;
         // 括号结束
         int valueEnd = 0;
         while (true) {
-            if (i2 >= sqlCharArr.length) {
+            if (currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
-            if (sqlCharArr[i2] == '(') {
-                valueStart = i2;
+            if (sqlCharArr[currIndex] == '(') {
+                valueStart = currIndex;
             }
-            if (sqlCharArr[i2] == ')') {
-                valueEnd = i2;
-                currIndex = i2 + 1;
+            if (sqlCharArr[currIndex] == ')') {
+                valueEnd = currIndex;
+                currIndex = currIndex + 1;
                 break;
             }
-            i2++;
+            currIndex++;
         }
 
         String valueStr = originalSql.substring(valueStart + 1, valueEnd);

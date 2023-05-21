@@ -2,6 +2,7 @@ package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
+import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 
 /**
  * @author xiaomingzhang
@@ -17,7 +18,16 @@ public class DropDatabaseCommand extends AbstractCommand {
         DatabaseMetadataStore metadataStore = null;
         try {
             metadataStore = new DatabaseMetadataStore();
+            DatabaseMetadata database = metadataStore.getDatabase(databaseName);
             metadataStore.dropDatabase(databaseName);
+            // 删除所有表
+            ShowTablesCommand showTablesCommand = new ShowTablesCommand(database.getDatabaseId());
+            String[] allTable = showTablesCommand.getAllTable();
+            for (String tableName : allTable) {
+                DropTableCommand dropTableCommand = new DropTableCommand(database.getDatabaseId(), tableName);
+                dropTableCommand.execute();
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             isSuccess = false;

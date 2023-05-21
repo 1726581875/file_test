@@ -4,6 +4,8 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.TableMetadata;
+import com.moyu.test.util.FileUtil;
+import com.moyu.test.util.PathUtil;
 
 /**
  * @author xiaomingzhang
@@ -24,9 +26,7 @@ public class DropTableCommand extends AbstractCommand {
     @Override
     public String execute() {
 
-
         boolean result = false;
-
         TableMetadataStore tableMetadataStore = null;
         ColumnMetadataStore columnMetadataStore = null;
         try{
@@ -36,7 +36,9 @@ public class DropTableCommand extends AbstractCommand {
             TableMetadata tableMetadata = tableMetadataStore.dropTable(tableName);
             // 删除字段元数据
             columnMetadataStore.dropColumnBlock(tableMetadata.getTableId());
-            // TODO 删除数据
+            // 删除数据文件
+            String dataFilePath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            FileUtil.deleteOnExists(dataFilePath);
 
             result = true;
         } catch (Exception e){

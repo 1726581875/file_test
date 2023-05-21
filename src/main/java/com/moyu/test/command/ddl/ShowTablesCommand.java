@@ -20,7 +20,7 @@ public class ShowTablesCommand extends AbstractCommand {
         this.databaseId = databaseId;
     }
 
-    public String[] execAndGetResult() {
+    public String[] getAllTable() {
         List<String> list = new ArrayList<>();
         TableMetadataStore metadataStore = null;
         try {
@@ -43,7 +43,7 @@ public class ShowTablesCommand extends AbstractCommand {
 
     @Override
     public String execute() {
-        String[] result = execAndGetResult();
+        String[] result = getAllTable();
         StringBuilder stringBuilder = new StringBuilder();
 
         stringBuilder.append("-------\n");

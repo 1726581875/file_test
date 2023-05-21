@@ -1,6 +1,7 @@
 package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 import com.moyu.test.util.DataUtils;
@@ -98,6 +99,15 @@ public class DatabaseMetadataStore {
 
     public List<DatabaseMetadata> getAllData(){
         return databaseMetadataList;
+    }
+
+    public DatabaseMetadata getDatabase(String databaseName) {
+        for (DatabaseMetadata metadata : databaseMetadataList) {
+            if (databaseName.equals(metadata.getName())) {
+                return metadata;
+            }
+        }
+        throw new SqlExecutionException("数据库" + databaseName + "不存在");
     }
 
 
