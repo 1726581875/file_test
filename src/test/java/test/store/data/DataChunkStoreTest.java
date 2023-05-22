@@ -59,7 +59,7 @@ public class DataChunkStoreTest {
             for (int i = 0; i < 1; i++) {
                 try {
                     byte[] bytes = RowData.toRowByteData(columnList);
-                    dataChunkStore.storeRow(bytes);
+                    dataChunkStore.storeRow(bytes,false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -101,7 +101,7 @@ public class DataChunkStoreTest {
             // write data
             for (int i = 0; i < 1024; i++) {
                 try {
-                    dataChunkStore.storeRow("hello world!hello world!啊啊啊啊".getBytes());
+                    dataChunkStore.storeRow("hello world!hello world!啊啊啊啊".getBytes(), false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();

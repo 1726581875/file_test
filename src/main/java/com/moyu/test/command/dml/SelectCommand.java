@@ -199,9 +199,6 @@ public class SelectCommand extends AbstractCommand {
             }
             // 获取数据块包含的数据行
             List<RowData> dataRowList = chunk.getDataRowList();
-            if (dataRowList == null || dataRowList.size() == 0) {
-                continue;
-            }
             for (int j = 0; j < dataRowList.size(); j++) {
                 RowData rowData = dataRowList.get(j);
                 Column[] columnData = rowData.getColumnData(columns);
@@ -265,7 +262,6 @@ public class SelectCommand extends AbstractCommand {
             if(columnName == null) {
                 throw new SqlIllegalException("sql语法错误，column应当不为空");
             }
-
             switch (functionName) {
                 case "count":
                     statFunctions.add(new CountFunction(columnName));
@@ -293,9 +289,6 @@ public class SelectCommand extends AbstractCommand {
             }
             // 获取数据块包含的数据行
             List<RowData> dataRowList = chunk.getDataRowList();
-            if (dataRowList == null || dataRowList.size() == 0) {
-                continue;
-            }
             for (int j = 0; j < dataRowList.size(); j++) {
                 RowData rowData = dataRowList.get(j);
                 Column[] columnData = rowData.getColumnData(columns);
@@ -327,7 +320,8 @@ public class SelectCommand extends AbstractCommand {
             Column resultColumn = null;
             Column c = selectColumns[i].getColumn();
             // 日期类型
-            if(c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
+            if(!selectColumns[i].getFunctionName().equals("count")
+                    && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
                 resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, i, 8);
                 resultColumn.setValue(statResult == null ? null : new Date(statResult));
             } else {

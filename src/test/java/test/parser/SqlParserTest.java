@@ -14,7 +14,7 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        testExecSQL("select * from table_1 where name like '3' limit 10 offset 2");
+        testInsert();
     }
 
 
@@ -36,8 +36,12 @@ public class SqlParserTest {
     }
 
 
-    private void testInsert(){
-        testExecSQL("desc table_1");
+    private static void testInsert(){
+        // testExecSQL("drop database xmz");
+
+        testExecSQL("drop table table_1");
+
+        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
 
         testExecSQL("truncate table table_1");
 

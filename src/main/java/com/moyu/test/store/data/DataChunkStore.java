@@ -35,7 +35,13 @@ public class DataChunkStore {
 
         // 初始化最后一个数据块到内存
         long endPosition = fileStore.getEndPosition();
+        this.dataChunkNum = (int) (endPosition / DataChunk.DATA_CHUNK_LEN);
         if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
+            ByteBuffer readBuffer = fileStore.read(endPosition - DataChunk.DATA_CHUNK_LEN, DataChunk.DATA_CHUNK_LEN);
+            this.lastChunk = new DataChunk(readBuffer);
+        }
+
+/*        if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
             long currPos = 0;
             while (currPos < endPosition) {
                 ByteBuffer readBuffer = fileStore.read(currPos, DataChunk.DATA_CHUNK_LEN);
@@ -43,7 +49,7 @@ public class DataChunkStore {
                 this.dataChunkNum++;
                 currPos += DataChunk.DATA_CHUNK_LEN;
             }
-        }
+        }*/
     }
 
 
@@ -52,7 +58,7 @@ public class DataChunkStore {
     }
 
 
-    public void createChunk() {
+    public DataChunk createChunk() {
         synchronized (this) {
             long startPos = lastChunk == null ? 0L : lastChunk.getStartPos() + DataChunk.DATA_CHUNK_LEN;
             int chunkIndex = lastChunk == null ? 0 : lastChunk.getChunkIndex() + 1;
@@ -61,6 +67,7 @@ public class DataChunkStore {
             fileStore.write(byteBuffer, startPos);
             this.lastChunk = dataChunk;
             this.dataChunkNum++;
+            return dataChunk;
         }
     }
 
@@ -78,15 +85,26 @@ public class DataChunkStore {
     }
 
 
+    /**
+     *
+     * @param row 数据字节
+     * @param saveLastChunk 是否直接保存到最后一个数据块,true数据直接插入最后位置，不会从头遍历，提高插入效率
+     * @return
+     */
+    public boolean storeRow(byte[] row, boolean saveLastChunk) {
 
-    public boolean storeRow(byte[] row) {
-        boolean result = writeRow(row);
+        boolean result = false;
+        if (saveLastChunk && lastChunk != null) {
+            result = writeRow(row, lastChunk.getChunkIndex());
+        } else {
+            result = writeRow(row);
+        }
         if (result == true) {
             return true;
         }
         // 创建一个数据块
-        createChunk();
-        result = writeRow(row);
+        DataChunk chunk = createChunk();
+        result = writeRow(row, chunk.getChunkIndex());
         if (result == true) {
             return true;
         }
@@ -96,28 +114,51 @@ public class DataChunkStore {
 
     public boolean storeRow(Column[] columns) {
         byte[] rowBytes = RowData.toRowByteData(columns);
-        return storeRow(rowBytes);
+        return storeRow(rowBytes, true);
     }
 
 
+    /**
+     * 简单粗暴从头开始遍历，找到可以存放的数据块(剩余空间足够存储该行)。
+     * 找到直接存储该行数据到对应数据块，如果目前所有数据块都存储不了返回false
+     *
+     * 优点可以重复利用前面的空间
+     * 缺点是数据量大后插入数据效率比较慢
+     * @param row
+     * @return
+     */
     private boolean writeRow(byte[] row) {
         long endPosition = fileStore.getEndPosition();
         if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
             long currPos = 0;
             while (currPos < endPosition) {
-                ByteBuffer readBuffer = fileStore.read(currPos, DataChunk.DATA_CHUNK_LEN);
-                DataChunk dataChunk = new DataChunk(readBuffer);
-                RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
-                // 当前块剩余空间足够，直接存储到该块
-                if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
-                    dataChunk.addRow(dataRow);
-                    fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
+                boolean result = writeRow(row, currPos);
+                if (result == true) {
                     return true;
                 }
                 currPos += DataChunk.DATA_CHUNK_LEN;
             }
         }
         return false;
+    }
+
+    private boolean writeRow(byte[] row, int chunkIndex) {
+        long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
+        return writeRow(row, startPos);
+    }
+
+    private boolean writeRow(byte[] row, long startPos) {
+        ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
+        DataChunk dataChunk = new DataChunk(readBuffer);
+        RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
+        // 当前块剩余空间足够，直接存储到该块
+        if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
+            dataChunk.addRow(dataRow);
+            fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
+            return true;
+        } else {
+            return false;
+        }
     }
 
 

@@ -31,11 +31,9 @@ public class SumFunction extends StatFunction{
                         value = value == null ? v2 : value + v2;
                         break;
                     case DbColumnTypeConstant.TIMESTAMP:
-                        Date v3 = (Date) c.getValue();
-                        value = value == null ? v3.getTime() : value + v3.getTime();
-                        break;
+                        throw new SqlExecutionException("sum函数计算错误，不支持日期类型");
                     default:
-                        throw new SqlExecutionException("min函数计算错误，类型不正确,type:" + columnType);
+                        throw new SqlExecutionException("sum函数计算错误，类型不正确,type:" + columnType);
                 }
                 break;
             }
