@@ -14,12 +14,53 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        testExecSQL("select count(*) from table_1");
+        testExecSQL("select sum(id) from table_1");
+        testExecSQL("select max(id) from table_1");
+        testExecSQL("select min(id) from table_1");
+
+        testExecSQL("select count(*),sum(id) from table_1");
+        testExecSQL("select max(id),sum(id) from table_1");
+        testExecSQL("select min(id),sum(id) from table_1");
+        testExecSQL("select max(id),min(id) from table_1");
+
+        testExecSQL("select count(time) from table_1 where id = 100000");
+        testExecSQL("select sum(time) from table_1 where id = 100000");
+        testExecSQL("select max(time) from table_1 where id = 100000");
+        testExecSQL("select min(time) from table_1 where id = 100000");
+    }
+
+
+    private void testInsert(){
+        testExecSQL("desc table_1");
+
+        testExecSQL("truncate table table_1");
+
+        long beginTime = System.currentTimeMillis();
+
+        long time = beginTime;
+        for (int i = 1; i <= 100000; i++) {
+
+            String insertSQL = "insert into table_1(id,name,time) value ("+ i + ",'name_"+ i +"','2023-05-19 00:00:00')";
+            testExecSQL2(insertSQL);
+
+            if(i % 1000 == 0) {
+                System.out.println("插入一千条记录耗时:" + (System.currentTimeMillis() - time) / 1000 + "s");
+                time = System.currentTimeMillis();
+            }
+        }
+
+        System.out.println("总耗时:" + (System.currentTimeMillis() - beginTime) / 1000 + "s");
+    }
+
+
+    private static void testUpdateSQL() {
         testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("desc table_1");
 
-        testExecSQL("insert into table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
-        testExecSQL("insert into table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
-        testExecSQL("insert into table_1(id,name,time) value (3,'333','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
 
         testExecSQL("select * from table_1");
 
@@ -28,9 +69,6 @@ public class SqlParserTest {
         testExecSQL("select * from table_1");
 
         testExecSQL("truncate table table_1");
-
-
-
     }
 
 
@@ -93,6 +131,13 @@ public class SqlParserTest {
         testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
     }
 
+
+    private static void testExecSQL2(String sql) {
+        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        SqlParser sqlParser = new SqlParser(connectSession);
+        Command command = sqlParser.prepareCommand(sql);
+        String[] exec = command.exec();
+    }
 
     private static void testExecSQL(String sql) {
         System.out.println("====================================");

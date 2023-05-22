@@ -1,6 +1,7 @@
 package com.moyu.test.command;
 
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,9 +12,16 @@ import java.util.List;
  */
 public class QueryResult {
 
-    private Column[] columns;
+    private SelectColumn[] selectColumns;
 
     private List<Object[]> resultRows;
+
+
+    public void addAll(List<Column[]> columnValueList) {
+        for (Column[] columns : columnValueList) {
+            addRow(columns);
+        }
+    }
 
     public void addRow(Column[] columnValues) {
         Object[] values = new Object[columnValues.length];
@@ -30,19 +38,19 @@ public class QueryResult {
         resultRows.add(resultRow);
     }
 
-    public Column[] getColumns() {
-        return columns;
-    }
-
-    public void setColumns(Column[] columns) {
-        this.columns = columns;
-    }
-
     public List<Object[]> getResultRows() {
         return resultRows;
     }
 
     public void setResultRows(List<Object[]> resultRows) {
         this.resultRows = resultRows;
+    }
+
+    public SelectColumn[] getSelectColumns() {
+        return selectColumns;
+    }
+
+    public void setSelectColumns(SelectColumn[] selectColumns) {
+        this.selectColumns = selectColumns;
     }
 }

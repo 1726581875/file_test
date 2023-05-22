@@ -13,10 +13,7 @@ import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.ColumnMetadata;
-import com.moyu.test.store.metadata.obj.TableColumnBlock;
-import com.moyu.test.store.metadata.obj.TableMetadata;
+import com.moyu.test.store.metadata.obj.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -278,18 +275,29 @@ public class SqlParser implements Parser {
 
         skipSpace();
         String tableName = null;
+        int startIndex = currIndex;
+        int endIndex = currIndex;
         while (true) {
             skipSpace();
             if(currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
+            endIndex = currIndex;
             String word = getNextKeyWord();
-            if("FROM".equals(word)) {
+            if("FROM".equals(word)
+                    && sqlCharArr[endIndex - 1] == ' '
+                    && sqlCharArr[currIndex] == ' ') {
                 skipSpace();
                 tableName = getNextOriginalWord();
                 break;
             }
         }
+
+        // 解析select字段
+        String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
+        Column[] allColumns = getColumns(tableName);
+
+        SelectColumn[] selectColumns = getSelectColumns(tableName, selectColumnsStr, allColumns);
 
         if(tableName == null) {
             throw new SqlIllegalException("sql语法有误,tableName为空");
@@ -315,10 +323,94 @@ public class SqlParser implements Parser {
             // TODO
         }
 
-
-        Column[] columns = getColumns(tableName);
-        return new SelectCommand(connectSession.getDatabaseId(), tableName, columns, root);
+        return new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns, root);
     }
+
+
+    private SelectColumn[] getSelectColumns(String tableName, String selectColumnsStr, Column[] allColumns) {
+
+
+        // SELECT *
+        if("*".equals(selectColumnsStr)) {
+            SelectColumn[] selectColumns = new SelectColumn[allColumns.length];
+            for (int i = 0; i < allColumns.length; i++) {
+                selectColumns[i] = new SelectColumn(allColumns[i], allColumns[i].getColumnName(), null, null);
+            }
+            return selectColumns;
+        }
+
+        // SELECT column1,column2...
+        // SELECT count(*)...
+        Map<String, Column> columnMap = new HashMap<>();
+        for (Column c : allColumns) {
+            columnMap.put(c.getColumnName(), c);
+        }
+        String[] selectColumnStrArr = selectColumnsStr.split(",");
+        SelectColumn[] selectColumns = new SelectColumn[selectColumnStrArr.length];
+        for (int i = 0; i < selectColumnStrArr.length; i++) {
+            String selectColumnStr = selectColumnStrArr[i].trim();
+            Column column = null;
+            String selectColumnName = selectColumnStr;
+            String functionName = null;
+            String[] args = null;
+
+            // count函数
+            if (selectColumnStr.startsWith("count(") && selectColumnStr.endsWith(")")) {
+                args = new String[1];
+                String functionArg = selectColumnStr.substring(6, selectColumnStr.length() - 1).trim();
+                if ("*".equals(functionArg)) {
+                    args[0] = "*";
+                } else {
+                    column = columnMap.get(functionArg);
+                    if (column == null) {
+                        throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                    }
+                    args[0] = functionArg;
+                }
+                functionName = "count";
+                // sum函数
+            } else if (selectColumnStr.startsWith("sum(") && selectColumnStr.endsWith(")")) {
+                args = new String[1];
+                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
+                column = columnMap.get(functionArg);
+                if (column == null) {
+                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                }
+                args[0] = functionArg;
+                functionName = "sum";
+                // max函数
+            } else if (selectColumnStr.startsWith("max(") && selectColumnStr.endsWith(")")) {
+                args = new String[1];
+                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
+                column = columnMap.get(functionArg);
+                if (column == null) {
+                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                }
+                args[0] = functionArg;
+                functionName = "max";
+                // min函数
+            } else if (selectColumnStr.startsWith("min(") && selectColumnStr.endsWith(")")) {
+                args = new String[1];
+                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
+                column = columnMap.get(functionArg);
+                if (column == null) {
+                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                }
+                args[0] = functionArg;
+                functionName = "min";
+                // 字段
+            } else {
+                column = columnMap.get(selectColumnStr);
+                if (column == null) {
+                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                }
+            }
+            selectColumns[i] = new SelectColumn(column, selectColumnName, functionName, args);
+        }
+        return selectColumns;
+    }
+
+
 
 
     /**
