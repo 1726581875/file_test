@@ -84,13 +84,15 @@ public class TableMetadataStore {
         if(endPos >= fileStore.getEndPosition()) {
             fileStore.truncate(startPos);
         } else {
-            long oldNextStarPos = endPos;
-            while (oldNextStarPos < fileStore.getEndPosition()) {
-                int dataByteLen = DataUtils.readInt(fileStore.read(oldNextStarPos, JavaTypeConstant.INT_LENGTH));
-                ByteBuffer readBuffer = fileStore.read(oldNextStarPos, dataByteLen);
-                fileStore.write(readBuffer, startPos);
+            long nextStartPos = endPos;
+            while (nextStartPos < fileStore.getEndPosition()) {
+                int dataByteLen = DataUtils.readInt(fileStore.read(nextStartPos, JavaTypeConstant.INT_LENGTH));
+                ByteBuffer readBuffer = fileStore.read(nextStartPos, dataByteLen);
+                TableMetadata metadata = new TableMetadata(readBuffer);
+                metadata.setStartPos(startPos);
+                fileStore.write(metadata.getByteBuffer(), startPos);
                 startPos += dataByteLen;
-                oldNextStarPos += dataByteLen;
+                nextStartPos += dataByteLen;
             }
             fileStore.truncate(startPos);
         }

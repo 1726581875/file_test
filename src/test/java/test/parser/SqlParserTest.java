@@ -14,8 +14,26 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        testInsert();
+
     }
+
+
+    private  static void dropTableTest() {
+        testExecSQL("show tables");
+
+        testExecSQL("create table xmz_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_2 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_3 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_4 (id int, name varchar(10), time timestamp)");
+
+        testExecSQL("show tables");
+
+        testExecSQL("drop table xmz_2");
+
+        testExecSQL("show tables");
+    }
+
+
 
 
     private static void testFunction(){
