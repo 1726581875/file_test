@@ -293,15 +293,13 @@ public class SqlParser implements Parser {
             }
         }
 
-        // 解析select字段
-        String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-        Column[] allColumns = getColumns(tableName);
-
-        SelectColumn[] selectColumns = getSelectColumns(tableName, selectColumnsStr, allColumns);
-
         if(tableName == null) {
             throw new SqlIllegalException("sql语法有误,tableName为空");
         }
+        Column[] allColumns = getColumns(tableName);
+        // 解析select字段
+        String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
+        SelectColumn[] selectColumns = getSelectColumns(tableName, selectColumnsStr, allColumns);
 
 
         List<ConditionTree> conditionTreeList = new ArrayList<>();
@@ -310,20 +308,65 @@ public class SqlParser implements Parser {
         root.setLeaf(false);
         root.setJoinType(ConditionConstant.AND);
         root.setChildNodes(conditionTreeList);
+
+        // limit 和 offset
+        Integer limit = null;
+        Integer offset = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
+        /**
+         * 表名后支持以下三种基本情况
+         * 1、select * from where c = 1;
+         * 2、select * from limit 10 offset 0;
+         *
+         * 关于group by、order by还不支持
+         *
+         */
         if("WHERE".equals(nextKeyWord)) {
             skipSpace();
             parseWhereCondition(root);
-        } else if("LIMIT".equals(nextKeyWord)) {
+            // 条件后面再接limit,如select * from table where column1=0 limit 10
+            skipSpace();
+            String nextKeyWord2 = getNextKeyWord();
+            if("LIMIT".equals(nextKeyWord2)) {
+                skipSpace();
+                String limitNum = getNextKeyWord().trim();
+                limit = Integer.valueOf(limitNum);
 
+                skipSpace();
+                String offsetStr = getNextKeyWord();
+                if("OFFSET".equals(offsetStr)) {
+                    skipSpace();
+                    String offsetNum = getNextKeyWord().trim();
+                    offset = Integer.valueOf(offsetNum);
+                }
+
+            } else if ("ORDER".equals(nextKeyWord2)) {
+
+            }
+         // table后面直接接limit,如:select * from table limit 10
+        } else if("LIMIT".equals(nextKeyWord)) {
+            skipSpace();
+            String limitNum = getNextKeyWord().trim();
+            limit = Integer.valueOf(limitNum);
+
+            skipSpace();
+            String offsetStr = getNextKeyWord();
+            if("OFFSET".equals(offsetStr)) {
+                skipSpace();
+                String offsetNum = getNextKeyWord().trim();
+                offset = Integer.valueOf(offsetNum);
+            }
         } else if ("ORDER".equals(nextKeyWord)) {
 
-        } else {
-            // TODO
         }
 
-        return new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns, root);
+        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns);
+        selectCommand.setConditionTree(root);
+        selectCommand.setLimit(limit);
+        selectCommand.setOffset(offset == null ? 0 : offset);
+
+        return selectCommand;
     }
 
 
@@ -502,6 +545,13 @@ public class SqlParser implements Parser {
                     continue;
                 }
             }
+
+
+            // 遇到limit直接结束
+            if ("LIMIT".equals(getNextKeyWordUnMove()) && sqlCharArr[currIndex - 1] == ' ') {
+                break;
+            }
+
             currIndex++;
         }
         return conditionTree;

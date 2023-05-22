@@ -34,19 +34,21 @@ public class SelectCommand extends AbstractCommand {
 
     private ConditionTree conditionTree;
 
+    private Integer limit;
+
+    private Integer offset = 0;
+
     private QueryResult queryResult;
 
 
     public SelectCommand(Integer databaseId,
                          String tableName,
                          Column[] columns,
-                         SelectColumn[] selectColumns,
-                         ConditionTree conditionTree) {
+                         SelectColumn[] selectColumns) {
         this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
         this.selectColumns = selectColumns;
-        this.conditionTree = conditionTree;
     }
 
     @Override
@@ -185,9 +187,10 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-
     private List<Column[]> getColumnDataList(int dataChunkNum, DataChunkStore dataChunkStore) {
         List<Column[]> dataList = new ArrayList<>();
+
+        int currIndex = 0;
         // 遍历数据块
         for (int i = 0; i < dataChunkNum; i++) {
             DataChunk chunk = dataChunkStore.getChunk(i);
@@ -203,14 +206,22 @@ public class SelectCommand extends AbstractCommand {
                 RowData rowData = dataRowList.get(j);
                 Column[] columnData = rowData.getColumnData(columns);
                 // 按照条件过滤
-                if(conditionTree == null) {
+                if (conditionTree == null) {
                     Column[] filterColumns = filterColumns(columnData);
-                    dataList.add(filterColumns);
+                    // 判断是否符合limit、offset
+                    if(isLimitRow(currIndex)) {
+                        dataList.add(filterColumns);
+                    }
+                    currIndex++;
                 } else {
                     boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
-                    if(compareResult) {
+                    if (compareResult) {
                         Column[] filterColumns = filterColumns(columnData);
-                        dataList.add(filterColumns);
+                        // 判断是否符合limit、offset
+                        if(isLimitRow(currIndex)) {
+                            dataList.add(filterColumns);
+                        }
+                        currIndex++;
                     }
                 }
             }
@@ -218,6 +229,24 @@ public class SelectCommand extends AbstractCommand {
 
         return dataList;
     }
+
+
+    /**
+     * 是否是符合offset和limit条件的行
+     * @param currIndex
+     * @return
+     */
+    private boolean isLimitRow(int currIndex) {
+        if (offset != null && limit != null) {
+            int beginIndex = offset;
+            int endIndex = offset + limit - 1;
+            if (currIndex < beginIndex || currIndex > endIndex) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     private List<Column[]> getFunctionResultList(int dataChunkNum, DataChunkStore dataChunkStore) {
 
@@ -334,5 +363,29 @@ public class SelectCommand extends AbstractCommand {
 
     public QueryResult getQueryResult() {
         return queryResult;
+    }
+
+    public ConditionTree getConditionTree() {
+        return conditionTree;
+    }
+
+    public void setConditionTree(ConditionTree conditionTree) {
+        this.conditionTree = conditionTree;
+    }
+
+    public Integer getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Integer limit) {
+        this.limit = limit;
+    }
+
+    public Integer getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Integer offset) {
+        this.offset = offset;
     }
 }

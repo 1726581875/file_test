@@ -14,6 +14,11 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        testExecSQL("select * from table_1 where name like '3' limit 10 offset 2");
+    }
+
+
+    private static void testFunction(){
         testExecSQL("select count(*) from table_1");
         testExecSQL("select sum(id) from table_1");
         testExecSQL("select max(id) from table_1");
