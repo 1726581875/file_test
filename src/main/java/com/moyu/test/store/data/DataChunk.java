@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class DataChunk {
 
-    public static final int DATA_CHUNK_LEN = 1024;
+    public static final int DATA_CHUNK_LEN = 4096;
 
     /**
      * 已使用字节长度

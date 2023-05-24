@@ -7,6 +7,7 @@ import com.moyu.test.util.PathUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -159,6 +160,37 @@ public class DataChunkStore {
         } else {
             return false;
         }
+    }
+
+
+    public int writeRow(List<byte[]> rows) {
+        if(lastChunk == null) {
+            createChunk();
+        }
+        int chunkIndex = lastChunk != null ? lastChunk.getChunkIndex() : 0;
+        long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
+        ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
+        DataChunk dataChunk = new DataChunk(readBuffer);
+        for (int i = 0; i < rows.size(); i++) {
+            byte[] row = rows.get(i);
+            RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
+            // 当前块剩余空间足够，直接存储到该块
+            if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
+                dataChunk.addRow(dataRow);
+            } else {
+                fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
+
+                dataChunk = createChunk();
+                if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
+                    dataChunk.addRow(dataRow);
+                } else {
+                    fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
+                    return -1;
+                }
+            }
+        }
+        fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
+        return 0;
     }
 
 

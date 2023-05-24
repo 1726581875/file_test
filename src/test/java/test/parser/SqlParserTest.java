@@ -2,6 +2,7 @@ package test.parser;
 
 import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.session.ConnectSession;
 
 import java.util.Arrays;
@@ -15,6 +16,29 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
+        testExecSQL("drop table table_1");
+
+        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+
+        testExecSQL("truncate table table_1");
+
+        long beginTime = System.currentTimeMillis();
+
+        long time = beginTime;
+        for (int i = 1; i <= 10000; i++) {
+
+            String insertSQL = "insert into table_1(id,name,time) value ("+ i + ",'name_"+ i +"','2023-05-19 00:00:00')";
+            ConnectSession connectSession = new ConnectSession("xmz", 0);
+            SqlParser sqlParser = new SqlParser(connectSession);
+            InsertCommand command = (InsertCommand)sqlParser.prepareCommand(insertSQL);
+            command.testWriteList();
+            if(i % 1000 == 0) {
+                System.out.println("插入一千条记录耗时:" + (System.currentTimeMillis() - time) / 1000 + "s");
+                time = System.currentTimeMillis();
+            }
+        }
+
+        System.out.println("总耗时:" + (System.currentTimeMillis() - beginTime) / 1000 + "s");
     }
 
 
@@ -54,7 +78,7 @@ public class SqlParserTest {
     }
 
 
-    private static void testInsert(){
+    private static void testInsert() {
         // testExecSQL("drop database xmz");
 
         testExecSQL("drop table table_1");

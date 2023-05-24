@@ -9,6 +9,8 @@ import java.util.List;
  */
 public class BTreeMap<K extends Comparable, V> {
 
+    private int level;
+
     private int maxNodeNum = 48;
 
     private TreeNode<K, V> rootNode;
@@ -32,7 +34,7 @@ public class BTreeMap<K extends Comparable, V> {
      * @param key
      * @param value
      */
-    private void put(K key, V value) {
+    public void put(K key, V value) {
         // 从根节点往下找，并且记录查找路径
         CursorPos<K,V> cursor = CursorPos.traverseDown(rootNode, key);
         int index = cursor.getIndex();
@@ -62,6 +64,7 @@ public class BTreeMap<K extends Comparable, V> {
                     children.add(node);
                     children.add(split);
                     rootNode = new TreeNode<>(this, keys, null, children, false);
+                    level++;
                     // 结束
                     break;
                 }
@@ -89,6 +92,10 @@ public class BTreeMap<K extends Comparable, V> {
 
     public TreeNode<K, V> getRootNode() {
         return rootNode;
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     public static void main(String[] args) {

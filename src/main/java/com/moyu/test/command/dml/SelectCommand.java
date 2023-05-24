@@ -209,6 +209,9 @@ public class SelectCommand extends AbstractCommand {
                     if(isLimitRow(currIndex)) {
                         dataList.add(filterColumns);
                     }
+                    if(limit != null && dataList.size()  >= limit) {
+                        return dataList;
+                    }
                     currIndex++;
                 } else {
                     boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
@@ -217,6 +220,9 @@ public class SelectCommand extends AbstractCommand {
                         // 判断是否符合limit、offset
                         if(isLimitRow(currIndex)) {
                             dataList.add(filterColumns);
+                        }
+                        if(limit != null && dataList.size()  >= limit) {
+                            return dataList;
                         }
                         currIndex++;
                     }
