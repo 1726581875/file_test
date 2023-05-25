@@ -1,4 +1,4 @@
-package com.moyu.test.store.tree;
+package test.tree.btree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/22
  */
-public class BTreeMap<K extends Comparable, V> {
+public class BpTreeMap<K extends Comparable, V> {
 
     private int level;
 
@@ -15,11 +15,11 @@ public class BTreeMap<K extends Comparable, V> {
 
     private TreeNode<K, V> rootNode;
 
-    public BTreeMap() {
+    public BpTreeMap() {
         this.rootNode = new TreeNode<>(this,  new ArrayList<>(), new ArrayList<>(), new ArrayList<>() , true);
     }
 
-    public BTreeMap(int  maxNodeNum) {
+    public BpTreeMap(int  maxNodeNum) {
         this.rootNode = new TreeNode<>(this,  new ArrayList<>(), new ArrayList<>(), new ArrayList<>() , true);
         this.maxNodeNum = maxNodeNum;
     }
@@ -99,7 +99,7 @@ public class BTreeMap<K extends Comparable, V> {
     }
 
     public static void main(String[] args) {
-        BTreeMap<Integer,String> bTreeMap = new BTreeMap<>(5);
+        BpTreeMap<Integer,String> bTreeMap = new BpTreeMap<>(5);
         //bTreeMap.put(0, "0");
         bTreeMap.put(1, "1");
         bTreeMap.put(2, "2");

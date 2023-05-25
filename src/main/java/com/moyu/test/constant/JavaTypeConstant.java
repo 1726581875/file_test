@@ -8,5 +8,7 @@ public interface JavaTypeConstant {
 
     int INT_LENGTH = 4;
 
+    int LONG_LENGTH = 8;
+
 
 }

@@ -147,7 +147,7 @@ public class SqlParser implements Parser {
                 String word13 = getNextOriginalWord();
                 return new TruncateTableCommand(connectSession.getDatabaseId() ,word13);
             default:
-                throw new SqlIllegalException("sql语法有误");
+                throw new SqlIllegalException("sql语法有误" + firstKeyWord);
         }
     }
 

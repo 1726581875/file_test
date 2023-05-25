@@ -12,7 +12,7 @@ import java.util.Map;
 public class ColumnTypeFactory {
 
 
-    private static final Map<Byte, ColumnType> columnTypeMap = new HashMap<>();
+    private static final Map<Byte, DataType> columnTypeMap = new HashMap<>();
 
     static {
         columnTypeMap.put(DbColumnTypeConstant.INT_4, new IntColumnType());
@@ -22,8 +22,8 @@ public class ColumnTypeFactory {
         columnTypeMap.put(DbColumnTypeConstant.TIMESTAMP, new DateColumnType());
     }
 
-    public static ColumnType getColumnType(Byte type) {
-        ColumnType columnType = columnTypeMap.get(type);
+    public static DataType getColumnType(Byte type) {
+        DataType columnType = columnTypeMap.get(type);
         if (columnType == null) {
             throw new UnsupportedOperationException("不支持该操作,type=" + type);
         }

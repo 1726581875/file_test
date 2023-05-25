@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public abstract class AbstractColumnType<T> implements ColumnType<T> {
+public abstract class AbstractColumnType<T extends Comparable> implements DataType<T> {
 
 
     @Override
@@ -32,6 +32,11 @@ public abstract class AbstractColumnType<T> implements ColumnType<T> {
             writeBuffer.put(flag);
             writeValue(writeBuffer, value);
         }
+    }
+
+    @Override
+    public int compare(T a, T b) {
+       return a.compareTo(b);
     }
 
     /**

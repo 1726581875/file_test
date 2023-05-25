@@ -24,4 +24,9 @@ public class StringColumnType extends AbstractColumnType<String> {
         writeBuffer.putStringData(value, value.length());
     }
 
+    @Override
+    public int getMaxByteLen(String value) {
+        return value.length() * 3 + 4;
+    }
+
 }

@@ -22,4 +22,8 @@ public class IntColumnType extends AbstractColumnType<Integer> {
         writeBuffer.putInt(value);
     }
 
+    @Override
+    public int getMaxByteLen(Integer value) {
+        return 4;
+    }
 }

@@ -23,4 +23,8 @@ public class DateColumnType extends AbstractColumnType<Date> {
         writeBuffer.putLong(value.getTime());
     }
 
+    @Override
+    public int getMaxByteLen(Date value) {
+        return 8;
+    }
 }

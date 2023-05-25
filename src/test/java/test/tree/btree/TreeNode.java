@@ -1,4 +1,4 @@
-package com.moyu.test.store.tree;
+package test.tree.btree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class TreeNode<K extends Comparable, V> {
 
-    private BTreeMap<K,V> map;
+    private BpTreeMap<K,V> map;
     /**
      * 节点关键词列表
      */
@@ -30,7 +30,7 @@ public class TreeNode<K extends Comparable, V> {
     private List<V> valueList;
 
 
-    public TreeNode(BTreeMap<K,V> map,
+    public TreeNode(BpTreeMap<K,V> map,
                     List<K> keywordList,
                     List<V> valueList,
                     List<TreeNode<K,V>> childNodeList,

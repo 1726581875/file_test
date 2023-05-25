@@ -2,7 +2,7 @@ package com.moyu.test.store.data;
 
 import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.ColumnType;
+import com.moyu.test.store.type.DataType;
 import com.moyu.test.store.type.ColumnTypeFactory;
 import com.moyu.test.util.DataUtils;
 
@@ -74,7 +74,7 @@ public class RowData {
     public static byte[] toRowByteData(Column[] columns) {
         WriteBuffer writeBuffer = new WriteBuffer(16);
         for (Column column : columns) {
-            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             columnType.write(writeBuffer, column.getValue());
         }
         writeBuffer.getBuffer().flip();
@@ -86,7 +86,7 @@ public class RowData {
     public List<Column> getColumnList(List<Column> columnList) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(row);
         for (Column column : columnList) {
-            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             Object value = columnType.read(byteBuffer);
             column.setValue(value);
         }
@@ -98,7 +98,7 @@ public class RowData {
         ByteBuffer byteBuffer = ByteBuffer.wrap(row);
         for (int i = 0; i < columns.length; i++) {
             Column column = columns[i];
-            ColumnType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             Object value = columnType.read(byteBuffer);
 
             Column valueColumn = column.createNullValueColumn();

@@ -21,5 +21,8 @@ public class LongColumnType extends AbstractColumnType<Long> {
         writeBuffer.putLong(value);
     }
 
-
+    @Override
+    public int getMaxByteLen(Long value) {
+        return 8;
+    }
 }

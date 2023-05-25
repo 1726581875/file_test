@@ -3,7 +3,7 @@
  * and the EPL 1.0 (https://h2database.com/html/license.html).
  * Initial Developer: H2 Group
  */
-package com.moyu.test.store.tree;
+package com.moyu.test.store.data.tree;
 
 /**
  * A position in a cursor.
@@ -16,7 +16,7 @@ public final class CursorPos<K extends Comparable,V> {
     /**
      * The page at the current level.
      */
-    private TreeNode<K,V> treeNode;
+    private Page<K,V> treeNode;
 
     /**
      * Index of the key (within page above) used to go down to a lower level
@@ -32,7 +32,7 @@ public final class CursorPos<K extends Comparable,V> {
     private CursorPos<K,V> parent;
 
 
-    public CursorPos(TreeNode<K,V> treeNode, int index, CursorPos<K,V> parent) {
+    public CursorPos(Page<K,V> treeNode, int index, CursorPos<K,V> parent) {
         this.treeNode = treeNode;
         this.index = index;
         this.parent = parent;
@@ -47,7 +47,7 @@ public final class CursorPos<K extends Comparable,V> {
      * @param key       the key to search for
      * @return head of the CursorPos chain (insertion point)
      */
-    static <K extends Comparable,V> CursorPos<K,V> traverseDown(TreeNode<K,V> page, K key) {
+    static <K extends Comparable,V> CursorPos<K,V> traverseDown(Page<K,V> page, K key) {
         CursorPos<K,V> cursorPos = null;
         while (!page.isLeaf()) {
             int index = page.binarySearch(key) + 1;
@@ -61,11 +61,11 @@ public final class CursorPos<K extends Comparable,V> {
     }
 
 
-    public TreeNode<K, V> getTreeNode() {
+    public Page<K, V> getTreeNode() {
         return treeNode;
     }
 
-    public void setTreeNode(TreeNode<K, V> treeNode) {
+    public void setTreeNode(Page<K, V> treeNode) {
         this.treeNode = treeNode;
     }
 
