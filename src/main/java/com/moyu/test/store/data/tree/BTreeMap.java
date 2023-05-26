@@ -51,11 +51,24 @@ public class BTreeMap<K extends Comparable, V> {
             } else if (index++ < 0) {
                 index = -index;
             }
-
-            Long childPos = page.getChildPosList().get(index);
-            page = bpTreeStore.getPage(childPos, this);
+            page = getChildPage(page, index);
         }
     }
+
+    public Page<K, V> getChildPage(Page<K, V> page, int index) {
+        Page<K, V> childPage = null;
+        if (page.getChildNodeList() == null || page.getChildNodeList().size() == 0) {
+            // 从磁盘中获取
+            Long childPos = page.getChildPosList().get(index);
+            childPage = bpTreeStore.getPage(childPos, this);
+        } else {
+            childPage = page.getChildNodeList().get(index);
+        }
+        return childPage;
+    }
+
+
+
 
     /**
      * 参考H2database关于b+树的实现，写得非常好的一段代码
@@ -68,7 +81,6 @@ public class BTreeMap<K extends Comparable, V> {
         CursorPos<K,V> cursor = CursorPos.traverseDown(rootNode, key);
         int index = cursor.getIndex();
         Page<K, V> node = cursor.getTreeNode();
-
         cursor = cursor.getParent();
         // index < 0表示找不到关键字,-1表示比任何关键字要小。其他数值计算通过(-index - 1)可以知道要插入的位置
         if (index < 0) {
@@ -100,6 +112,9 @@ public class BTreeMap<K extends Comparable, V> {
                     // 保存新的根节点到磁盘
                     bpTreeStore.savePage(rootNode);
                     bpTreeStore.updateRootPos(rootNode.getStartPos());
+                    // 保存左边节点和右边节点
+                    bpTreeStore.savePage(split);
+                    bpTreeStore.savePage(node);
                     // 结束
                     break;
                 }
@@ -120,7 +135,6 @@ public class BTreeMap<K extends Comparable, V> {
                 // 更新到磁盘
                 bpTreeStore.savePage(c);
                 bpTreeStore.savePage(split);
-                bpTreeStore.savePage(node);
             }
             bpTreeStore.savePage(node);
         } else {

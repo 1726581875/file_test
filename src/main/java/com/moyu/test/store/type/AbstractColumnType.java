@@ -34,6 +34,16 @@ public abstract class AbstractColumnType<T extends Comparable> implements DataTy
         }
     }
 
+
+    @Override
+    public int getMaxByteSize(T value) {
+        // 1字节空值标记
+        return getMaxByteLen(value) + 1;
+    }
+
+    abstract int getMaxByteLen(T value);
+
+
     @Override
     public int compare(T a, T b) {
        return a.compareTo(b);

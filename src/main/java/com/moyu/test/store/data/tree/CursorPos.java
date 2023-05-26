@@ -55,7 +55,7 @@ public final class CursorPos<K extends Comparable,V> {
                 index = -index;
             }
             cursorPos = new CursorPos<>(page, index, cursorPos);
-            page = page.getChildNodeList().get(index);
+            page = page.getMap().getChildPage(page, index);
         }
         return new CursorPos<>(page, page.binarySearch(key), cursorPos);
     }

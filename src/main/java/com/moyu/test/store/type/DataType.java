@@ -16,6 +16,6 @@ public interface DataType<T> {
 
     int compare(T a, T b);
 
-    int getMaxByteLen(T value);
+    int getMaxByteSize(T value);
 
 }
