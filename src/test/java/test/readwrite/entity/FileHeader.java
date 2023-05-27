@@ -1,4 +1,4 @@
-package com.moyu.test.store;
+package test.readwrite.entity;
 
 import com.moyu.test.util.DataUtils;
 

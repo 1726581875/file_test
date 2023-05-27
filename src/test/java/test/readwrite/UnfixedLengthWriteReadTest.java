@@ -1,7 +1,7 @@
 package test.readwrite;
 
-import com.moyu.test.store.Chunk;
-import com.moyu.test.store.FileHeader;
+import test.readwrite.entity.Chunk;
+import test.readwrite.entity.FileHeader;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.util.DataUtils;
 import com.moyu.test.util.FileUtil;

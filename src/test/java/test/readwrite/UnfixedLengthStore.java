@@ -1,6 +1,10 @@
-package com.moyu.test.store;
+package test.readwrite;
 
+import com.moyu.test.store.FileStore;
 import com.moyu.test.util.DataUtils;
+import test.readwrite.entity.Chunk;
+import test.readwrite.entity.FileHeader;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;

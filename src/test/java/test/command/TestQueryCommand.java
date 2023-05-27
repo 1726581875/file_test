@@ -1,9 +1,9 @@
-package com.moyu.test.command;
+package test.command;
 
 import com.moyu.test.command.condition.Condition;
 import com.moyu.test.constant.OperatorConstant;
-import com.moyu.test.store.Chunk;
-import com.moyu.test.store.UnfixedLengthStore;
+import test.readwrite.UnfixedLengthStore;
+import test.readwrite.entity.Chunk;
 
 import java.util.ArrayList;
 import java.util.List;
