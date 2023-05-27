@@ -29,17 +29,19 @@ public class BpTreeTest2 {
                     bpTreeStore);
             bTreeMap.initRootNode();
 
-            for (int i = 0; i < 99999; i++) {
+            int count = 1000000;
+            long startTime = System.currentTimeMillis();
+/*            for (int i = 0; i < count; i++) {
                 bTreeMap.put(i, "v" + i);
-            }
+            }*/
+            long point1 = System.currentTimeMillis();
+            System.out.println("存储" + count + "条数据，耗时:" + (point1 - startTime) / 1000 + "s");
 
+            String s = bTreeMap.get(8888);
 
-
-/*            Page<Integer, String> rootNode = bTreeMap.getRootNode();
-            System.out.println(rootNode.toString());*/
-
-            String s = bTreeMap.get(99998);
+            long point2 = System.currentTimeMillis();
             System.out.println("get result=" + s);
+            System.out.println("查询耗时:" + (point2 - point1) + "ms");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

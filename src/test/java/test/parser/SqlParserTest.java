@@ -16,6 +16,22 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
+        testExecSQL("drop table table_2");
+
+        testExecSQL("create table table_2 (id int PRIMARY KEY, name varchar(10), time timestamp)");
+
+        testExecSQL("insert into table_2(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_2(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_2(id,name,time) value (3,'333','2023-05-19 00:00:00')");
+        testExecSQL("desc table_2");
+
+        testExecSQL("select * from table_2");
+
+
+    }
+
+
+    private static void batchInsertData(){
         testExecSQL("drop table table_1");
 
         testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
@@ -40,6 +56,10 @@ public class SqlParserTest {
 
         System.out.println("总耗时:" + (System.currentTimeMillis() - beginTime) / 1000 + "s");
     }
+
+
+
+
 
 
     private  static void dropTableTest() {

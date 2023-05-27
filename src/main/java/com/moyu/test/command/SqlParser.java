@@ -742,27 +742,10 @@ public class SqlParser implements Parser {
         }
 
         // ==== 读取字段 ====
-        // 括号开始
-        int columnStart = 0;
-        // 括号结束
-        int columnEnd = 0;
-        while (true) {
-            if (currIndex >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if (sqlCharArr[currIndex] == '(') {
-                columnStart = currIndex;
-            }
-            if (sqlCharArr[currIndex] == ')') {
-                columnEnd = currIndex;
-                currIndex = currIndex + 1;
-                break;
-            }
-            currIndex++;
-        }
-
-        String columnStr = originalSql.substring(columnStart + 1, columnEnd);
+        StartEndIndex columnBracket = getNextBracketStartEnd();
+        String columnStr = originalSql.substring(columnBracket.getStart() + 1, columnBracket.getEnd());
         String[] columnNameList = columnStr.split(",");
+        currIndex =  columnBracket.getEnd() + 1;
 
         // ==== 读字段值 ===
         skipSpace();
@@ -781,27 +764,9 @@ public class SqlParser implements Parser {
         if (!"VALUE".equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
-
-        // 括号开始
-        int valueStart = 0;
-        // 括号结束
-        int valueEnd = 0;
-        while (true) {
-            if (currIndex >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if (sqlCharArr[currIndex] == '(') {
-                valueStart = currIndex;
-            }
-            if (sqlCharArr[currIndex] == ')') {
-                valueEnd = currIndex;
-                currIndex = currIndex + 1;
-                break;
-            }
-            currIndex++;
-        }
-
-        String valueStr = originalSql.substring(valueStart + 1, valueEnd);
+        // value
+        StartEndIndex valueBracket = getNextBracketStartEnd();
+        String valueStr = originalSql.substring(valueBracket.getStart() + 1, valueBracket.getEnd());
         String[] valueList = valueStr.split(",");
 
 
@@ -935,56 +900,18 @@ public class SqlParser implements Parser {
             i++;
         }
 
-        // 解析columns
+        // 解析建表字段
         skipSpace();
         List<Column> columnList = new ArrayList<>();
-        int idx = currIndex;
-        while (true) {
-            if(idx >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            // create table (
-            // 解析"("里面内容
-            if(sqlCharArr[idx] == '(') {
-                idx++;
-                currIndex++;
-                int columnIndex = 0;
-                boolean columnNotOpen = true;
-                while (true) {
-                    skipSpace();
-                    if (idx >= sqlCharArr.length) {
-                        break;
-                    }
 
-                    if ((sqlCharArr[idx] == ')' && columnNotOpen)) {
-                        Column column = parseColumn(columnIndex, originalSql.substring(currIndex, idx));
-                        columnList.add(column);
-                        columnIndex++;
-                        break;
-                    }
-
-                    if (sqlCharArr[idx] == '(' && columnNotOpen) {
-                        columnNotOpen = false;
-                    }
-                    if (sqlCharArr[idx] == ')' && !columnNotOpen) {
-                        columnNotOpen = true;
-                    }
-
-                    if (sqlCharArr[idx] == ',') {
-                        Column column = parseColumn(columnIndex, originalSql.substring(currIndex, idx));
-                        columnList.add(column);
-                        columnIndex++;
-                        currIndex = idx + 1;
-                    }
-                    idx++;
-                }
-            }
-
-            if(sqlCharArr[idx] == ')') {
-                break;
-            }
-            idx++;
-            currIndex++;
+        StartEndIndex bracketStartEnd = getNextBracketStartEnd();
+        String allColumnStr = originalSql.substring(bracketStartEnd.getStart() + 1, bracketStartEnd.getEnd());
+        String[] columnStrArr = allColumnStr.split(",");
+        int columnIndex = 0;
+        for (String columnStr : columnStrArr) {
+            String trimColumn = columnStr.trim();
+            Column column = parseColumn(columnIndex++, trimColumn);
+            columnList.add(column);
         }
 
         // 构造创建表命令
@@ -995,6 +922,35 @@ public class SqlParser implements Parser {
         return command;
     }
 
+
+
+    static class StartEndIndex{
+
+        private int start;
+
+        private int end;
+
+        public StartEndIndex(int start, int end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public int getStart() {
+            return start;
+        }
+
+        public void setStart(int start) {
+            this.start = start;
+        }
+
+        public int getEnd() {
+            return end;
+        }
+
+        public void setEnd(int end) {
+            this.end = end;
+        }
+    }
 
     /**
      *
@@ -1055,6 +1011,40 @@ public class SqlParser implements Parser {
             }
         }
         return new Column(columnName, columnType, columnIndex, columnLength);
+    }
+
+
+    private StartEndIndex getNextBracketStartEnd() {
+        boolean firstIsOpen = false;
+        boolean afterIsOpen = false;
+        int startPos = -1;
+        int endPos = -1;
+        int i = currIndex;
+        while (true) {
+            if (i >= sqlCharArr.length) {
+                break;
+            }
+            // 遇到第一个括号，标记第一个括号打开状态
+            if (sqlCharArr[i] == '(' && !firstIsOpen) {
+                firstIsOpen = true;
+                startPos = i;
+            }
+            // 之后再有括号标记之后的括号为打开状态
+            else if(sqlCharArr[i] == '(' && firstIsOpen) {
+                afterIsOpen = true;
+            } else if(sqlCharArr[i] == ')' && afterIsOpen) {
+                afterIsOpen = false;
+            } else if (sqlCharArr[i] == ')' && !afterIsOpen && firstIsOpen) {
+                endPos = i;
+                break;
+            }
+            i++;
+        }
+
+        if(startPos == -1 || endPos == -1) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+        return new StartEndIndex(startPos, endPos);
     }
 
 
