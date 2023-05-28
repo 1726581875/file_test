@@ -60,6 +60,7 @@ public class ColumnMetadataStore {
                 Column columnDto = columnDtoList.get(i);
                 ColumnMetadata column = new ColumnMetadata(tableId, columnStartPos, columnDto.getColumnName(),
                         columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
+                column.setIsPrimaryKey(columnDto.getIsPrimaryKey());
                 columnBlock.addColumn(column);
                 columnStartPos += column.getTotalByteLen();
             }

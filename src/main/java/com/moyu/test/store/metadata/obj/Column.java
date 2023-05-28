@@ -14,6 +14,8 @@ public class Column {
 
     private int columnLength;
 
+    private byte isPrimaryKey;
+
     private Object value;
 
 
@@ -22,6 +24,7 @@ public class Column {
         this.columnType = columnType;
         this.columnIndex = columnIndex;
         this.columnLength = columnLength;
+        this.isPrimaryKey = 0;
     }
 
 
@@ -71,6 +74,14 @@ public class Column {
         this.value = value;
     }
 
+
+    public byte getIsPrimaryKey() {
+        return isPrimaryKey;
+    }
+
+    public void setIsPrimaryKey(byte isPrimaryKey) {
+        this.isPrimaryKey = isPrimaryKey;
+    }
 
     @Override
     public String toString() {

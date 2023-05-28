@@ -22,7 +22,10 @@ public class BTreeMap<K extends Comparable, V> {
 
     private Page<K, V> rootNode;
 
-    public BTreeMap(int maxNodeNum, DataType<K> keyType, DataType<V> valueType, BpTreeStore bpTreeStore) {
+    public BTreeMap(int maxNodeNum,
+                    DataType<K> keyType,
+                    DataType<V> valueType,
+                    BpTreeStore bpTreeStore) {
         this.maxNodeNum = maxNodeNum;
         this.keyType = keyType;
         this.valueType = valueType;

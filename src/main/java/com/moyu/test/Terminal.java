@@ -12,11 +12,15 @@ import java.util.*;
 /**
  * @author xiaomingzhang
  * @date 2023/5/19
- * 假终端
+ * 一个便以测试的假终端
  */
 public class Terminal {
 
 
+    /**
+     * 运行前要配置resource/config.properties文件下数据目录路径和元数据路径
+     * @param args
+     */
     public static void main(String[] args) {
 
         // 初始化，查询所有数据库

@@ -28,6 +28,8 @@ public class ColumnMetadata {
 
     private int columnLength;
 
+    private byte isPrimaryKey;
+
 
     public ColumnMetadata(int tableId,
                           long startPos,
@@ -43,7 +45,8 @@ public class ColumnMetadata {
         this.columnType = columnType;
         this.columnIndex = columnIndex;
         this.columnLength = columnLength;
-        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + this.columnNameByteLen + 1 + 4 + 4;
+        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + this.columnNameByteLen + 1 + 4 + 4 + 1;
+        this.isPrimaryKey = 0;
     }
 
     public ColumnMetadata(ByteBuffer byteBuffer) {
@@ -56,6 +59,7 @@ public class ColumnMetadata {
         this.columnType = byteBuffer.get();
         this.columnIndex = DataUtils.readInt(byteBuffer);
         this.columnLength = DataUtils.readInt(byteBuffer);
+        this.isPrimaryKey = byteBuffer.get();
     }
 
 
@@ -72,6 +76,7 @@ public class ColumnMetadata {
         byteBuffer.put(columnType);
         DataUtils.writeInt(byteBuffer, columnIndex);
         DataUtils.writeInt(byteBuffer, columnLength);
+        byteBuffer.put(isPrimaryKey);
         byteBuffer.rewind();
         return byteBuffer;
     }
@@ -149,18 +154,14 @@ public class ColumnMetadata {
         this.columnIndex = columnIndex;
     }
 
-    @Override
-    public String toString() {
-        return "ColumnMetadata{" +
-                "totalByteLen=" + totalByteLen +
-                ", startPos=" + startPos +
-                ", tableId=" + tableId +
-                ", columnNameByteLen=" + columnNameByteLen +
-                ", columnNameCharLen=" + columnNameCharLen +
-                ", columnName='" + columnName + '\'' +
-                ", columnType=" + columnType +
-                ", columnIndex=" + columnIndex +
-                ", columnLength=" + columnLength +
-                '}';
+
+    public byte getIsPrimaryKey() {
+        return isPrimaryKey;
     }
+
+    public void setIsPrimaryKey(byte isPrimaryKey) {
+        this.isPrimaryKey = isPrimaryKey;
+    }
+
+
 }

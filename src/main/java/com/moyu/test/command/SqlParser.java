@@ -872,6 +872,7 @@ public class SqlParser implements Parser {
                     metadata.getColumnType(),
                     metadata.getColumnIndex(),
                     metadata.getColumnLength());
+            column.setIsPrimaryKey(metadata.getIsPrimaryKey());
             columns[i] = column;
         }
 
@@ -973,44 +974,63 @@ public class SqlParser implements Parser {
         }
 
         // 解析字段类型、字段长度。示例:varchar(64)、int
-        String column = columnKeyWord[1];
+        String columnTypeStr = columnKeyWord[1];
 
         int columnLength = -1;
         // 括号开始
         int start = -1;
         // 括号结束
         int end = -1;
-        for (int i = 0; i < column.length(); i++) {
-            if(column.charAt(i) == '('){
+        for (int i = 0; i < columnTypeStr.length(); i++) {
+            if(columnTypeStr.charAt(i) == '('){
                 start = i;
             }
-            if(column.charAt(i) == ')'){
+            if(columnTypeStr.charAt(i) == ')'){
                 end = i;
             }
         }
 
         String typeName = null;
         if(end > start && start > 0) {
-            columnLength = Integer.valueOf(column.substring(start + 1, end));
-            typeName = column.substring(0, start);
+            columnLength = Integer.valueOf(columnTypeStr.substring(start + 1, end));
+            typeName = columnTypeStr.substring(0, start);
         } else {
-            typeName = column;
+            typeName = columnTypeStr;
         }
-        Byte columnType = ColumnTypeEnum.getColumnTypeByName(typeName);
-        if(columnType == null) {
+        Byte type = ColumnTypeEnum.getColumnTypeByName(typeName);
+        if(type == null) {
             throw new SqlIllegalException("不支持类型:" + typeName);
         }
 
         // 如果没有指定字段长度像int、bigint等，要自动给长度
         if(columnLength == -1) {
-            if(DbColumnTypeConstant.INT_4 == columnType) {
+            if(DbColumnTypeConstant.INT_4 == type) {
                 columnLength = 4;
             }
-            if(DbColumnTypeConstant.INT_8 == columnType) {
+            if(DbColumnTypeConstant.INT_8 == type) {
                 columnLength = 8;
             }
         }
-        return new Column(columnName, columnType, columnIndex, columnLength);
+
+
+        Column column = new Column(columnName, type, columnIndex, columnLength);
+
+        // 解析字段类型后面的字段设置，像column varchar(10) DEFAULT/NOT NULL 或者 id varchar(10) PRIMARY KEY等等情况
+        if (columnKeyWord.length >= 3) {
+            String str = columnKeyWord[2].trim();
+            if (str.equals("PRIMARY") || str.equals("primary")) {
+                if (columnKeyWord.length < 4 || !(columnKeyWord[3].trim().equals("KEY")|| columnKeyWord[3].trim().equals("key"))) {
+                    throw new SqlIllegalException("sql不合法 PRIMARY语法有误");
+                }
+                column.setIsPrimaryKey((byte) 1);
+            } else if (str.equals("NOT")) {
+
+            } else if (str.equals("DEFAULT")) {
+
+            }
+        }
+
+        return column;
     }
 
 

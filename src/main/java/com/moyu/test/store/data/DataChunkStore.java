@@ -118,6 +118,28 @@ public class DataChunkStore {
         return storeRow(rowBytes, true);
     }
 
+    public Long storeRowAndGetPos(Column[] columns) {
+        byte[] rowBytes = RowData.toRowByteData(columns);
+        if(lastChunk == null) {
+            DataChunk chunk = createChunk();
+            lastChunk = chunk;
+        }
+        int chunkIndex = lastChunk == null ? 0 : lastChunk.getChunkIndex();
+        long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
+        DataChunk dataChunk = writeRow(rowBytes, startPos);
+        if (dataChunk != null) {
+            return dataChunk.getStartPos();
+        }
+
+        DataChunk newChunk = createChunk();
+        DataChunk chunk = writeRow(rowBytes, newChunk.getStartPos());
+        if (chunk != null) {
+            return dataChunk.getStartPos();
+        } else {
+            return null;
+        }
+    }
+
 
     /**
      * 简单粗暴从头开始遍历，找到可以存放的数据块(剩余空间足够存储该行)。
@@ -133,8 +155,8 @@ public class DataChunkStore {
         if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
             long currPos = 0;
             while (currPos < endPosition) {
-                boolean result = writeRow(row, currPos);
-                if (result == true) {
+                DataChunk dataChunk = writeRow(row, currPos);
+                if (dataChunk != null) {
                     return true;
                 }
                 currPos += DataChunk.DATA_CHUNK_LEN;
@@ -145,10 +167,10 @@ public class DataChunkStore {
 
     private boolean writeRow(byte[] row, int chunkIndex) {
         long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
-        return writeRow(row, startPos);
+        return writeRow(row, startPos) != null;
     }
 
-    private boolean writeRow(byte[] row, long startPos) {
+    private DataChunk writeRow(byte[] row, long startPos) {
         ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
         DataChunk dataChunk = new DataChunk(readBuffer);
         RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
@@ -156,9 +178,9 @@ public class DataChunkStore {
         if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
             dataChunk.addRow(dataRow);
             fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
-            return true;
+            return dataChunk;
         } else {
-            return false;
+            return null;
         }
     }
 
