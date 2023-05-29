@@ -46,7 +46,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     private int currMaxByteLen;
 
 
-    private BTreeMap<K, V> map;
+    private BpTreeMap<K, V> map;
     /**
      * 节点关键词列表
      */
@@ -71,7 +71,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     private List<V> valueList;
 
 
-    public Page(BTreeMap<K, V> map,
+    public Page(BpTreeMap<K, V> map,
                 List<K> keywordList,
                 List<V> valueList,
                 List<Page<K, V>> childNodeList,
@@ -81,7 +81,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     }
 
 
-    public Page(BTreeMap<K, V> map,
+    public Page(BpTreeMap<K, V> map,
                 List<K> keywordList,
                 List<V> valueList,
                 List<Page<K, V>> childNodeList,
@@ -121,7 +121,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     }
 
 
-    public Page(ByteBuffer byteBuffer, BTreeMap treeMap) {
+    public Page(ByteBuffer byteBuffer, BpTreeMap treeMap) {
         this.usedByteLen = byteBuffer.getInt();
         this.startPos = byteBuffer.getLong();
         this.pageIndex = byteBuffer.getInt();
@@ -282,9 +282,6 @@ public class Page<K extends Comparable, V> implements SerializableByte {
             this.keywordCount = this.keywordList.size();
             resetCrrMaxByteLen();
             return createLeafNode(rightKeywords, rightValues);
-
-
-
             // 非叶子节点分裂
         } else {
             // 分裂关键字
@@ -558,11 +555,11 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     }
 
 
-    public void setMap(BTreeMap<K, V> map) {
+    public void setMap(BpTreeMap<K, V> map) {
         this.map = map;
     }
 
-    public BTreeMap<K, V> getMap() {
+    public BpTreeMap<K, V> getMap() {
         return map;
     }
 }

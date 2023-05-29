@@ -1,6 +1,15 @@
 package com.moyu.test.store.data.tree;
 
+import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.DataType;
+import com.moyu.test.store.type.IntColumnType;
+import com.moyu.test.store.type.LongColumnType;
+import com.moyu.test.store.type.StringColumnType;
+import com.moyu.test.util.FileUtil;
+import com.moyu.test.util.PathUtil;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,7 +17,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/22
  */
-public class BTreeMap<K extends Comparable, V> {
+public class BpTreeMap<K extends Comparable, V> {
 
     private DataType<K> keyType;
 
@@ -22,10 +31,10 @@ public class BTreeMap<K extends Comparable, V> {
 
     private Page<K, V> rootNode;
 
-    public BTreeMap(int maxNodeNum,
-                    DataType<K> keyType,
-                    DataType<V> valueType,
-                    BpTreeStore bpTreeStore) {
+    public BpTreeMap(int maxNodeNum,
+                     DataType<K> keyType,
+                     DataType<V> valueType,
+                     BpTreeStore bpTreeStore) {
         this.maxNodeNum = maxNodeNum;
         this.keyType = keyType;
         this.valueType = valueType;
@@ -181,6 +190,33 @@ public class BTreeMap<K extends Comparable, V> {
 
     public void close(){
         bpTreeStore.close();
+    }
+
+
+    public static <K extends Comparable> BpTreeMap<K, Long> getBtreeMap(Column primaryKeyColumn, Integer databaseId, String tableName) {
+        String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
+        String indexPath = dirPath + File.separator + tableName + ".idx";
+        FileUtil.createFileIfNotExists(indexPath);
+        BpTreeStore bpTreeStore = null;
+        try {
+            bpTreeStore = new BpTreeStore(indexPath);
+            if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+                BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
+                bTreeMap.initRootNode();
+                return (BpTreeMap<K, Long>) bTreeMap;
+            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
+                BpTreeMap<Long, Long> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongColumnType(), bpTreeStore);
+                bTreeMap.initRootNode();
+                return (BpTreeMap<K, Long>) bTreeMap;
+            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+                BpTreeMap<String, Long> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongColumnType(), bpTreeStore);
+                bTreeMap.initRootNode();
+                return (BpTreeMap<K, Long>) bTreeMap;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

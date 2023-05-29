@@ -41,16 +41,6 @@ public class DataChunkStore {
             ByteBuffer readBuffer = fileStore.read(endPosition - DataChunk.DATA_CHUNK_LEN, DataChunk.DATA_CHUNK_LEN);
             this.lastChunk = new DataChunk(readBuffer);
         }
-
-/*        if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
-            long currPos = 0;
-            while (currPos < endPosition) {
-                ByteBuffer readBuffer = fileStore.read(currPos, DataChunk.DATA_CHUNK_LEN);
-                this.lastChunk = new DataChunk(readBuffer);
-                this.dataChunkNum++;
-                currPos += DataChunk.DATA_CHUNK_LEN;
-            }
-        }*/
     }
 
 
@@ -187,7 +177,7 @@ public class DataChunkStore {
 
     public int writeRow(List<byte[]> rows) {
         if(lastChunk == null) {
-            createChunk();
+            lastChunk = createChunk();
         }
         int chunkIndex = lastChunk != null ? lastChunk.getChunkIndex() : 0;
         long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
@@ -221,6 +211,10 @@ public class DataChunkStore {
         if (i > dataChunkNum - 1) {
             return null;
         }
+        return getChunkByPos(startPos);
+    }
+
+    public DataChunk getChunkByPos(long startPos) {
         if (fileStore.getEndPosition() >= startPos) {
             return new DataChunk(fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN));
         }

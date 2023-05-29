@@ -46,13 +46,13 @@ public class BpTreeStore {
             this.rootStartPos = 0L;
             this.pageCount = 0;
         }
-        this.nextPageIndex = this.pageCount == 0 ? 0 : this.pageCount - 1;
+        this.nextPageIndex = this.pageCount == 0 ? 0 : this.pageCount;
     }
 
 
 
 
-    public Page getRootPage(BTreeMap map){
+    public Page getRootPage(BpTreeMap map){
         return getPage(rootStartPos, map);
     }
 
@@ -65,7 +65,7 @@ public class BpTreeStore {
     }
 
 
-    public Page getPage(long startPos, BTreeMap map) {
+    public Page getPage(long startPos, BpTreeMap map) {
         ByteBuffer byteBuffer = fileStore.read(startPos, Page.PAGE_SIZE);
         return new Page(byteBuffer, map);
     }

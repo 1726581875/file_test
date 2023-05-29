@@ -30,6 +30,7 @@ public class Column {
 
     public Column createNullValueColumn() {
         Column column = new Column(columnName, columnType, columnIndex, columnLength);
+        column.setIsPrimaryKey(isPrimaryKey);
         column.setValue(null);
         return column;
     }

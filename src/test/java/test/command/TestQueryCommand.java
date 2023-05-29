@@ -1,6 +1,6 @@
 package test.command;
 
-import com.moyu.test.command.condition.Condition;
+import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.constant.OperatorConstant;
 import test.readwrite.UnfixedLengthStore;
 import test.readwrite.entity.Chunk;

@@ -4,8 +4,18 @@ import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.store.data.tree.BpTreeMap;
+import com.moyu.test.store.data.tree.BpTreeStore;
+import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.type.IntColumnType;
+import com.moyu.test.store.type.LongColumnType;
+import com.moyu.test.util.FileUtil;
+import com.moyu.test.util.PathUtil;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -16,6 +26,27 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
+        String dirPath = PathUtil.getBaseDirPath() + File.separator + 0;
+        String indexPath = dirPath + File.separator + "table_1" + ".idx";
+        FileUtil.createFileIfNotExists(indexPath);
+        BpTreeStore bpTreeStore = null;
+        try {
+            bpTreeStore = new BpTreeStore(indexPath);
+            BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
+            bTreeMap.initRootNode();
+
+            Long aLong = bTreeMap.get(10);
+            System.out.println(aLong);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        //batchInsertData();
+    }
+
+
+    private static void testPrimaryKey(){
         testExecSQL("drop table table_2");
 
         testExecSQL("create table table_2 (id int PRIMARY KEY, name varchar(10), time timestamp)");
@@ -26,33 +57,48 @@ public class SqlParserTest {
         testExecSQL("desc table_2");
 
         testExecSQL("select * from table_2");
-
-
     }
 
 
     private static void batchInsertData(){
         testExecSQL("drop table table_1");
 
-        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table table_1 (id int PRIMARY KEY, name varchar(10), time timestamp)");
 
         testExecSQL("truncate table table_1");
 
         long beginTime = System.currentTimeMillis();
 
         long time = beginTime;
-        for (int i = 1; i <= 10000; i++) {
 
-            String insertSQL = "insert into table_1(id,name,time) value ("+ i + ",'name_"+ i +"','2023-05-19 00:00:00')";
-            ConnectSession connectSession = new ConnectSession("xmz", 0);
-            SqlParser sqlParser = new SqlParser(connectSession);
-            InsertCommand command = (InsertCommand)sqlParser.prepareCommand(insertSQL);
-            command.testWriteList();
-            if(i % 1000 == 0) {
-                System.out.println("插入一千条记录耗时:" + (System.currentTimeMillis() - time) / 1000 + "s");
+
+        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        SqlParser sqlParser = new SqlParser(connectSession);
+        List<Column[]> columnList = new ArrayList<>();
+
+
+        int rowNum = 10000;
+        for (int i = 1; i <= rowNum; i++) {
+            String insertSQL = "insert into table_1(id,name,time) value (" + i + ",'name_" + i + "','2023-05-19 00:00:00')";
+            InsertCommand command = (InsertCommand) sqlParser.prepareCommand(insertSQL);
+            columnList.add(command.getColumns());
+
+            if (i % 10000 == 0) {
+                command.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) / 1000 + "s");
                 time = System.currentTimeMillis();
+                columnList.clear();
+                testExecSQL("select count(*) from table_1");
+            }
+
+            if(i == rowNum) {
+                time = System.currentTimeMillis();
+                command.testSetIndex();
+                System.out.println("set Index:" + (System.currentTimeMillis() - time) / 1000 + "s");
             }
         }
+
+
 
         System.out.println("总耗时:" + (System.currentTimeMillis() - beginTime) / 1000 + "s");
     }

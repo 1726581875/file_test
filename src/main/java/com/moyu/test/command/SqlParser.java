@@ -1,9 +1,11 @@
 package com.moyu.test.command;
 
-import com.moyu.test.command.condition.Condition;
-import com.moyu.test.command.condition.ConditionTree;
+import com.moyu.test.command.dml.condition.Condition;
+import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
+import com.moyu.test.command.dml.plan.SelectPlan;
+import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
@@ -366,8 +368,16 @@ public class SqlParser implements Parser {
         selectCommand.setLimit(limit);
         selectCommand.setOffset(offset == null ? 0 : offset);
 
+
+        // 设置查询计划（是否使用索引）
+        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns);
+        selectCommand.setSelectPlan(selectPlan);
+
         return selectCommand;
     }
+
+
+
 
 
     private SelectColumn[] getSelectColumns(String tableName, String selectColumnsStr, Column[] allColumns) {

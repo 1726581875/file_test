@@ -1,4 +1,4 @@
-package com.moyu.test.command.condition;
+package com.moyu.test.command.dml.condition;
 
 import java.util.List;
 

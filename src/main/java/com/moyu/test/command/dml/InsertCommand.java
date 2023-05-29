@@ -2,9 +2,10 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.data.tree.BTreeMap;
+import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.data.tree.BpTreeStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.IntColumnType;
@@ -47,7 +48,7 @@ public class InsertCommand extends AbstractCommand {
                 return "插入数据失败";
             }
             // 插入主键索引
-            Column primaryKeyColumn = getPrimaryKeyColumn();
+            Column primaryKeyColumn = getPrimaryKeyColumn(columns);
             if(primaryKeyColumn != null) {
                 insertIndex(primaryKeyColumn, chunkPos);
             }
@@ -68,15 +69,15 @@ public class InsertCommand extends AbstractCommand {
         try {
             bpTreeStore = new BpTreeStore(indexPath);
             if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                BTreeMap<Integer, Long> bTreeMap = new BTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
+                BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
                 bTreeMap.initRootNode();
                 bTreeMap.put((Integer) primaryKeyColumn.getValue(), chunkPos);
             } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-                BTreeMap<Long, Long> bTreeMap = new BTreeMap<>(1024, new LongColumnType(), new LongColumnType(), bpTreeStore);
+                BpTreeMap<Long, Long> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongColumnType(), bpTreeStore);
                 bTreeMap.initRootNode();
                 bTreeMap.put((Long) primaryKeyColumn.getValue(), chunkPos);
             } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                BTreeMap<String, Long> bTreeMap = new BTreeMap<>(1024, new StringColumnType(), new LongColumnType(), bpTreeStore);
+                BpTreeMap<String, Long> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongColumnType(), bpTreeStore);
                 bTreeMap.initRootNode();
                 bTreeMap.put((String) primaryKeyColumn.getValue(), chunkPos);
             }
@@ -90,8 +91,8 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-    private Column getPrimaryKeyColumn() {
-        for (Column c : columns) {
+    private Column getPrimaryKeyColumn(Column[] columnArr) {
+        for (Column c : columnArr) {
             if (c.getIsPrimaryKey() == (byte) 1) {
                 return c;
             }
@@ -100,14 +101,16 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-    public String testWriteList() {
+    public String testWriteList(List<Column[]> columnsList) {
         DataChunkStore dataChunkStore = null;
         try {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             List<byte[]> list = new ArrayList<>();
-            byte[] rowBytes = RowData.toRowByteData(columns);
-            for (int i = 0; i < 1024; i++) {
+
+            for (int i = 0; i < columnsList.size(); i++) {
+                Column[] columns = columnsList.get(i);
+                byte[] rowBytes = RowData.toRowByteData(columns);
                 list.add(rowBytes);
             }
             dataChunkStore.writeRow(list);
@@ -119,4 +122,35 @@ public class InsertCommand extends AbstractCommand {
         return "ok";
     }
 
+
+    public String testSetIndex() {
+        DataChunkStore dataChunkStore = null;
+        try {
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            dataChunkStore = new DataChunkStore(fileFullPath);
+            int dataChunkNum = dataChunkStore.getDataChunkNum();
+            for (int i = 0; i < dataChunkNum; i++) {
+                DataChunk chunk = dataChunkStore.getChunk(i);
+                for (int j = 0; j < chunk.getDataRowList().size(); j++) {
+                    RowData rowData = chunk.getDataRowList().get(j);
+                    Column[] columnData = rowData.getColumnData(columns);
+                    // 插入主键索引
+                    Column primaryKeyColumn = getPrimaryKeyColumn(columnData);
+                    if (primaryKeyColumn != null) {
+                        insertIndex(primaryKeyColumn, chunk.getStartPos());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            dataChunkStore.close();
+        }
+        return "ok";
+    }
+
+
+    public Column[] getColumns() {
+        return columns;
+    }
 }

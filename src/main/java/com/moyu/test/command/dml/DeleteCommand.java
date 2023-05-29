@@ -1,8 +1,8 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
-import com.moyu.test.command.condition.ConditionComparator;
-import com.moyu.test.command.condition.ConditionTree;
+import com.moyu.test.command.dml.condition.ConditionComparator;
+import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;

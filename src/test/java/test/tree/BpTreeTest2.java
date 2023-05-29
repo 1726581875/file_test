@@ -1,6 +1,6 @@
 package test.tree;
 
-import com.moyu.test.store.data.tree.BTreeMap;
+import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.data.tree.BpTreeStore;
 import com.moyu.test.store.type.IntColumnType;
 import com.moyu.test.store.type.StringColumnType;
@@ -22,8 +22,8 @@ public class BpTreeTest2 {
 
         BpTreeStore bpTreeStore = new BpTreeStore();
         try {
-            BTreeMap<Integer, String> bTreeMap = null;
-            bTreeMap = new BTreeMap<>(1024,
+            BpTreeMap<Integer, String> bTreeMap = null;
+            bTreeMap = new BpTreeMap<>(1024,
                     new IntColumnType(),
                     new StringColumnType(),
                     bpTreeStore);

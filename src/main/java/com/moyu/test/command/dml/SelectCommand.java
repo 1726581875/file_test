@@ -2,17 +2,21 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.condition.ConditionComparator;
-import com.moyu.test.command.condition.ConditionTree;
+import com.moyu.test.command.dml.condition.ConditionComparator;
+import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.dml.function.*;
+import com.moyu.test.command.dml.plan.SelectPlan;
+import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.PathUtil;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,6 +37,8 @@ public class SelectCommand extends AbstractCommand {
     private SelectColumn[] selectColumns;
 
     private ConditionTree conditionTree;
+
+    private SelectPlan selectPlan;
 
     private Integer limit;
 
@@ -110,7 +116,6 @@ public class SelectCommand extends AbstractCommand {
             Object[] rowValues = resultRows.get(i);
             String rowStr = "";
             for (int j = 0; j < rowValues.length; j++) {
-                // 按照条件过滤
                 Object value = rowValues[j];
                 String valueStr = (value == null ? "" : valueToString(value));
                 int length = resultColumns[j].getSelectColumnName().length();
@@ -150,12 +155,17 @@ public class SelectCommand extends AbstractCommand {
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             List<Column[]> dataList = null;
-            // select后面是统计函数
+            // select统计函数
             if(isFunction()) {
                 dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
             } else {
-                // select后面是字段
-                dataList = getColumnDataList(dataChunkNum, dataChunkStore);
+                if(selectPlan == null) {
+                    dataList = getColumnDataList(dataChunkNum, dataChunkStore);
+                } else {
+                    // 使用主键索引查询
+                    Column indexColumn = selectPlan.getIndexColumn();
+                    dataList = getColumnDataListUsePrimaryKey(indexColumn, dataChunkStore);
+                }
             }
             result.addAll(dataList);
         } catch (Exception e) {
@@ -229,6 +239,64 @@ public class SelectCommand extends AbstractCommand {
                 }
             }
         }
+
+        return dataList;
+    }
+
+
+
+    private List<Column[]> getColumnDataListUsePrimaryKey(Column indexColumn, DataChunkStore dataChunkStore) {
+        List<Column[]> dataList = new ArrayList<>();
+        try {
+            int currIndex = 0;
+            BpTreeMap<Comparable, Long> btreeMap = BpTreeMap.getBtreeMap(indexColumn, databaseId, tableName);
+
+
+            Long startPos = null;
+            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+                startPos = btreeMap.get(Integer.valueOf((String) indexColumn.getValue()));
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
+                startPos = btreeMap.get(Long.valueOf((String) indexColumn.getValue()));
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+                startPos = btreeMap.get((String)indexColumn.getValue());
+            }
+
+
+            DataChunk dataChunk = dataChunkStore.getChunkByPos(startPos);
+            List<RowData> dataRowList = dataChunk.getDataRowList();
+            for (int j = 0; j < dataRowList.size(); j++) {
+                RowData rowData = dataRowList.get(j);
+                Column[] columnData = rowData.getColumnData(columns);
+                // 按照条件过滤
+                if (conditionTree == null) {
+                    Column[] filterColumns = filterColumns(columnData);
+                    // 判断是否符合limit、offset
+                    if(isLimitRow(currIndex)) {
+                        dataList.add(filterColumns);
+                    }
+                    if(limit != null && dataList.size()  >= limit) {
+                        return dataList;
+                    }
+                    currIndex++;
+                } else {
+                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                    if (compareResult) {
+                        Column[] filterColumns = filterColumns(columnData);
+                        // 判断是否符合limit、offset
+                        if(isLimitRow(currIndex)) {
+                            dataList.add(filterColumns);
+                        }
+                        if(limit != null && dataList.size()  >= limit) {
+                            return dataList;
+                        }
+                        currIndex++;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         return dataList;
     }
@@ -387,5 +455,12 @@ public class SelectCommand extends AbstractCommand {
 
     public void setOffset(Integer offset) {
         this.offset = offset;
+    }
+
+    public SelectPlan getSelectPlan() {
+        return selectPlan;
+    }
+    public void setSelectPlan(SelectPlan selectPlan) {
+        this.selectPlan = selectPlan;
     }
 }
