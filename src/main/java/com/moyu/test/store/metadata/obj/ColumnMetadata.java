@@ -10,24 +10,46 @@ import java.nio.ByteBuffer;
  */
 public class ColumnMetadata {
 
+    /**
+     * 所有字段占用字节(包含自身)
+     */
     private int totalByteLen;
-
+    /**
+     * 所属文件中开始位置
+     */
     private long startPos;
-
+    /**
+     * 列字段所属表id
+     */
     private int tableId;
-
+    /**
+     * 字段名字节长度
+     */
     private int columnNameByteLen;
-
+    /**
+     * 字段名字符长度
+     */
     private int columnNameCharLen;
-
+    /**
+     * 字段名
+     */
     private String columnName;
-
+    /**
+     * 字段类型，
+     * @see com.moyu.test.constant.DbColumnTypeConstant
+     */
     private byte columnType;
-
+    /**
+     * 字段下标
+     */
     private int columnIndex;
-
+    /**
+     * 字段长度
+     */
     private int columnLength;
-
+    /**
+     * 是否主键索引 1:是 、0否
+     */
     private byte isPrimaryKey;
 
 

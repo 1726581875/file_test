@@ -339,12 +339,12 @@ public class Page<K extends Comparable, V> implements SerializableByte {
 
 
     private Page<K, V> createLeafNode(List<K> keywordList, List<V> valueList) {
-        return new Page<>(map, keywordList, valueList, null, true, map.getBpTreeStore().getNextPageIndex());
+        return new Page<>(map, keywordList, valueList, null, true, map.getNextPageIndex());
     }
 
 
     private Page<K, V> createNonLeafNode(List<K> keywordList, List<Page<K, V>> childNodeList, List<Long> childPosList) {
-        return new Page<>(map, keywordList, null, childNodeList, childPosList, false, map.getBpTreeStore().getNextPageIndex());
+        return new Page<>(map, keywordList, null, childNodeList, childPosList, false, map.getNextPageIndex());
     }
 
 

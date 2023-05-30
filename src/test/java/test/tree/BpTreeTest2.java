@@ -26,22 +26,29 @@ public class BpTreeTest2 {
             bTreeMap = new BpTreeMap<>(1024,
                     new IntColumnType(),
                     new StringColumnType(),
-                    bpTreeStore);
+                    bpTreeStore, false);
             bTreeMap.initRootNode();
 
             int count = 1000000;
             long startTime = System.currentTimeMillis();
-/*            for (int i = 0; i < count; i++) {
-                bTreeMap.put(i, "v" + i);
-            }*/
+            for (int i = 0; i < count; i++) {
+                bTreeMap.putUnSaveDisk(i, "v" + i);
+            }
+
+            //bTreeMap.commitSaveDisk();
+
             long point1 = System.currentTimeMillis();
             System.out.println("存储" + count + "条数据，耗时:" + (point1 - startTime) / 1000 + "s");
 
-            String s = bTreeMap.get(8888);
 
+
+            String s = bTreeMap.get(8888);
             long point2 = System.currentTimeMillis();
             System.out.println("get result=" + s);
             System.out.println("查询耗时:" + (point2 - point1) + "ms");
+
+
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

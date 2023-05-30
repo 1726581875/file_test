@@ -123,24 +123,39 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-    public String testSetIndex() {
+    public String testSetIndex(Column[] columnArr) {
         DataChunkStore dataChunkStore = null;
+        BpTreeStore bpTreeStore = null;
         try {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
+
+            BpTreeMap<Integer, Long> bTreeMap = null;
+            // 如果索引文件不存在，先创建索引文件
+            String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
+            String indexPath = dirPath + File.separator + tableName + ".idx";
+            FileUtil.createFileIfNotExists(indexPath);
+
+            bpTreeStore = new BpTreeStore(indexPath);
+            bTreeMap = new BpTreeMap<>(1024,new IntColumnType(), new LongColumnType(), bpTreeStore, false);
+            bTreeMap.initRootNode();
+
             for (int i = 0; i < dataChunkNum; i++) {
                 DataChunk chunk = dataChunkStore.getChunk(i);
                 for (int j = 0; j < chunk.getDataRowList().size(); j++) {
                     RowData rowData = chunk.getDataRowList().get(j);
-                    Column[] columnData = rowData.getColumnData(columns);
+                    Column[] columnData = rowData.getColumnData(columnArr);
                     // 插入主键索引
                     Column primaryKeyColumn = getPrimaryKeyColumn(columnData);
                     if (primaryKeyColumn != null) {
-                        insertIndex(primaryKeyColumn, chunk.getStartPos());
+                        bTreeMap.putUnSaveDisk((Integer) primaryKeyColumn.getValue(), chunk.getStartPos());
                     }
                 }
             }
+
+            bTreeMap.commitSaveDisk();
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

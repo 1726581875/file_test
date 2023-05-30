@@ -17,6 +17,7 @@ import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.PathUtil;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -259,6 +260,10 @@ public class SelectCommand extends AbstractCommand {
                 startPos = btreeMap.get(Long.valueOf((String) indexColumn.getValue()));
             } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
                 startPos = btreeMap.get((String)indexColumn.getValue());
+            }
+
+            if (startPos == null) {
+                return new ArrayList<>();
             }
 
 

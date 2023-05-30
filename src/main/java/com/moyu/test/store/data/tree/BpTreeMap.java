@@ -2,10 +2,7 @@ package com.moyu.test.store.data.tree;
 
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.DataType;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.LongColumnType;
-import com.moyu.test.store.type.StringColumnType;
+import com.moyu.test.store.type.*;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 
@@ -31,6 +28,11 @@ public class BpTreeMap<K extends Comparable, V> {
 
     private Page<K, V> rootNode;
 
+    private boolean isAutoCommit;
+
+    private int nextPageIndex;
+
+
     public BpTreeMap(int maxNodeNum,
                      DataType<K> keyType,
                      DataType<V> valueType,
@@ -39,6 +41,18 @@ public class BpTreeMap<K extends Comparable, V> {
         this.keyType = keyType;
         this.valueType = valueType;
         this.bpTreeStore = bpTreeStore;
+        this.isAutoCommit = true;
+    }
+
+    public BpTreeMap(int maxNodeNum,
+                     DataType<K> keyType,
+                     DataType<V> valueType,
+                     BpTreeStore bpTreeStore, boolean isAutoCommit) {
+        this.maxNodeNum = maxNodeNum;
+        this.keyType = keyType;
+        this.valueType = valueType;
+        this.bpTreeStore = bpTreeStore;
+        this.isAutoCommit = isAutoCommit;
     }
 
 
@@ -51,6 +65,7 @@ public class BpTreeMap<K extends Comparable, V> {
         } else {
             this.rootNode = bpTreeStore.getRootPage(this);
         }
+        this.nextPageIndex++;
     }
 
 
@@ -158,6 +173,99 @@ public class BpTreeMap<K extends Comparable, V> {
     }
 
 
+    public Integer getNextPageIndex() {
+        if (isAutoCommit) {
+            return bpTreeStore.getNextPageIndex();
+        } else {
+            Integer next = nextPageIndex;
+            nextPageIndex++;
+            return next;
+        }
+    }
+
+
+    public void putUnSaveDisk(K key, V value) {
+        // 从根节点往下找，并且记录查找路径
+        CursorPos<K,V> cursor = CursorPos.traverseDown(rootNode, key);
+        int index = cursor.getIndex();
+        Page<K, V> node = cursor.getTreeNode();
+        cursor = cursor.getParent();
+        // index < 0表示找不到关键字,-1表示比任何关键字要小。其他数值计算通过(-index - 1)可以知道要插入的位置
+        if (index < 0) {
+            // 插入到叶子节点，b树每次插入都是在叶子节点插入
+            node.insertLeaf(-index - 1, key, value);
+            int keyCount;
+            // 判断b树节点是否要分裂，当结点数大于最大节点树。关键子和值从中间分裂为两个节点，并会把中间关键字提取到父节点
+            while ((keyCount = node.getKeywordCount()) > maxNodeNum
+                    || node.getCurrMaxByteLen() > Page.PAGE_SIZE) {
+                // 相当于除2
+                int at = keyCount >> 1;
+                //获取中间关键字
+                K k = node.getKey(at);
+                // 从中间分裂出新节点
+                Page<K, V> split = node.split(at);
+                // 如果父节点是空，表示当前就是根节点, 新建新节点作为父节点，原先分裂的两个节点作为其子节点
+                if (cursor == null) {
+                    // 设置关键字
+                    List<K> keys = new ArrayList<>();
+                    keys.add(k);
+                    // 设置子节点
+                    List<Page<K, V>> children = new ArrayList<>(2);
+                    children.add(node);
+                    children.add(split);
+                    int nextPageIndex = getNextPageIndex();
+                    rootNode = new Page<>(this, keys, null, children, false, nextPageIndex);
+                    level++;
+                    // 结束
+                    break;
+                }
+
+                // 当前节点赋值给c
+                Page<K, V> c = node;
+                // 赋值为父节点
+                node = cursor.getTreeNode();
+                // 拿到父节点中的插入位置
+                index = cursor.getIndex();
+                // 赋值为父节点, 往上，一直保持是node的父节点位置
+                cursor = cursor.getParent();
+                // 重新设置前面分裂左节点
+                node.setChild(index, c);
+                // 插入前面分裂的右节点
+                node.insertNode(index + 1, k, split);
+            }
+        } else {
+            // index > 0 在叶子节点找到对应关键字， 直接替换为新值
+            node.setValue(index, value);
+        }
+    }
+
+
+    public void commitSaveDisk() {
+        long startPos = rootNode.getStartPos();
+        bpTreeStore.updateRootPos(startPos);
+        saveDisk(rootNode);
+
+    }
+
+    public void saveDisk(Page<K, V> node) {
+        if (node.isLeaf()) {
+            bpTreeStore.savePage(node);
+        } else {
+            bpTreeStore.savePage(node);
+            List<Page<K, V>> childNodeList = node.getChildNodeList();
+            if(childNodeList == null) {
+                System.out.println("1");
+            }
+            for (Page<K, V> childNode : childNodeList) {
+                saveDisk(childNode);
+            }
+        }
+    }
+
+
+
+
+
     public Page<K, V> getRootNode() {
         return rootNode;
     }
@@ -218,5 +326,30 @@ public class BpTreeMap<K extends Comparable, V> {
         }
         return null;
     }
+
+
+    public static <T extends Comparable> BpTreeMap<T, Long[]> getBpTreeMap(String indexPath, boolean isAutoCommit, Class<T> keyType) {
+        FileUtil.createFileIfNotExists(indexPath);
+        BpTreeStore bpTreeStore = null;
+        try {
+
+            bpTreeStore = new BpTreeStore(indexPath);
+            if (Integer.class.equals(keyType)) {
+                BpTreeMap<Integer, Long[]> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                return (BpTreeMap<T, Long[]>) bTreeMap;
+            } else if (Long.class.equals(keyType)) {
+                BpTreeMap<Long, Long[]> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                return (BpTreeMap<T, Long[]>) bTreeMap;
+            } else if (String.class.equals(keyType)) {
+                BpTreeMap<String, Long[]> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                return (BpTreeMap<T, Long[]>) bTreeMap;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
 
 }

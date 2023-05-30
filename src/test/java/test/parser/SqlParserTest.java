@@ -3,6 +3,7 @@ package test.parser;
 import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
+import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.data.tree.BpTreeStore;
@@ -15,6 +16,7 @@ import com.moyu.test.util.PathUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,7 +28,7 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
-        String dirPath = PathUtil.getBaseDirPath() + File.separator + 0;
+/*        String dirPath = PathUtil.getBaseDirPath() + File.separator + 0;
         String indexPath = dirPath + File.separator + "table_1" + ".idx";
         FileUtil.createFileIfNotExists(indexPath);
         BpTreeStore bpTreeStore = null;
@@ -40,7 +42,7 @@ public class SqlParserTest {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 
         //batchInsertData();
     }
@@ -60,47 +62,53 @@ public class SqlParserTest {
     }
 
 
-    private static void batchInsertData(){
+    private static void batchInsertData() {
         testExecSQL("drop table table_1");
 
         testExecSQL("create table table_1 (id int PRIMARY KEY, name varchar(10), time timestamp)");
-
-        testExecSQL("truncate table table_1");
-
         long beginTime = System.currentTimeMillis();
-
         long time = beginTime;
 
-
-        ConnectSession connectSession = new ConnectSession("xmz", 0);
-        SqlParser sqlParser = new SqlParser(connectSession);
         List<Column[]> columnList = new ArrayList<>();
-
-
-        int rowNum = 10000;
+        InsertCommand insertCommand = new InsertCommand(0, "table_1", null);
+        int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
-            String insertSQL = "insert into table_1(id,name,time) value (" + i + ",'name_" + i + "','2023-05-19 00:00:00')";
-            InsertCommand command = (InsertCommand) sqlParser.prepareCommand(insertSQL);
-            columnList.add(command.getColumns());
-
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
             if (i % 10000 == 0) {
-                command.testWriteList(columnList);
-                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) / 1000 + "s");
+                insertCommand.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
-                testExecSQL("select count(*) from table_1");
-            }
-
-            if(i == rowNum) {
-                time = System.currentTimeMillis();
-                command.testSetIndex();
-                System.out.println("set Index:" + (System.currentTimeMillis() - time) / 1000 + "s");
             }
         }
 
 
+        Column[] columns = getColumns(-1, "");
+        time = System.currentTimeMillis();
+        insertCommand.testSetIndex(columns);
+        System.out.println("set Index:" + (System.currentTimeMillis() - time) / 1000 + "s");
 
+
+        testExecSQL("select count(*) from table_1");
         System.out.println("总耗时:" + (System.currentTimeMillis() - beginTime) / 1000 + "s");
+    }
+
+
+    private static Column[] getColumns(Integer id, String name) {
+        Column[] columns = new Column[3];
+        // 字段11
+        columns[0] = new Column("id", ColumnTypeEnum.INT.getColumnType(), 0, 4);
+        columns[0].setIsPrimaryKey((byte) 1);
+        columns[0].setValue(id);
+
+        // 字段2
+        columns[1] = new Column("name", ColumnTypeEnum.VARCHAR.getColumnType(), 1, 100);
+        columns[1].setValue(name);
+        // 字段3
+        columns[2] = new Column("time", ColumnTypeEnum.TIMESTAMP.getColumnType(), 2, 8);
+        columns[2].setValue(new Date());
+        return columns;
     }
 
 
