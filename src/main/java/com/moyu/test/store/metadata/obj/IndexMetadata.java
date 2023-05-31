@@ -25,17 +25,19 @@ public class IndexMetadata implements SerializableByte {
      */
     private String columnName;
     /**
-     * 是否主键索引
+     * 索引类型，1主键索引、2一般索引
      */
-    private byte isPrimaryKey;
+    private byte indexType;
 
 
-    public IndexMetadata(long startPos, int tableId, String indexName, String columnName, byte isPrimaryKey) {
+
+    public IndexMetadata(long startPos, int tableId, String indexName, String columnName, byte indexType) {
         this.startPos = startPos;
         this.tableId = tableId;
         this.indexName = indexName;
         this.columnName = columnName;
-        this.isPrimaryKey = isPrimaryKey;
+        this.indexType = indexType;
+        // 当前最大长度，不是准确大小，后面调getByteBuffer()方法会复写真正长度
         this.totalByteLen = 4 + 8 + 4 +  1 + (this.indexName.length() * 3) + (this.columnName.length() * 3) + 2;
     }
 
@@ -47,7 +49,7 @@ public class IndexMetadata implements SerializableByte {
         this.indexName = DataUtils.readString(byteBuffer, l1);
         int l2 = DataUtils.readInt(byteBuffer);
         this.columnName = DataUtils.readString(byteBuffer, l2);
-        this.isPrimaryKey = byteBuffer.get();
+        this.indexType = byteBuffer.get();
     }
 
 
@@ -61,7 +63,7 @@ public class IndexMetadata implements SerializableByte {
         DataUtils.writeStringData(byteBuffer, this.indexName, this.indexName.length());
         byteBuffer.putInt(this.columnName.length());
         DataUtils.writeStringData(byteBuffer, this.columnName, this.columnName.length());
-        byteBuffer.put(this.isPrimaryKey);
+        byteBuffer.put(this.indexType);
         // 获取真实长度
         this.totalByteLen = byteBuffer.position();
         byteBuffer.putInt(0, this.totalByteLen);
@@ -111,12 +113,12 @@ public class IndexMetadata implements SerializableByte {
         this.columnName = columnName;
     }
 
-    public byte getIsPrimaryKey() {
-        return isPrimaryKey;
+    public byte getIndexType() {
+        return indexType;
     }
 
-    public void setIsPrimaryKey(byte isPrimaryKey) {
-        this.isPrimaryKey = isPrimaryKey;
+    public void setIndexType(byte indexType) {
+        this.indexType = indexType;
     }
 
 
@@ -128,7 +130,7 @@ public class IndexMetadata implements SerializableByte {
                 ", tableId=" + tableId +
                 ", indexName='" + indexName + '\'' +
                 ", columnName='" + columnName + '\'' +
-                ", isPrimaryKey=" + isPrimaryKey +
+                ", isPrimaryKey=" + indexType +
                 '}';
     }
 }

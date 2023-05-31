@@ -28,9 +28,15 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
+        testPrimaryKey();
+
+    }
+
+
+    private static void createIndexSqlTest(){
         testExecSQL("drop table xmz_1");
 
-        testExecSQL("create table xmz_1 (id int PRIMARY KEY, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_1 (id int, name varchar(10), time timestamp)");
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
@@ -50,13 +56,15 @@ public class SqlParserTest {
 
         testExecSQL("select count(*) from xmz_1");
 
-        //testExecSQL("ALTER TABLE xmz_1 ADD INDEX indexName(id);");
-        testExecSQL("CREATE INDEX aaaa ON xmz_1 (id);");
+        testExecSQL("ALTER TABLE xmz_1 ADD INDEX indexName(id);");
+
+        testExecSQL("select * from xmz_1 where id = 1000");
+
+        //testExecSQL("CREATE INDEX aaaa ON xmz_1 (id);");
 
         testExecSQL("desc xmz_1");
-
-
     }
+
 
 
     private static void testPrimaryKey(){

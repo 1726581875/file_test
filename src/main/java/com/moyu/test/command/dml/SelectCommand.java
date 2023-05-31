@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author xiaomingzhang
@@ -161,11 +162,15 @@ public class SelectCommand extends AbstractCommand {
                 dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
             } else {
                 if(selectPlan == null) {
+                    System.out.println("不使用索引");
                     dataList = getColumnDataList(dataChunkNum, dataChunkStore);
-                } else {
-                    // 使用主键索引查询
+                } else if(selectPlan.getIndexType() == (byte) 1) {
+                    System.out.println("使用主键索引");
                     Column indexColumn = selectPlan.getIndexColumn();
                     dataList = getColumnDataListUsePrimaryKey(indexColumn, dataChunkStore);
+                } else if(selectPlan.getIndexType() == (byte) 2) {
+                    System.out.println("使用普通索引");
+                    dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
                 }
             }
             result.addAll(dataList);
@@ -304,6 +309,81 @@ public class SelectCommand extends AbstractCommand {
 
 
         return dataList;
+    }
+
+
+
+
+    private List<Column[]> getColumnDataListUseIndex(SelectPlan selectPlan, DataChunkStore dataChunkStore) {
+        List<Column[]> dataList = new ArrayList<>();
+        try {
+            String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
+            String indexPath = dirPath + File.separator + tableName +"_" + selectPlan.getIndexName() +".idx";
+
+            Column indexColumn = selectPlan.getIndexColumn();
+            Long[] startPosArr = null;
+            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+                BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
+                bpTreeMap.initRootNode();
+                startPosArr = bpTreeMap.get(Integer.valueOf((String) indexColumn.getValue()));
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
+                BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
+                bpTreeMap.initRootNode();
+                startPosArr = bpTreeMap.get(Long.valueOf((String) indexColumn.getValue()));
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+                BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
+                bpTreeMap.initRootNode();
+                startPosArr = bpTreeMap.get((String)indexColumn.getValue());
+            }
+
+            if (startPosArr == null || startPosArr.length == 0) {
+                return new ArrayList<>();
+            }
+
+            AtomicInteger currIndex = new AtomicInteger(0);
+            for (Long starPos : startPosArr) {
+                DataChunk dataChunk = dataChunkStore.getChunkByPos(starPos);
+                analyzeDataChunkGetRowList(dataChunk, dataList, currIndex);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return dataList;
+    }
+
+
+    public void analyzeDataChunkGetRowList(DataChunk dataChunk, List<Column[]> dataList, AtomicInteger currIndex) {
+        List<RowData> dataRowList = dataChunk.getDataRowList();
+        for (int j = 0; j < dataRowList.size(); j++) {
+            RowData rowData = dataRowList.get(j);
+            Column[] columnData = rowData.getColumnData(columns);
+            // 按照条件过滤
+            if (conditionTree == null) {
+                Column[] filterColumns = filterColumns(columnData);
+                // 判断是否符合limit、offset
+                if (isLimitRow(currIndex.get())) {
+                    dataList.add(filterColumns);
+                }
+                if (limit != null && dataList.size() >= limit) {
+                    break;
+                }
+                currIndex.addAndGet(1);
+            } else {
+                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                if (compareResult) {
+                    Column[] filterColumns = filterColumns(columnData);
+                    // 判断是否符合limit、offset
+                    if (isLimitRow(currIndex.get())) {
+                        dataList.add(filterColumns);
+                    }
+                    if (limit != null && dataList.size() >= limit) {
+                        break;
+                    }
+                    currIndex.addAndGet(1);
+                }
+            }
+        }
     }
 
 

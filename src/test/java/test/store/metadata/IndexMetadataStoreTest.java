@@ -17,7 +17,9 @@ public class IndexMetadataStoreTest {
         try {
             metadataStore = new IndexMetadataStore();
             IndexMetadata index = new IndexMetadata(0L, 1, "aaa", "bbb", (byte) 0);
-           // metadataStore.saveIndexMetadata(2, index);
+            //metadataStore.saveIndexMetadata(2, index);
+            //metadataStore.dropIndexMetadata(1, "indexName");
+            metadataStore.dropIndexBlock(2);
             Map<Integer, TableIndexBlock> columnMap = metadataStore.getIndexMap();
             columnMap.forEach((k, v) -> {
                 System.out.println("=======  tableId=" + k + " ========");

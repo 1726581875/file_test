@@ -15,6 +15,12 @@ public class SelectPlan {
      * 表id
      */
     private Integer tableId;
+
+    /**
+     * 1主键索引、2一般索引
+     */
+    private Byte indexType;
+
     /**
      * 是否使用索引
      */
@@ -23,6 +29,8 @@ public class SelectPlan {
      * 索引字段
      */
     private Column indexColumn;
+
+    private String indexName;
 
 
     public String getTableName() {
@@ -55,5 +63,22 @@ public class SelectPlan {
 
     public void setIndexColumn(Column indexColumn) {
         this.indexColumn = indexColumn;
+    }
+
+    public Byte getIndexType() {
+        return indexType;
+    }
+
+    public void setIndexType(Byte indexType) {
+        this.indexType = indexType;
+    }
+
+
+    public String getIndexName() {
+        return indexName;
+    }
+
+    public void setIndexName(String indexName) {
+        this.indexName = indexName;
     }
 }

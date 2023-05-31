@@ -70,8 +70,10 @@ public class DescTableCommand extends AbstractCommand {
             List<IndexMetadata> indexMetadataList = tableIndexBlock.getIndexMetadataList();
             if (indexMetadataList != null) {
                 resultList.add("index:\n");
+                resultList.add("indexName" + " | " + "column" + " | " + "indexType");
                 for (IndexMetadata index : indexMetadataList) {
-                    resultList.add("indexName:" + index.getIndexName() + ", column:" + index.getColumnName());
+                    String type = index.getIndexType() == (byte) 1 ? "主键" : "一般索引";
+                    resultList.add(index.getIndexName()  + " | " + index.getColumnName() + " | " + type);
                 }
             }
 

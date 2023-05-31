@@ -1,5 +1,6 @@
 package com.moyu.test.store.metadata;
 
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.*;
 import com.moyu.test.store.metadata.obj.TableIndexBlock;
@@ -73,6 +74,44 @@ public class IndexMetadataStore {
             }
         }
     }
+
+
+    public void dropIndexMetadata(Integer tableId, String indexName) {
+        synchronized (ColumnMetadataStore.class) {
+            TableIndexBlock block = indexBlockMap.get(tableId);
+            if (block == null) {
+                throw new SqlExecutionException("索引" + indexName + "不存在");
+            } else {
+                List<IndexMetadata> list = block.getIndexMetadataList();
+                if (list != null && list.size() > 0) {
+                    for (int i = list.size() - 1; i >= 0; i--) {
+                        IndexMetadata indexMetadata = list.get(i);
+                        if(indexMetadata.getIndexName().equals(indexName)) {
+                            list.remove(i);
+                        }
+                    }
+                }
+                // 重新写数据块
+                TableIndexBlock newBlock = new TableIndexBlock(block.getBlockIndex(), block.getStartPos(), block.getTableId());
+                long startPos = newBlock.getStartPos();
+                for (int i = 0; i < list.size(); i++) {
+                    IndexMetadata index = list.get(i);
+                    index.setStartPos(startPos);
+                    newBlock.addIndex(index);
+                    startPos += index.getStartPos() + index.getTotalByteLen();
+                }
+                fileStore.write(newBlock.getByteBuffer(), newBlock.getStartPos());
+            }
+
+            try {
+                init();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
 
 
     public void dropIndexBlock(Integer tableId) {

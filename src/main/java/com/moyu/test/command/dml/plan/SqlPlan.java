@@ -1,9 +1,9 @@
 package com.moyu.test.command.dml.plan;
 import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionTree;
-import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,17 +16,28 @@ import java.util.Map;
 public class SqlPlan {
 
 
-    public static SelectPlan getSelectPlan(ConditionTree conditionTree, Column[] columns) {
+    public static SelectPlan getSelectPlan(ConditionTree conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
 
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : columns) {
             columnMap.put(c.getColumnName(), c);
         }
-        return analyzeTree(conditionTree, columnMap);
+
+        Map<String, IndexMetadata> indexMap = new HashMap<>();
+        if(indexMetadataList != null) {
+            for (IndexMetadata idx : indexMetadataList) {
+                indexMap.put(idx.getColumnName(), idx);
+            }
+        }
+
+
+        return analyzeTree(conditionTree, columnMap, indexMap);
     }
 
 
-    private static SelectPlan analyzeTree(ConditionTree conditionTree, Map<String,Column> columnMap) {
+    private static SelectPlan analyzeTree(ConditionTree conditionTree,
+                                          Map<String,Column> columnMap,
+                                          Map<String, IndexMetadata> indexMap) {
         if(conditionTree.isLeaf()) {
             // TODO 目前只处理最简单的情况，按单个主键索引查询
             Condition condition = conditionTree.getCondition();
@@ -35,21 +46,35 @@ public class SqlPlan {
             if(column == null) {
                 throw new SqlIllegalException("字段" + key + "不存在");
             }
-            if(column.getIsPrimaryKey() == (byte)1) {
+
+            IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
+
+            if(column.getIsPrimaryKey() == (byte)1 && indexMetadata == null) {
                 column.setValue(condition.getValue().get(0));
                 SelectPlan selectPlan = new SelectPlan();
                 selectPlan.setTableName(column.getColumnName());
                 selectPlan.setUseIndex(true);
+                selectPlan.setIndexType((byte)1);
                 selectPlan.setIndexColumn(column);
                 // TODO tableId
                 selectPlan.setTableId(null);
+                return selectPlan;
+            } else if(indexMetadata != null) {
+                column.setValue(condition.getValue().get(0));
+                SelectPlan selectPlan = new SelectPlan();
+                selectPlan.setTableName(column.getColumnName());
+                selectPlan.setUseIndex(true);
+                selectPlan.setIndexType(indexMetadata.getIndexType());
+                selectPlan.setIndexColumn(column);
+                selectPlan.setTableId(indexMetadata.getTableId());
+                selectPlan.setIndexName(indexMetadata.getIndexName());
                 return selectPlan;
             }
         } else {
             List<ConditionTree> childNodes = conditionTree.getChildNodes();
             if (childNodes != null) {
                 for (int i = 0; i < childNodes.size(); i++) {
-                    SelectPlan selectPlan = analyzeTree(childNodes.get(i), columnMap);
+                    SelectPlan selectPlan = analyzeTree(childNodes.get(i), columnMap, indexMap);
                     if(selectPlan != null) {
                         return selectPlan;
                     }

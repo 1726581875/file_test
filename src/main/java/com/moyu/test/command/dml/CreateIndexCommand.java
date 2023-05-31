@@ -31,6 +31,8 @@ public class CreateIndexCommand extends AbstractCommand {
 
     private String indexName;
 
+    private Byte indexType;
+
     private Column[] columns;
 
     private Column indexColumn;
@@ -41,19 +43,22 @@ public class CreateIndexCommand extends AbstractCommand {
         DataChunkStore dataChunkStore = null;
         IndexMetadataStore indexMetadataStore = null;
         try {
-            // 保存索引元数据
             indexMetadataStore = new IndexMetadataStore();
-            IndexMetadata index = new IndexMetadata(0L, tableId, indexName, columnName, (byte) 0);
+            // 存在则先删除索引元数据
+            indexMetadataStore.dropIndexMetadata(this.tableId, this.indexName);
+
+            IndexMetadata index = new IndexMetadata(0L, tableId, indexName, columnName, indexType);
+            // 保存索引元数据
             indexMetadataStore.saveIndexMetadata(tableId, index);
 
-            // 生成创建索引文件
             String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
             String indexPath = dirPath + File.separator + tableName +"_" + indexName +".idx";
-
+            // 索引文件存在则先删除
             File file = new File(indexPath);
             if(file.exists()) {
                 file.delete();
             }
+            // 生成索引文件
             FileUtil.createFileIfNotExists(indexPath);
 
             // 索引为int类型
@@ -216,5 +221,13 @@ public class CreateIndexCommand extends AbstractCommand {
 
     public void setIndexColumn(Column indexColumn) {
         this.indexColumn = indexColumn;
+    }
+
+    public Byte getIndexType() {
+        return indexType;
+    }
+
+    public void setIndexType(Byte indexType) {
+        this.indexType = indexType;
     }
 }

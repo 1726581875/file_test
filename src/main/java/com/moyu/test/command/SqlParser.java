@@ -14,6 +14,7 @@ import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
+import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
 
@@ -248,6 +249,7 @@ public class SqlParser implements Parser {
         command.setIndexName(indexName);
         command.setColumnName(columnName);
         command.setColumns(columns);
+        command.setIndexType((byte) 2);
         command.setIndexColumn(indexColumn);
         return command;
     }
@@ -470,8 +472,26 @@ public class SqlParser implements Parser {
         selectCommand.setOffset(offset == null ? 0 : offset);
 
 
+        // 当前索引列表
+        List<IndexMetadata> indexMetadataList = null;
+        IndexMetadataStore metadataStore = null;
+        try {
+            TableMetadata tableMeta = getTableMeta(tableName);
+            metadataStore = new IndexMetadataStore();
+            Map<Integer, TableIndexBlock> columnMap = metadataStore.getIndexMap();
+            TableIndexBlock tableIndexBlock = columnMap.get(tableMeta.getTableId());
+            if (tableIndexBlock != null) {
+                indexMetadataList = tableIndexBlock.getIndexMetadataList();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            metadataStore.close();
+        }
+
+
         // 设置查询计划（是否使用索引）
-        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns);
+        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns, indexMetadataList);
         selectCommand.setSelectPlan(selectPlan);
 
         return selectCommand;
