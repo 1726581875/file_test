@@ -28,23 +28,34 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
-/*        String dirPath = PathUtil.getBaseDirPath() + File.separator + 0;
-        String indexPath = dirPath + File.separator + "table_1" + ".idx";
-        FileUtil.createFileIfNotExists(indexPath);
-        BpTreeStore bpTreeStore = null;
-        try {
-            bpTreeStore = new BpTreeStore(indexPath);
-            BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
-            bTreeMap.initRootNode();
+        testExecSQL("drop table xmz_1");
 
-            Long aLong = bTreeMap.get(10);
-            System.out.println(aLong);
+        testExecSQL("create table xmz_1 (id int PRIMARY KEY, name varchar(10), time timestamp)");
+        long beginTime = System.currentTimeMillis();
+        long time = beginTime;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
+        List<Column[]> columnList = new ArrayList<>();
+        InsertCommand insertCommand = new InsertCommand(0, "xmz_1", null);
+        int rowNum = 10000;
+        for (int i = 1; i <= rowNum; i++) {
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
+            if (i % 10000 == 0) {
+                insertCommand.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+                time = System.currentTimeMillis();
+                columnList.clear();
+            }
+        }
 
-        //batchInsertData();
+        testExecSQL("select count(*) from xmz_1");
+
+        //testExecSQL("ALTER TABLE xmz_1 ADD INDEX indexName(id);");
+        testExecSQL("CREATE INDEX aaaa ON xmz_1 (id);");
+
+        testExecSQL("desc xmz_1");
+
+
     }
 
 

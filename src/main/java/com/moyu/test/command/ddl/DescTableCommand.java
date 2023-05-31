@@ -4,13 +4,13 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.exception.SqlQueryException;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
+import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.ColumnMetadata;
-import com.moyu.test.store.metadata.obj.TableColumnBlock;
-import com.moyu.test.store.metadata.obj.TableMetadata;
+import com.moyu.test.store.metadata.obj.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -33,6 +33,7 @@ public class DescTableCommand extends AbstractCommand {
         List<String> resultList = new ArrayList<>();
         TableMetadataStore metadataStore = null;
         ColumnMetadataStore columnMetadataStore = null;
+        IndexMetadataStore indexStore = null;
         try {
             metadataStore = new TableMetadataStore(databaseId);
             columnMetadataStore = new ColumnMetadataStore();
@@ -40,19 +41,19 @@ public class DescTableCommand extends AbstractCommand {
 
             TableMetadata table = null;
             for (int i = 0; i < allData.size(); i++) {
-                if(databaseId.equals(allData.get(i).getDatabaseId())
+                if (databaseId.equals(allData.get(i).getDatabaseId())
                         && tableName.equals(allData.get(i).getTableName())) {
                     table = allData.get(i);
                     break;
                 }
             }
 
-            if(table == null) {
+            if (table == null) {
                 throw new SqlQueryException("表" + tableName + "不存在");
             }
 
             TableColumnBlock columnBlock = columnMetadataStore.getColumnBlock(table.getTableId());
-            if(columnBlock == null) {
+            if (columnBlock == null) {
                 throw new SqlQueryException("表字段不存在");
             }
             // 构造输出结果
@@ -61,6 +62,19 @@ public class DescTableCommand extends AbstractCommand {
             for (ColumnMetadata column : columnMetadataList) {
                 resultList.add(column.getColumnIndex() + " | " + ColumnTypeEnum.getNameByType(column.getColumnType()) + " | " + column.getColumnLength());
             }
+
+            // 索引信息
+            indexStore = new IndexMetadataStore();
+            Map<Integer, TableIndexBlock> indexMap = indexStore.getIndexMap();
+            TableIndexBlock tableIndexBlock = indexMap.get(table.getTableId());
+            List<IndexMetadata> indexMetadataList = tableIndexBlock.getIndexMetadataList();
+            if (indexMetadataList != null) {
+                resultList.add("index:\n");
+                for (IndexMetadata index : indexMetadataList) {
+                    resultList.add("indexName:" + index.getIndexName() + ", column:" + index.getColumnName());
+                }
+            }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,6 +97,10 @@ public class DescTableCommand extends AbstractCommand {
             stringBuilder.append(str);
             stringBuilder.append("\n");
         }
+
+
+
+
         return stringBuilder.toString();
     }
 

@@ -55,12 +55,15 @@ public class SqlParser implements Parser {
     private static final String INSERT = "INSERT";
     private static final String TRUNCATE = "TRUNCATE";
 
+    private static final String ALTER = "ALTER";
+
     private static final String DROP = "DROP";
     private static final String SHOW = "SHOW";
     private static final String DESC = "DESC";
 
     private static final String DATABASE = "DATABASE";
     private static final String TABLE = "TABLE";
+    private static final String INDEX = "INDEX";
 
 
     public SqlParser(ConnectSession connectSession) {
@@ -89,9 +92,35 @@ public class SqlParser implements Parser {
                         CreateDatabaseCommand command = new CreateDatabaseCommand();
                         command.setDatabaseName(databaseName);
                         return command;
-                        // create table
+                    // create table
                     case TABLE:
                         return getCreateTableCommand();
+                    // CREATE INDEX indexName ON tableName (columnName(length));
+                    case INDEX:
+                        skipSpace();
+                        String indexName = getNextOriginalWord();
+                        skipSpace();
+                        String ON = getNextKeyWord();
+                        if(!"ON".equals(ON)) {
+                            throw new SqlIllegalException("sql语法有误");
+                        }
+
+                        skipSpace();
+                        String tableName = null;
+                        int i = currIndex;
+                        while (true) {
+                            if (currIndex >= sqlCharArr.length) {
+                                throw new SqlIllegalException("sql语法有误");
+                            }
+                            if (sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
+                                tableName = originalSql.substring(i, currIndex);
+                                break;
+                            }
+                            currIndex++;
+                        }
+                        StartEndIndex startEnd = getNextBracketStartEnd();
+                        String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
+                        return getCreateIndexCommand(tableName, columnName, indexName);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
@@ -122,6 +151,8 @@ public class SqlParser implements Parser {
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
+            case ALTER:
+                return getAlterTableCommand();
             case SHOW:
                 skipSpace();
                 String word11 = getNextKeyWord();
@@ -152,6 +183,76 @@ public class SqlParser implements Parser {
                 throw new SqlIllegalException("sql语法有误" + firstKeyWord);
         }
     }
+
+
+    private Command getAlterTableCommand() {
+        skipSpace();
+        String tableKeyWord = getNextKeyWord();
+        if(!TABLE.equals(tableKeyWord)) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+
+        skipSpace();
+        String tableName = getNextOriginalWord();
+
+        skipSpace();
+        String operate = getNextKeyWord();
+        switch (operate) {
+            case "ADD":
+                skipSpace();
+                String word0 = getNextKeyWord();
+                // ALTER TABLE tableName ADD INDEX indexName(columnName);
+                if(INDEX.equals(word0)) {
+                    skipSpace();
+
+                    String indexName = null;
+                    int i = currIndex;
+                    while (true) {
+                        if(currIndex >= sqlCharArr.length) {
+                            throw new SqlIllegalException("sql语法有误");
+                        }
+                        if(sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
+                            indexName = originalSql.substring(i, currIndex);
+                            break;
+                        }
+                        currIndex++;
+                    }
+
+                    StartEndIndex startEnd = getNextBracketStartEnd();
+                    String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
+
+                    CreateIndexCommand command = getCreateIndexCommand(tableName, columnName, indexName);
+                    return command;
+                }
+            case "DROP":
+            default:
+                throw new SqlIllegalException("sql语法有误");
+        }
+    }
+
+
+    private CreateIndexCommand getCreateIndexCommand(String tableName, String columnName, String indexName){
+        TableMetadata tableMeta = getTableMeta(tableName);
+        Column[] columns = getColumns(tableName);
+
+        Column indexColumn = null;
+        for (Column c : columns) {
+            if(columnName.equals(c.getColumnName())) {
+                indexColumn = c;
+            }
+        }
+        CreateIndexCommand command = new CreateIndexCommand();
+        command.setDatabaseId(this.connectSession.getDatabaseId());
+        command.setTableName(tableName);
+        command.setTableId(tableMeta.getTableId());
+        command.setIndexName(indexName);
+        command.setColumnName(columnName);
+        command.setColumns(columns);
+        command.setIndexColumn(indexColumn);
+        return command;
+    }
+
+
 
 
     private UpdateCommand getUpdateCommand() {
@@ -868,6 +969,7 @@ public class SqlParser implements Parser {
             e.printStackTrace();
         } finally {
             columnStore.close();
+            tableMetadata.close();
         }
 
         if(columnMetadataList == null || columnMetadataList.size() == 0) {
@@ -888,6 +990,27 @@ public class SqlParser implements Parser {
 
         return columns;
     }
+
+
+    private TableMetadata getTableMeta(String tableName){
+        TableMetadataStore tableMetadata = null;
+        try {
+            tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
+            TableMetadata table = tableMetadata.getTable(tableName);
+            if(table == null) {
+                throw new SqlExecutionException("表" + tableName + "不存在");
+            }
+            return table;
+        } catch (SqlExecutionException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            tableMetadata.close();
+        }
+        throw new SqlExecutionException("表" + tableName + "不存在");
+    }
+
 
 
     /**
