@@ -28,19 +28,19 @@ public class SqlParserTest {
 
     public static void main(String[] args) {
 
-        testPrimaryKey();
+        createIndexSqlTest();
     }
 
 
     private static void createIndexSqlTest(){
-        testExecSQL("drop table xmz_1");
+        testExecSQL("drop table xmz_2");
 
-        testExecSQL("create table xmz_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_2 (id int, name varchar(10), time timestamp)");
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "xmz_1", null);
+        InsertCommand insertCommand = new InsertCommand(0, "xmz_2", null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -53,15 +53,15 @@ public class SqlParserTest {
             }
         }
 
-        testExecSQL("select count(*) from xmz_1");
+        testExecSQL("select count(*) from xmz_2");
 
-        testExecSQL("ALTER TABLE xmz_1 ADD INDEX indexName(id);");
+        testExecSQL("ALTER TABLE xmz_2 ADD INDEX indexName(id);");
 
-        testExecSQL("select * from xmz_1 where id = 1000");
+        testExecSQL("select * from xmz_2 where id = 1000");
 
         //testExecSQL("CREATE INDEX aaaa ON xmz_1 (id);");
 
-        testExecSQL("desc xmz_1");
+        testExecSQL("desc xmz_2");
     }
 
 

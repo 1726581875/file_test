@@ -28,7 +28,7 @@ public class ShowTablesCommand extends AbstractCommand {
             List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
 
             for (int i = 0; i < allData.size(); i++) {
-                list.add(allData.get(i).getTableName());
+                list.add(allData.get(i).getTableName() + "  |  " + allData.get(i).getTableId());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,9 +46,9 @@ public class ShowTablesCommand extends AbstractCommand {
         String[] result = getAllTable();
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("-------\n");
-        stringBuilder.append("| 数据表 |\n");
-        stringBuilder.append("-------\n");
+        stringBuilder.append("----------------\n");
+        stringBuilder.append("| 数据表 |   id  |\n");
+        stringBuilder.append("----------------\n");
         for (String str : result) {
             stringBuilder.append("| " +str + " |");
             stringBuilder.append("\n");

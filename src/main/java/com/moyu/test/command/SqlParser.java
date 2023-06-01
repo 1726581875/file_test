@@ -149,6 +149,18 @@ public class SqlParser implements Parser {
                         skipSpace();
                         String tableName = getNextOriginalWord();
                         return new DropTableCommand(this.connectSession.getDatabaseId(), tableName);
+                    case INDEX:
+                        skipSpace();
+                        String indexName = getNextOriginalWord();
+                        skipSpace();
+                        String ON = getNextKeyWord();
+                        if(!"ON".equals(ON)) {
+                            throw new SqlIllegalException("sql语法有误");
+                        }
+                        skipSpace();
+                        String tableName11 = getNextOriginalWord();
+                        TableMetadata tableMeta = getTableMeta(tableName11);
+                        return new DropIndexCommand(this.connectSession.getDatabaseId(), tableMeta.getTableId(), tableMeta.getTableName(), indexName);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }

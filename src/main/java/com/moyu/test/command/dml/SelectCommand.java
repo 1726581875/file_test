@@ -90,8 +90,7 @@ public class SelectCommand extends AbstractCommand {
                     dataList = getColumnDataList(dataChunkNum, dataChunkStore);
                 } else if(selectPlan.getIndexType() == (byte) 1) {
                     System.out.println("使用主键索引");
-                    Column indexColumn = selectPlan.getIndexColumn();
-                    dataList = getColumnDataListUsePrimaryKey(indexColumn, dataChunkStore);
+                    dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
                 } else if(selectPlan.getIndexType() == (byte) 2) {
                     System.out.println("使用普通索引");
                     dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);

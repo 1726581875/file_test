@@ -22,7 +22,7 @@ public class ShowDatabasesCommand extends AbstractCommand {
             List<DatabaseMetadata> allData = metadataStore.getAllData();
 
             for (int i = 0; i < allData.size(); i++) {
-                list.add(allData.get(i).getName());
+                list.add(allData.get(i).getName() + "  |  " + allData.get(i).getDatabaseId());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,9 +40,9 @@ public class ShowDatabasesCommand extends AbstractCommand {
         StringBuilder stringBuilder = new StringBuilder();
 
 
-        stringBuilder.append("--------\n");
-        stringBuilder.append("| 数据库 |\n");
-        stringBuilder.append("--------\n");
+        stringBuilder.append("--------------\n");
+        stringBuilder.append("| 数据库 |  id |\n");
+        stringBuilder.append("---------------\n");
         for (String str : result) {
             stringBuilder.append("| " +str + " |");
             stringBuilder.append("\n");

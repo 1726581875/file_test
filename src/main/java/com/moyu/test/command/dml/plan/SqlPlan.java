@@ -39,27 +39,15 @@ public class SqlPlan {
                                           Map<String,Column> columnMap,
                                           Map<String, IndexMetadata> indexMap) {
         if(conditionTree.isLeaf()) {
-            // TODO 目前只处理最简单的情况，按单个主键索引查询
+            // TODO 目前只处理最简单的情况，按单个索引查询
             Condition condition = conditionTree.getCondition();
             String key = condition.getKey();
             Column column = columnMap.get(key);
             if(column == null) {
                 throw new SqlIllegalException("字段" + key + "不存在");
             }
-
             IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
-
-            if(column.getIsPrimaryKey() == (byte)1 && indexMetadata == null) {
-                column.setValue(condition.getValue().get(0));
-                SelectPlan selectPlan = new SelectPlan();
-                selectPlan.setTableName(column.getColumnName());
-                selectPlan.setUseIndex(true);
-                selectPlan.setIndexType((byte)1);
-                selectPlan.setIndexColumn(column);
-                // TODO tableId
-                selectPlan.setTableId(null);
-                return selectPlan;
-            } else if(indexMetadata != null) {
+            if(indexMetadata != null) {
                 column.setValue(condition.getValue().get(0));
                 SelectPlan selectPlan = new SelectPlan();
                 selectPlan.setTableName(column.getColumnName());

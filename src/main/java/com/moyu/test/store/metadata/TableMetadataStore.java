@@ -52,7 +52,7 @@ public class TableMetadataStore {
         synchronized (TableMetadataStore.class) {
             checkTableName(tableName);
             TableMetadata lastData = getLastTable();
-            int nextTableId = lastData == null ? 0 : lastData.getDatabaseId() + 1;
+            int nextTableId = lastData == null ? 0 : lastData.getTableId() + 1;
             long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
             metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
             ByteBuffer byteBuffer = metadata.getByteBuffer();
