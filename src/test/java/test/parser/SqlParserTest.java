@@ -29,7 +29,6 @@ public class SqlParserTest {
     public static void main(String[] args) {
 
         testPrimaryKey();
-
     }
 
 

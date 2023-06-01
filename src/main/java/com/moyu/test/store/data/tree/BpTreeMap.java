@@ -335,14 +335,17 @@ public class BpTreeMap<K extends Comparable, V> {
 
             bpTreeStore = new BpTreeStore(indexPath);
             if (Integer.class.equals(keyType)) {
-                BpTreeMap<Integer, Long[]> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
-                return (BpTreeMap<T, Long[]>) bTreeMap;
+                BpTreeMap<Integer, Long[]> bpTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                bpTreeMap.initRootNode();
+                return (BpTreeMap<T, Long[]>) bpTreeMap;
             } else if (Long.class.equals(keyType)) {
-                BpTreeMap<Long, Long[]> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
-                return (BpTreeMap<T, Long[]>) bTreeMap;
+                BpTreeMap<Long, Long[]> bpTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                bpTreeMap.initRootNode();
+                return (BpTreeMap<T, Long[]>) bpTreeMap;
             } else if (String.class.equals(keyType)) {
-                BpTreeMap<String, Long[]> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
-                return (BpTreeMap<T, Long[]>) bTreeMap;
+                BpTreeMap<String, Long[]> bpTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
+                bpTreeMap.initRootNode();
+                return (BpTreeMap<T, Long[]>) bpTreeMap;
             }
         } catch (Exception e) {
             e.printStackTrace();

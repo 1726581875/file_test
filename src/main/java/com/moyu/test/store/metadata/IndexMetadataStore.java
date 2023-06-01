@@ -112,6 +112,23 @@ public class IndexMetadataStore {
     }
 
 
+    public IndexMetadata getIndex(Integer tableId, String indexName) {
+        TableIndexBlock block = indexBlockMap.get(tableId);
+        if(block == null) {
+            return null;
+        }
+        List<IndexMetadata> list = block.getIndexMetadataList();
+        if (list != null && list.size() > 0) {
+            for (int i = list.size() - 1; i >= 0; i--) {
+                IndexMetadata indexMetadata = list.get(i);
+                if (indexMetadata.getIndexName().equals(indexName)) {
+                    return indexMetadata;
+                }
+            }
+        }
+        return null;
+    }
+
 
 
     public void dropIndexBlock(Integer tableId) {

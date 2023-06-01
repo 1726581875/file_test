@@ -70,82 +70,6 @@ public class SelectCommand extends AbstractCommand {
         return getResultPrintStr(queryResult, queryStartTime, queryEndTime);
     }
 
-    private void appendLine(StringBuilder stringBuilder) {
-        stringBuilder.append(" ");
-        for (SelectColumn column : selectColumns) {
-            int length = column.getSelectColumnName().length();
-            while (length > 0) {
-                stringBuilder.append("--");
-                length--;
-            }
-        }
-        stringBuilder.append("\n");
-    }
-
-    private String getStr(char c, int num) {
-        StringBuilder stringBuilder = new StringBuilder();
-        while (num > 0) {
-            stringBuilder.append(c);
-            num--;
-        }
-        return stringBuilder.toString();
-    }
-
-
-    private String getResultPrintStr(QueryResult queryResult, long queryStartTime,long queryEndTime) {
-        // 解析结果，打印拼接结果字符串
-        StringBuilder stringBuilder = new StringBuilder();
-        // 分界线
-        appendLine(stringBuilder);
-
-
-        SelectColumn[] selectColumns = queryResult.getSelectColumns();
-        // 表头
-        String tableHeaderStr = "";
-        for (SelectColumn column : selectColumns) {
-            String value = column.getSelectColumnName();
-            tableHeaderStr = tableHeaderStr + " | " + value;
-        }
-        stringBuilder.append(tableHeaderStr + " | " + "\n");
-
-        // 分界线
-        appendLine(stringBuilder);
-
-        SelectColumn[] resultColumns = queryResult.getSelectColumns();
-        // 值
-        List<Object[]> resultRows = queryResult.getResultRows();
-        for (int i = 0; i < resultRows.size(); i++) {
-            Object[] rowValues = resultRows.get(i);
-            String rowStr = "";
-            for (int j = 0; j < rowValues.length; j++) {
-                Object value = rowValues[j];
-                String valueStr = (value == null ? "" : valueToString(value));
-                int length = resultColumns[j].getSelectColumnName().length();
-                if(length > valueStr.length()) {
-                    int spaceNum = (length - valueStr.length()) / 2;
-                    rowStr = rowStr + " | "+ getStr(' ',spaceNum) + valueStr + getStr(' ',spaceNum);
-                } else {
-                    rowStr = rowStr + " | " + valueStr;
-                }
-            }
-            stringBuilder.append(rowStr + " | " + "\n");
-        }
-
-        stringBuilder.append("查询结果行数:" +  resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms");
-
-        return stringBuilder.toString();
-    }
-
-    private String valueToString(Object value) {
-        if (value instanceof Date) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            return dateFormat.format((Date) value);
-        } else {
-            return value.toString();
-        }
-    }
-
-
 
     public QueryResult execQuery() {
         QueryResult result = new QueryResult();
@@ -317,22 +241,21 @@ public class SelectCommand extends AbstractCommand {
     private List<Column[]> getColumnDataListUseIndex(SelectPlan selectPlan, DataChunkStore dataChunkStore) {
         List<Column[]> dataList = new ArrayList<>();
         try {
+            // 索引文件位置
             String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
             String indexPath = dirPath + File.separator + tableName +"_" + selectPlan.getIndexName() +".idx";
 
             Column indexColumn = selectPlan.getIndexColumn();
+            // 根据索引拿到，数据块位置数组
             Long[] startPosArr = null;
             if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
                 BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-                bpTreeMap.initRootNode();
                 startPosArr = bpTreeMap.get(Integer.valueOf((String) indexColumn.getValue()));
             } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
                 BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-                bpTreeMap.initRootNode();
                 startPosArr = bpTreeMap.get(Long.valueOf((String) indexColumn.getValue()));
             } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
                 BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-                bpTreeMap.initRootNode();
                 startPosArr = bpTreeMap.get((String)indexColumn.getValue());
             }
 
@@ -340,6 +263,7 @@ public class SelectCommand extends AbstractCommand {
                 return new ArrayList<>();
             }
 
+            // 遍历数据块，拿到符合条件的数据
             AtomicInteger currIndex = new AtomicInteger(0);
             for (Long starPos : startPosArr) {
                 DataChunk dataChunk = dataChunkStore.getChunkByPos(starPos);
@@ -511,6 +435,81 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
+
+    private void appendLine(StringBuilder stringBuilder) {
+        stringBuilder.append(" ");
+        for (SelectColumn column : selectColumns) {
+            int length = column.getSelectColumnName().length();
+            while (length > 0) {
+                stringBuilder.append("--");
+                length--;
+            }
+        }
+        stringBuilder.append("\n");
+    }
+
+    private String getStr(char c, int num) {
+        StringBuilder stringBuilder = new StringBuilder();
+        while (num > 0) {
+            stringBuilder.append(c);
+            num--;
+        }
+        return stringBuilder.toString();
+    }
+
+
+    private String getResultPrintStr(QueryResult queryResult, long queryStartTime,long queryEndTime) {
+        // 解析结果，打印拼接结果字符串
+        StringBuilder stringBuilder = new StringBuilder();
+        // 分界线
+        appendLine(stringBuilder);
+
+
+        SelectColumn[] selectColumns = queryResult.getSelectColumns();
+        // 表头
+        String tableHeaderStr = "";
+        for (SelectColumn column : selectColumns) {
+            String value = column.getSelectColumnName();
+            tableHeaderStr = tableHeaderStr + " | " + value;
+        }
+        stringBuilder.append(tableHeaderStr + " | " + "\n");
+
+        // 分界线
+        appendLine(stringBuilder);
+
+        SelectColumn[] resultColumns = queryResult.getSelectColumns();
+        // 值
+        List<Object[]> resultRows = queryResult.getResultRows();
+        for (int i = 0; i < resultRows.size(); i++) {
+            Object[] rowValues = resultRows.get(i);
+            String rowStr = "";
+            for (int j = 0; j < rowValues.length; j++) {
+                Object value = rowValues[j];
+                String valueStr = (value == null ? "" : valueToString(value));
+                int length = resultColumns[j].getSelectColumnName().length();
+                if(length > valueStr.length()) {
+                    int spaceNum = (length - valueStr.length()) / 2;
+                    rowStr = rowStr + " | "+ getStr(' ',spaceNum) + valueStr + getStr(' ',spaceNum);
+                } else {
+                    rowStr = rowStr + " | " + valueStr;
+                }
+            }
+            stringBuilder.append(rowStr + " | " + "\n");
+        }
+
+        stringBuilder.append("查询结果行数:" +  resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms");
+
+        return stringBuilder.toString();
+    }
+
+    private String valueToString(Object value) {
+        if (value instanceof Date) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return dateFormat.format((Date) value);
+        } else {
+            return value.toString();
+        }
+    }
 
 
 

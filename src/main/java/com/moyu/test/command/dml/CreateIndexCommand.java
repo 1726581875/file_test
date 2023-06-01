@@ -2,6 +2,7 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
@@ -41,90 +42,44 @@ public class CreateIndexCommand extends AbstractCommand {
     @Override
     public String execute() {
         DataChunkStore dataChunkStore = null;
-        IndexMetadataStore indexMetadataStore = null;
+        IndexMetadataStore indexStore = null;
         try {
-            indexMetadataStore = new IndexMetadataStore();
+            indexStore = new IndexMetadataStore();
+
+            IndexMetadata oldIndex = indexStore.getIndex(this.tableId, this.indexName);
             // 存在则先删除索引元数据
-            indexMetadataStore.dropIndexMetadata(this.tableId, this.indexName);
+            if (oldIndex != null) {
+                indexStore.dropIndexMetadata(this.tableId, this.indexName);
+            }
 
-            IndexMetadata index = new IndexMetadata(0L, tableId, indexName, columnName, indexType);
             // 保存索引元数据
-            indexMetadataStore.saveIndexMetadata(tableId, index);
+            IndexMetadata index = new IndexMetadata(0L, tableId, indexName, columnName, indexType);
+            indexStore.saveIndexMetadata(tableId, index);
 
+            // 索引路径
             String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
-            String indexPath = dirPath + File.separator + tableName +"_" + indexName +".idx";
+            String indexPath = dirPath + File.separator + tableName + "_" + indexName + ".idx";
             // 索引文件存在则先删除
             File file = new File(indexPath);
-            if(file.exists()) {
+            if (file.exists()) {
                 file.delete();
             }
-            // 生成索引文件
+            // 创建索引文件
             FileUtil.createFileIfNotExists(indexPath);
 
-            // 索引为int类型
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
-            dataChunkStore = new DataChunkStore(fileFullPath);
+            // 操作数据文件，获取数据块数量(后面遍历没一行数据，为每一行数据创建索引)
+            dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, this.tableName));
             int dataChunkNum = dataChunkStore.getDataChunkNum();
+
+            // 根据索引类型构造索引
             if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-                bpTreeMap.initRootNode();
-                for (int i = 0; i < dataChunkNum; i++) {
-                    DataChunk chunk = dataChunkStore.getChunk(i);
-                    for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-                        RowData rowData = chunk.getDataRowList().get(j);
-                        Column[] columnData = rowData.getColumnData(columns);
-                        // 找到对应字段插入索引
-                        Column indexColumnValue = getIndexColumn(columnData);
-                        if (indexColumnValue != null) {
-                            Integer key = (Integer) indexColumnValue.getValue();
-                            Long[] arr = bpTreeMap.get(key);
-                            Long[] saveArr = insertPosArr(arr, chunk.getStartPos());
-                            bpTreeMap.putUnSaveDisk(key, saveArr);
-                        }
-                    }
-                }
-                bpTreeMap.commitSaveDisk();
-
-                // 索引为Long类型
+                buildIndexTree(indexPath, dataChunkNum, dataChunkStore, Integer.class);
             } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-                BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-                bpTreeMap.initRootNode();
-                for (int i = 0; i < dataChunkNum; i++) {
-                    DataChunk chunk = dataChunkStore.getChunk(i);
-                    for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-                        RowData rowData = chunk.getDataRowList().get(j);
-                        Column[] columnData = rowData.getColumnData(columns);
-                        Column indexColumnValue = getIndexColumn(columnData);
-                        if (indexColumnValue != null) {
-                            Long key = (Long) indexColumnValue.getValue();
-                            Long[] arr = bpTreeMap.get(key);
-                            Long[] saveArr = insertPosArr(arr, chunk.getStartPos());
-                            bpTreeMap.putUnSaveDisk(key, saveArr);
-                        }
-                    }
-                }
-                bpTreeMap.commitSaveDisk();
-
-                // 索引为String类型
+                buildIndexTree(indexPath, dataChunkNum, dataChunkStore, Long.class);
             } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-                bpTreeMap.initRootNode();
-                for (int i = 0; i < dataChunkNum; i++) {
-                    DataChunk chunk = dataChunkStore.getChunk(i);
-                    for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-                        RowData rowData = chunk.getDataRowList().get(j);
-                        Column[] columnData = rowData.getColumnData(columns);
-                        // 找到对应字段插入索引
-                        Column indexColumnValue = getIndexColumn(columnData);
-                        if (indexColumnValue != null) {
-                            String key = (String) indexColumnValue.getValue();
-                            Long[] arr = bpTreeMap.get(key);
-                            Long[] saveArr = insertPosArr(arr, chunk.getStartPos());
-                            bpTreeMap.putUnSaveDisk(key, saveArr);
-                        }
-                    }
-                }
-                bpTreeMap.commitSaveDisk();
+                buildIndexTree(indexPath, dataChunkNum, dataChunkStore, String.class);
+            } else {
+                throw new SqlExecutionException("该字段类型不支持创建索引，类型:" + indexColumn.getColumnType());
             }
 
         } catch (Exception e) {
@@ -132,24 +87,56 @@ public class CreateIndexCommand extends AbstractCommand {
             return "error";
         } finally {
             dataChunkStore.close();
-            indexMetadataStore.close();
+            indexStore.close();
         }
         return "ok";
     }
 
 
-    private Long[] insertPosArr(Long[] arr, Long pos) {
+    private <T extends Comparable> void buildIndexTree(String indexPath, Integer dataChunkNum, DataChunkStore dataChunkStore, Class<T> clazz) {
+        // 创建一颗b+树
+        BpTreeMap<T, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, false, clazz);
+        // 一行一行遍历数据
+        for (int i = 0; i < dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            for (int j = 0; j < chunk.getDataRowList().size(); j++) {
+                RowData rowData = chunk.getDataRowList().get(j);
+                Column[] columnData = rowData.getColumnData(columns);
+                // 找到对应索引字段
+                Column indexColumnValue = getIndexColumn(columnData);
+                if (indexColumnValue != null) {
+                    // 当前行对应索引字段的值作为b+树的【关键字】，数据块位置作为b+数的【值】
+                    T key = (T) indexColumnValue.getValue();
+                    Long[] arr = bpTreeMap.get(key);
+                    Long[] valueArr = insertValueArr(arr, chunk.getStartPos());
+                    bpTreeMap.putUnSaveDisk(key, valueArr);
+                }
+            }
+        }
+        // 保存到磁盘
+        bpTreeMap.commitSaveDisk();
+    }
+
+
+    /**
+     * 插入值数组
+     * @param arr 当前关键字对应的值数组
+     * @param pos 数据块在文件中的开始位置
+     * @return
+     */
+    private Long[] insertValueArr(Long[] arr, Long pos) {
         if (arr == null) {
             arr = new Long[1];
             arr[0] = pos;
             return arr;
         } else {
+            // 已经存在，不需要再插入（因为可能会存在某些数据是处于同一数据块内）
             for (Long p : arr) {
                 if (p.equals(pos)) {
                     return arr;
                 }
             }
-
+            // 数组最后一个位置插入
             Long[] newArr = new Long[arr.length + 1];
             System.arraycopy(arr, 0, newArr, 0, arr.length);
             newArr[newArr.length - 1] = pos;
