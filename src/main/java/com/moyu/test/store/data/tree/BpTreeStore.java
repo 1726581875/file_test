@@ -79,10 +79,18 @@ public class BpTreeStore {
     }
 
 
+    public void clear() {
+        fileStore.truncate(0L);
+        this.nextPageIndex = 0;
+        this.pageCount = 0;
+    }
+
+
     public int getNextPageIndex() {
         synchronized (this) {
             int next = this.nextPageIndex;
             nextPageIndex++;
+            pageCount++;
             return next;
         }
     }

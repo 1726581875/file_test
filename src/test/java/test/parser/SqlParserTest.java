@@ -5,15 +5,7 @@ import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
-import com.moyu.test.store.data.tree.BpTreeMap;
-import com.moyu.test.store.data.tree.BpTreeStore;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.LongColumnType;
-import com.moyu.test.util.FileUtil;
-import com.moyu.test.util.PathUtil;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -27,20 +19,19 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-
         createIndexSqlTest();
     }
 
 
     private static void createIndexSqlTest(){
-        testExecSQL("drop table xmz_2");
+        testExecSQL("drop table xmz_3");
 
-        testExecSQL("create table xmz_2 (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table xmz_3 (id int, name varchar(10), time timestamp)");
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "xmz_2", null, null);
+        InsertCommand insertCommand = new InsertCommand(0, "xmz_3", null, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -53,15 +44,15 @@ public class SqlParserTest {
             }
         }
 
-        testExecSQL("select count(*) from xmz_2");
+        testExecSQL("select count(*) from xmz_3");
 
-        testExecSQL("ALTER TABLE xmz_2 ADD INDEX indexName(id);");
+        testExecSQL("ALTER TABLE xmz_3 ADD PRIMARY KEY indexName(id);");
 
-        testExecSQL("select * from xmz_2 where id = 1000");
+        testExecSQL("select * from xmz_3 where id = 1000");
 
         //testExecSQL("CREATE INDEX aaaa ON xmz_1 (id);");
 
-        testExecSQL("desc xmz_2");
+        testExecSQL("desc xmz_3");
     }
 
 

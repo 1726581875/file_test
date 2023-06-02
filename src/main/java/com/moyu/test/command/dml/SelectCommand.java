@@ -7,6 +7,7 @@ import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
@@ -88,10 +89,10 @@ public class SelectCommand extends AbstractCommand {
                 if(selectPlan == null) {
                     System.out.println("不使用索引");
                     dataList = getColumnDataList(dataChunkNum, dataChunkStore);
-                } else if(selectPlan.getIndexType() == (byte) 1) {
+                } else if(selectPlan.getIndexType() == CommonConstant.PRIMARY_KEY) {
                     System.out.println("使用主键索引");
                     dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
-                } else if(selectPlan.getIndexType() == (byte) 2) {
+                } else if(selectPlan.getIndexType() == CommonConstant.GENERAL_INDEX) {
                     System.out.println("使用普通索引");
                     dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
                 }

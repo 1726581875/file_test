@@ -2,6 +2,7 @@ package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.CreateIndexCommand;
+import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
@@ -46,7 +47,7 @@ public class CreateTableCommand extends AbstractCommand {
                 indexCommand.setTableName(tableName);
                 indexCommand.setColumns(columnList.toArray(new Column[0]));
                 indexCommand.setIndexColumn(keyColumn);
-                indexCommand.setIndexType((byte) 1);
+                indexCommand.setIndexType(CommonConstant.PRIMARY_KEY);
                 indexCommand.execute();
             }
         } catch (Exception e) {

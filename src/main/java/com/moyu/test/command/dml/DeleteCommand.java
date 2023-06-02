@@ -3,10 +3,15 @@ package com.moyu.test.command.dml;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.constant.CommonConstant;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.util.PathUtil;
 
 import java.util.List;
@@ -25,6 +30,8 @@ public class DeleteCommand extends AbstractCommand {
 
     private ConditionTree conditionTree;
 
+    private List<IndexMetadata> indexList;
+
 
     public DeleteCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree conditionTree) {
         this.databaseId = databaseId;
@@ -40,41 +47,11 @@ public class DeleteCommand extends AbstractCommand {
         try {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
-            int dataChunkNum = dataChunkStore.getDataChunkNum();
-            // 遍历数据块
-            for (int i = 0; i < dataChunkNum; i++) {
-                DataChunk chunk = dataChunkStore.getChunk(i);
-                if (chunk == null) {
-                    break;
-                }
-                // delete语句没有带任何条件，直接清空块内所有数据
-                if(conditionTree == null) {
-                    deleteRowNum += chunk.getRowNum();
-                    // 清空块内所有行数据
-                    chunk.clear();
-                } else {
-                    // 带条件，按条件筛选符号条件的行并且进行移除
-                    List<RowData> dataRowList = chunk.getDataRowList();
-                    if (dataRowList == null || dataRowList.size() == 0) {
-                        continue;
-                    }
-
-                    int index = dataRowList.size() - 1;
-                    do {
-                        RowData rowData = dataRowList.get(index);
-                        Column[] columnData = rowData.getColumnData(columns);
-                        boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
-                        // 只移除符号条件的行
-                        if (compareResult) {
-                            chunk.removeRow(index);
-                            deleteRowNum++;
-                        }
-                        index--;
-                    } while (index >= 0);
-
-                }
-                // 更新块整个数据块到磁盘
-                dataChunkStore.updateChunk(chunk);
+            // TODO 应该要支持按索引删除
+            if (conditionTree == null) {
+                deleteRowNum = deleteAllData(dataChunkStore);
+            } else {
+                deleteRowNum = deleteDataByCondition(dataChunkStore);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,7 +62,121 @@ public class DeleteCommand extends AbstractCommand {
         return "共删除了" + deleteRowNum + "行数据";
     }
 
+    private int deleteAllData(DataChunkStore dataChunkStore) {
+        int dataChunkNum = dataChunkStore.getDataChunkNum();
+        int deleteRowNum = 0;
+        // 遍历数据块
+        for (int i = 0; i < dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            if (chunk == null) {
+                break;
+            }
+            deleteRowNum += chunk.getRowNum();
+            // 清空块内所有行数据
+            chunk.clear();
+            // 更新块整个数据块到磁盘
+            dataChunkStore.updateChunk(chunk);
+
+        }
+
+        // 清空所有索引
+        if (indexList != null && indexList.size() > 0) {
+            for (IndexMetadata index : indexList) {
+                //Column indexColumn = getIndexColumn(index, columns);
+                String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+                BpTreeMap<Comparable, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Comparable.class);
+                bpTreeMap.clear();
+            }
+        }
+        return deleteRowNum;
+    }
+
+    /**
+     * 不使用索引
+     * @param dataChunkStore
+     * @return
+     */
+    private int deleteDataByCondition(DataChunkStore dataChunkStore) {
+        int dataChunkNum = dataChunkStore.getDataChunkNum();
+        int deleteRowNum = 0;
+        // 遍历数据块
+        for (int i = 0; i < dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            if (chunk == null) {
+                break;
+            }
+            List<RowData> dataRowList = chunk.getDataRowList();
+            int k = dataRowList.size() - 1;
+            do {
+                RowData rowData = dataRowList.get(k);
+                Column[] columnData = rowData.getColumnData(columns);
+                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                // 只移除符合条件的行
+                if (compareResult) {
+                    // 删除行
+                    chunk.removeRow(k);
+                    // 删除主键索引
+                    if (indexList != null && indexList.size() > 0) {
+                        for (IndexMetadata index : indexList) {
+                            if (index.getIndexType() == CommonConstant.PRIMARY_KEY) {
+                                Column indexColumn = getIndexColumn(index, columnData);
+                                removePrimaryKeyValue(index, indexColumn);
+                            }
+                        }
+                    }
+                    deleteRowNum++;
+                }
+                k--;
+            } while (k >= 0);
+
+            // 更新块整个数据块到磁盘
+            dataChunkStore.updateChunk(chunk);
+        }
+
+        return deleteRowNum;
+    }
+
+    private Column getIndexColumn(IndexMetadata index,  Column[] columnData) {
+        for (Column c : columns) {
+            if (c.getColumnName().equals(index.getColumnName())) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+
+    private void removePrimaryKeyValue(IndexMetadata index, Column indexColumn) {
+
+        if(indexColumn == null || indexColumn.getValue() == null) {
+            return;
+        }
+
+        String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+        if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+            BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
+            Integer key = (Integer) indexColumn.getValue();
+            bpTreeMap.remove(key);
+        } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
+            BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
+            Long key = (Long) indexColumn.getValue();
+            bpTreeMap.remove(key);
+        } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+            BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
+            String key = (String) indexColumn.getValue();
+            bpTreeMap.remove(key);
+        } else {
+            throw new SqlExecutionException("该字段类型不支持索引，类型:" + indexColumn.getColumnType());
+        }
+    }
 
 
 
+    public List<IndexMetadata> getIndexList() {
+        return indexList;
+    }
+
+    public void setIndexList(List<IndexMetadata> indexList) {
+        this.indexList = indexList;
+    }
 }

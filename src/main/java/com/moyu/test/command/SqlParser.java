@@ -6,10 +6,7 @@ import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.command.dml.plan.SqlPlan;
-import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.constant.ConditionConstant;
-import com.moyu.test.constant.DbColumnTypeConstant;
-import com.moyu.test.constant.OperatorConstant;
+import com.moyu.test.constant.*;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
@@ -121,7 +118,7 @@ public class SqlParser implements Parser {
                         }
                         StartEndIndex startEnd = getNextBracketStartEnd();
                         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-                        return getCreateIndexCommand(tableName, columnName, indexName);
+                        return getCreateIndexCommand(tableName, columnName, indexName, CommonConstant.GENERAL_INDEX);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
@@ -214,28 +211,18 @@ public class SqlParser implements Parser {
             case "ADD":
                 skipSpace();
                 String word0 = getNextKeyWord();
-                // ALTER TABLE tableName ADD INDEX indexName(columnName);
                 if(INDEX.equals(word0)) {
+                    // ALTER TABLE tableName ADD INDEX indexName(columnName);
+                    return parseIndexCommand(tableName, CommonConstant.GENERAL_INDEX);
+                } else if("PRIMARY".equals(word0)) {
+                    // ALTER TABLE tableName ADD PRIMARY KEY indexName(columnName);
                     skipSpace();
-
-                    String indexName = null;
-                    int i = currIndex;
-                    while (true) {
-                        if(currIndex >= sqlCharArr.length) {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
-                        if(sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
-                            indexName = originalSql.substring(i, currIndex);
-                            break;
-                        }
-                        currIndex++;
+                    String word00 = getNextKeyWord();
+                    if(!"KEY".equals(word00)) {
+                        throw new SqlIllegalException("sql语法有误，" + word0 + "附近");
                     }
 
-                    StartEndIndex startEnd = getNextBracketStartEnd();
-                    String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-
-                    CreateIndexCommand command = getCreateIndexCommand(tableName, columnName, indexName);
-                    return command;
+                    return parseIndexCommand(tableName, CommonConstant.PRIMARY_KEY);
                 }
             case "DROP":
             default:
@@ -244,7 +231,35 @@ public class SqlParser implements Parser {
     }
 
 
-    private CreateIndexCommand getCreateIndexCommand(String tableName, String columnName, String indexName){
+    private CreateIndexCommand parseIndexCommand(String tableName, byte indexType){
+        skipSpace();
+
+        String indexName = null;
+        int i = currIndex;
+        while (true) {
+            if(currIndex >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if(sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
+                indexName = originalSql.substring(i, currIndex);
+                break;
+            }
+            currIndex++;
+        }
+
+        StartEndIndex startEnd = getNextBracketStartEnd();
+        String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
+
+        CreateIndexCommand command = getCreateIndexCommand(tableName, columnName, indexName, indexType);
+        return command;
+    }
+
+
+
+    private CreateIndexCommand getCreateIndexCommand(String tableName,
+                                                     String columnName,
+                                                     String indexName,
+                                                     byte indexType){
         TableMetadata tableMeta = getTableMeta(tableName);
         Column[] columns = getColumns(tableName);
 
@@ -261,7 +276,7 @@ public class SqlParser implements Parser {
         command.setIndexName(indexName);
         command.setColumnName(columnName);
         command.setColumns(columns);
-        command.setIndexType((byte) 2);
+        command.setIndexType(indexType);
         command.setIndexColumn(indexColumn);
         return command;
     }

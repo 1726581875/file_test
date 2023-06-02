@@ -1,12 +1,7 @@
 package com.moyu.test.store.data.tree;
 
-import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.*;
 import com.moyu.test.util.FileUtil;
-import com.moyu.test.util.PathUtil;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -238,6 +233,27 @@ public class BpTreeMap<K extends Comparable, V> {
             node.setValue(index, value);
         }
     }
+
+
+    public void remove(K key) {
+        CursorPos<K,V> cursor = CursorPos.traverseDown(rootNode, key);
+        int index = cursor.getIndex();
+        Page<K, V> node = cursor.getTreeNode();
+        cursor = cursor.getParent();
+
+        if(index < 0) {
+            return;
+        }
+
+        node.remove(index);
+        bpTreeStore.savePage(node);
+    }
+
+    public void clear() {
+        bpTreeStore.clear();
+        initRootNode();
+    }
+
 
 
     public void commitSaveDisk() {

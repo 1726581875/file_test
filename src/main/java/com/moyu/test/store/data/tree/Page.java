@@ -338,6 +338,24 @@ public class Page<K extends Comparable, V> implements SerializableByte {
     }
 
 
+    public void remove(int index) {
+        if (isLeaf) {
+            this.keywordList.remove(index);
+            this.valueList.remove(index);
+        } else {
+            this.keywordList.remove(index);
+            if (this.childPosList != null && this.childPosList.size() > 0) {
+                this.childPosList.remove(index);
+            }
+            if (this.childNodeList != null && this.childNodeList.size() > 0) {
+                this.childNodeList.remove(index);
+            }
+        }
+        this.keywordCount--;
+    }
+
+
+
     private Page<K, V> createLeafNode(List<K> keywordList, List<V> valueList) {
         return new Page<>(map, keywordList, valueList, null, true, map.getNextPageIndex());
     }
