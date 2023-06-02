@@ -108,7 +108,7 @@ public class CreateIndexCommand extends AbstractCommand {
                     // 当前行对应索引字段的值作为b+树的【关键字】，数据块位置作为b+数的【值】
                     T key = (T) indexColumnValue.getValue();
                     Long[] arr = bpTreeMap.get(key);
-                    Long[] valueArr = insertValueArr(arr, chunk.getStartPos());
+                    Long[] valueArr = BpTreeMap.insertValueArray(arr, chunk.getStartPos());
                     bpTreeMap.putUnSaveDisk(key, valueArr);
                 }
             }
@@ -117,32 +117,6 @@ public class CreateIndexCommand extends AbstractCommand {
         bpTreeMap.commitSaveDisk();
     }
 
-
-    /**
-     * 插入值数组
-     * @param arr 当前关键字对应的值数组
-     * @param pos 数据块在文件中的开始位置
-     * @return
-     */
-    private Long[] insertValueArr(Long[] arr, Long pos) {
-        if (arr == null) {
-            arr = new Long[1];
-            arr[0] = pos;
-            return arr;
-        } else {
-            // 已经存在，不需要再插入（因为可能会存在某些数据是处于同一数据块内）
-            for (Long p : arr) {
-                if (p.equals(pos)) {
-                    return arr;
-                }
-            }
-            // 数组最后一个位置插入
-            Long[] newArr = new Long[arr.length + 1];
-            System.arraycopy(arr, 0, newArr, 0, arr.length);
-            newArr[newArr.length - 1] = pos;
-            return newArr;
-        }
-    }
 
     private Column getIndexColumn(Column[] columnArr) {
         for (Column c : columnArr) {

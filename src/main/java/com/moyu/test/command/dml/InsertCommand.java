@@ -2,19 +2,14 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.store.data.DataChunk;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.tree.BpTreeMap;
-import com.moyu.test.store.data.tree.BpTreeStore;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.LongColumnType;
-import com.moyu.test.store.type.StringColumnType;
-import com.moyu.test.util.FileUtil;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.util.PathUtil;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,10 +25,13 @@ public class InsertCommand extends AbstractCommand {
 
     private Column[] columns;
 
-    public InsertCommand(Integer databaseId, String tableName, Column[] columns) {
+    private List<IndexMetadata> indexList;
+
+    public InsertCommand(Integer databaseId, String tableName, Column[] columns, List<IndexMetadata> indexList) {
         this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
+        this.indexList = indexList;
     }
 
     @Override
@@ -47,11 +45,16 @@ public class InsertCommand extends AbstractCommand {
             if(chunkPos == null) {
                 return "插入数据失败";
             }
-            // 插入主键索引
-            Column primaryKeyColumn = getPrimaryKeyColumn(columns);
-            if(primaryKeyColumn != null) {
-                insertIndex(primaryKeyColumn, chunkPos);
+            // 插入索引
+            if (indexList != null && indexList.size() > 0) {
+                for (IndexMetadata index : indexList) {
+                    Column indexColumn = getIndexColumn(index);
+                    if (indexColumn != null && indexColumn.getValue() != null) {
+                        insertIndex(index, indexColumn, chunkPos);
+                    }
+                }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -61,39 +64,32 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-    private void insertIndex(Column primaryKeyColumn, Long chunkPos) {
-        String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
-        String indexPath = dirPath + File.separator + tableName + ".idx";
-        FileUtil.createFileIfNotExists(indexPath);
-        BpTreeStore bpTreeStore = null;
-        try {
-            bpTreeStore = new BpTreeStore(indexPath);
-            if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                bTreeMap.put((Integer) primaryKeyColumn.getValue(), chunkPos);
-            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-                BpTreeMap<Long, Long> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                bTreeMap.put((Long) primaryKeyColumn.getValue(), chunkPos);
-            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                BpTreeMap<String, Long> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                bTreeMap.put((String) primaryKeyColumn.getValue(), chunkPos);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (bpTreeStore != null) {
-                bpTreeStore.close();
-            }
+    private void insertIndex(IndexMetadata index, Column indexColumn, Long chunkPos) {
+        String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+        if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+            insertIndexTree(indexPath, indexColumn, chunkPos, Integer.class);
+        } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
+            insertIndexTree(indexPath, indexColumn, chunkPos, Long.class);
+        } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+            insertIndexTree(indexPath, indexColumn, chunkPos, String.class);
+        } else {
+            throw new SqlExecutionException("该字段类型不支持索引，类型:" + indexColumn.getColumnType());
         }
     }
 
 
-    private Column getPrimaryKeyColumn(Column[] columnArr) {
-        for (Column c : columnArr) {
-            if (c.getIsPrimaryKey() == (byte) 1) {
+    private <T extends Comparable> void insertIndexTree(String indexPath, Column indexColumn, Long startPos, Class<T> clazz) {
+        BpTreeMap<T, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, clazz);
+        T key = (T) indexColumn.getValue();
+        Long[] arr = bpTreeMap.get(key);
+        Long[] valueArr = BpTreeMap.insertValueArray(arr, startPos);
+        bpTreeMap.put(key, valueArr);
+    }
+
+
+    private Column getIndexColumn(IndexMetadata index) {
+        for (Column c : columns) {
+            if (c.getColumnName().equals(index.getColumnName())) {
                 return c;
             }
         }
@@ -114,48 +110,6 @@ public class InsertCommand extends AbstractCommand {
                 list.add(rowBytes);
             }
             dataChunkStore.writeRow(list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            dataChunkStore.close();
-        }
-        return "ok";
-    }
-
-
-    public String testSetIndex(Column[] columnArr) {
-        DataChunkStore dataChunkStore = null;
-        BpTreeStore bpTreeStore = null;
-        try {
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
-            dataChunkStore = new DataChunkStore(fileFullPath);
-            int dataChunkNum = dataChunkStore.getDataChunkNum();
-
-            BpTreeMap<Integer, Long> bTreeMap = null;
-            // 如果索引文件不存在，先创建索引文件
-            String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
-            String indexPath = dirPath + File.separator + tableName + ".idx";
-            FileUtil.createFileIfNotExists(indexPath);
-
-            bpTreeStore = new BpTreeStore(indexPath);
-            bTreeMap = new BpTreeMap<>(1024,new IntColumnType(), new LongColumnType(), bpTreeStore, false);
-            bTreeMap.initRootNode();
-
-            for (int i = 0; i < dataChunkNum; i++) {
-                DataChunk chunk = dataChunkStore.getChunk(i);
-                for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-                    RowData rowData = chunk.getDataRowList().get(j);
-                    Column[] columnData = rowData.getColumnData(columnArr);
-                    // 插入主键索引
-                    Column primaryKeyColumn = getPrimaryKeyColumn(columnData);
-                    if (primaryKeyColumn != null) {
-                        bTreeMap.putUnSaveDisk((Integer) primaryKeyColumn.getValue(), chunk.getStartPos());
-                    }
-                }
-            }
-
-            bTreeMap.commitSaveDisk();
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

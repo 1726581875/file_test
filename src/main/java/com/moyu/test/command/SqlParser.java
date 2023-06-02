@@ -485,7 +485,16 @@ public class SqlParser implements Parser {
 
 
         // 当前索引列表
-        List<IndexMetadata> indexMetadataList = null;
+        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
+        // 设置查询计划（是否使用索引）
+        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns, indexMetadataList);
+        selectCommand.setSelectPlan(selectPlan);
+
+        return selectCommand;
+    }
+
+
+    private List<IndexMetadata> getIndexList(String tableName) {
         IndexMetadataStore metadataStore = null;
         try {
             TableMetadata tableMeta = getTableMeta(tableName);
@@ -493,20 +502,14 @@ public class SqlParser implements Parser {
             Map<Integer, TableIndexBlock> columnMap = metadataStore.getIndexMap();
             TableIndexBlock tableIndexBlock = columnMap.get(tableMeta.getTableId());
             if (tableIndexBlock != null) {
-                indexMetadataList = tableIndexBlock.getIndexMetadataList();
+                return tableIndexBlock.getIndexMetadataList();
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             metadataStore.close();
         }
-
-
-        // 设置查询计划（是否使用索引）
-        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns, indexMetadataList);
-        selectCommand.setSelectPlan(selectPlan);
-
-        return selectCommand;
+        return null;
     }
 
 
@@ -928,7 +931,12 @@ public class SqlParser implements Parser {
             setColumnValue(column, value);
         }
 
-        return new InsertCommand(connectSession.getDatabaseId(),tableName, columns);
+
+        // 当前索引列表
+        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
+
+
+        return new InsertCommand(connectSession.getDatabaseId(), tableName, columns, indexMetadataList);
     }
 
 

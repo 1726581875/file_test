@@ -301,38 +301,11 @@ public class BpTreeMap<K extends Comparable, V> {
     }
 
 
-    public static <K extends Comparable> BpTreeMap<K, Long> getBtreeMap(Column primaryKeyColumn, Integer databaseId, String tableName) {
-        String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
-        String indexPath = dirPath + File.separator + tableName + ".idx";
-        FileUtil.createFileIfNotExists(indexPath);
-        BpTreeStore bpTreeStore = null;
-        try {
-            bpTreeStore = new BpTreeStore(indexPath);
-            if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                BpTreeMap<Integer, Long> bTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                return (BpTreeMap<K, Long>) bTreeMap;
-            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-                BpTreeMap<Long, Long> bTreeMap = new BpTreeMap<>(1024, new LongColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                return (BpTreeMap<K, Long>) bTreeMap;
-            } else if (primaryKeyColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                BpTreeMap<String, Long> bTreeMap = new BpTreeMap<>(1024, new StringColumnType(), new LongColumnType(), bpTreeStore);
-                bTreeMap.initRootNode();
-                return (BpTreeMap<K, Long>) bTreeMap;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
 
     public static <T extends Comparable> BpTreeMap<T, Long[]> getBpTreeMap(String indexPath, boolean isAutoCommit, Class<T> keyType) {
         FileUtil.createFileIfNotExists(indexPath);
         BpTreeStore bpTreeStore = null;
         try {
-
             bpTreeStore = new BpTreeStore(indexPath);
             if (Integer.class.equals(keyType)) {
                 BpTreeMap<Integer, Long[]> bpTreeMap = new BpTreeMap<>(1024, new IntColumnType(), new LongArrayType(), bpTreeStore, isAutoCommit);
@@ -351,6 +324,32 @@ public class BpTreeMap<K extends Comparable, V> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 插入值数组
+     * @param arr 当前关键字对应的值数组
+     * @param pos 数据块在文件中的开始位置
+     * @return
+     */
+    public static Long[] insertValueArray(Long[] arr, Long pos) {
+        if (arr == null) {
+            arr = new Long[1];
+            arr[0] = pos;
+            return arr;
+        } else {
+            // 已经存在，不需要再插入（因为可能会存在某些数据是处于同一数据块内）
+            for (Long p : arr) {
+                if (p.equals(pos)) {
+                    return arr;
+                }
+            }
+            // 数组最后一个位置插入
+            Long[] newArr = new Long[arr.length + 1];
+            System.arraycopy(arr, 0, newArr, 0, arr.length);
+            newArr[newArr.length - 1] = pos;
+            return newArr;
+        }
     }
 
 

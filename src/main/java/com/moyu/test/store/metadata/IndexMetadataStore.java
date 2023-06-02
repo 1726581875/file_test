@@ -83,15 +83,25 @@ public class IndexMetadataStore {
                 throw new SqlExecutionException("索引" + indexName + "不存在");
             } else {
                 List<IndexMetadata> list = block.getIndexMetadataList();
+
+                int k = -1;
                 if (list != null && list.size() > 0) {
                     for (int i = list.size() - 1; i >= 0; i--) {
                         IndexMetadata indexMetadata = list.get(i);
                         if(indexMetadata.getIndexName().equals(indexName)) {
-                            list.remove(i);
+                            k = i;
+                            break;
                         }
                     }
                 }
-                // 重新写数据块
+
+                if(k == -1) {
+                    throw new SqlExecutionException("索引" + indexName + "不存在");
+                } else {
+                    list.remove(k);
+                }
+
+                // 重新写索引块
                 TableIndexBlock newBlock = new TableIndexBlock(block.getBlockIndex(), block.getStartPos(), block.getTableId());
                 long startPos = newBlock.getStartPos();
                 for (int i = 0; i < list.size(); i++) {

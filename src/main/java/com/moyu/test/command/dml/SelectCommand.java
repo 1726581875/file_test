@@ -174,68 +174,6 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    private List<Column[]> getColumnDataListUsePrimaryKey(Column indexColumn, DataChunkStore dataChunkStore) {
-        List<Column[]> dataList = new ArrayList<>();
-        try {
-            int currIndex = 0;
-            BpTreeMap<Comparable, Long> btreeMap = BpTreeMap.getBtreeMap(indexColumn, databaseId, tableName);
-
-
-            Long startPos = null;
-            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                startPos = btreeMap.get(Integer.valueOf((String) indexColumn.getValue()));
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
-                startPos = btreeMap.get(Long.valueOf((String) indexColumn.getValue()));
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                startPos = btreeMap.get((String)indexColumn.getValue());
-            }
-
-            if (startPos == null) {
-                return new ArrayList<>();
-            }
-
-
-            DataChunk dataChunk = dataChunkStore.getChunkByPos(startPos);
-            List<RowData> dataRowList = dataChunk.getDataRowList();
-            for (int j = 0; j < dataRowList.size(); j++) {
-                RowData rowData = dataRowList.get(j);
-                Column[] columnData = rowData.getColumnData(columns);
-                // 按照条件过滤
-                if (conditionTree == null) {
-                    Column[] filterColumns = filterColumns(columnData);
-                    // 判断是否符合limit、offset
-                    if(isLimitRow(currIndex)) {
-                        dataList.add(filterColumns);
-                    }
-                    if(limit != null && dataList.size()  >= limit) {
-                        return dataList;
-                    }
-                    currIndex++;
-                } else {
-                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
-                    if (compareResult) {
-                        Column[] filterColumns = filterColumns(columnData);
-                        // 判断是否符合limit、offset
-                        if(isLimitRow(currIndex)) {
-                            dataList.add(filterColumns);
-                        }
-                        if(limit != null && dataList.size()  >= limit) {
-                            return dataList;
-                        }
-                        currIndex++;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-        return dataList;
-    }
-
-
-
 
     private List<Column[]> getColumnDataListUseIndex(SelectPlan selectPlan, DataChunkStore dataChunkStore) {
         List<Column[]> dataList = new ArrayList<>();

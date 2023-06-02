@@ -27,5 +27,11 @@ public class PathUtil {
         return dirPath + File.separator + tableName + ".d";
     }
 
+    public static String getIndexFilePath(Integer databaseId, String tableName, String indexName) {
+        String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
+        String indexPath = dirPath + File.separator + tableName + "_" + indexName + ".idx";
+        return indexPath;
+    }
+
 
 }

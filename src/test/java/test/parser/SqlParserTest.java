@@ -40,7 +40,7 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "xmz_2", null);
+        InsertCommand insertCommand = new InsertCommand(0, "xmz_2", null, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -88,7 +88,7 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "table_1", null);
+        InsertCommand insertCommand = new InsertCommand(0, "table_1", null, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -104,7 +104,6 @@ public class SqlParserTest {
 
         Column[] columns = getColumns(-1, "");
         time = System.currentTimeMillis();
-        insertCommand.testSetIndex(columns);
         System.out.println("set Index:" + (System.currentTimeMillis() - time) / 1000 + "s");
 
 
