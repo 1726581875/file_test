@@ -86,7 +86,7 @@ public class UpdateCommand extends AbstractCommand {
         } finally {
             dataChunkStore.close();
         }
-        return "共删除了" + updateRowNum + "行数据";
+        return "共更新了" + updateRowNum + "行数据";
     }
 
 

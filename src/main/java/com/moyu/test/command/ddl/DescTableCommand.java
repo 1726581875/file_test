@@ -58,22 +58,24 @@ public class DescTableCommand extends AbstractCommand {
             }
             // 构造输出结果
             List<ColumnMetadata> columnMetadataList = columnBlock.getColumnMetadataList();
-            resultList.add("columnIndex" + " | " + "columnType" + " | " + "columnLength");
+            resultList.add("columnName" + " | "+ "columnIndex" + " | " + "columnType" + " | " + "columnLength");
             for (ColumnMetadata column : columnMetadataList) {
-                resultList.add(column.getColumnIndex() + " | " + ColumnTypeEnum.getNameByType(column.getColumnType()) + " | " + column.getColumnLength());
+                resultList.add(column.getColumnName() + " | " + column.getColumnIndex() + " | " + ColumnTypeEnum.getNameByType(column.getColumnType()) + " | " + column.getColumnLength());
             }
 
             // 索引信息
             indexStore = new IndexMetadataStore();
             Map<Integer, TableIndexBlock> indexMap = indexStore.getIndexMap();
             TableIndexBlock tableIndexBlock = indexMap.get(table.getTableId());
-            List<IndexMetadata> indexMetadataList = tableIndexBlock.getIndexMetadataList();
-            if (indexMetadataList != null) {
-                resultList.add("index:\n");
-                resultList.add("indexName" + " | " + "column" + " | " + "indexType");
-                for (IndexMetadata index : indexMetadataList) {
-                    String type = index.getIndexType() == (byte) 1 ? "主键" : "一般索引";
-                    resultList.add(index.getIndexName()  + " | " + index.getColumnName() + " | " + type);
+            if(tableIndexBlock != null) {
+                List<IndexMetadata> indexMetadataList = tableIndexBlock.getIndexMetadataList();
+                if (indexMetadataList != null) {
+                    resultList.add("index:\n");
+                    resultList.add("indexName" + " | " + "column" + " | " + "indexType");
+                    for (IndexMetadata index : indexMetadataList) {
+                        String type = index.getIndexType() == (byte) 1 ? "主键" : "一般索引";
+                        resultList.add(index.getIndexName() + " | " + index.getColumnName() + " | " + type);
+                    }
                 }
             }
 
