@@ -85,6 +85,17 @@ public class Column {
     }
 
     @Override
+    public boolean equals(Object o) {
+        Column c = (Column) o;
+        return value != null && value.equals(c.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return (value != null ? value.hashCode() : 0);
+    }
+
+    @Override
     public String toString() {
         return "Column{" +
                 "columnName='" + columnName + '\'' +

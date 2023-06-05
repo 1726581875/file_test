@@ -444,6 +444,10 @@ public class SqlParser implements Parser {
         // limit 和 offset
         Integer limit = null;
         Integer offset = null;
+
+        // GROUP BY
+        String groupByColumnName = null;
+
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         /**
@@ -491,12 +495,22 @@ public class SqlParser implements Parser {
             }
         } else if ("ORDER".equals(nextKeyWord)) {
 
+        } else if("GROUP".equals(nextKeyWord)) {
+            skipSpace();
+            String byKeyword = getNextKeyWord();
+            if(!"BY".equals(byKeyword)) {
+                throw new SqlIllegalException("SQL语法有误");
+            }
+            skipSpace();
+            groupByColumnName = getNextOriginalWord();
+
         }
 
         SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns);
         selectCommand.setConditionTree(root);
         selectCommand.setLimit(limit);
         selectCommand.setOffset(offset == null ? 0 : offset);
+        selectCommand.setGroupByColumnName(groupByColumnName);
 
 
         // 当前索引列表

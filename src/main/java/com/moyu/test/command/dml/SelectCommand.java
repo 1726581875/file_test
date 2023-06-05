@@ -20,9 +20,7 @@ import com.moyu.test.util.PathUtil;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -34,19 +32,31 @@ public class SelectCommand extends AbstractCommand {
     private Integer databaseId;
 
     private String tableName;
-
+    /**
+     * 表所有的字段
+     */
     private Column[] columns;
-
+    /**
+     * 要查询的列/字段
+     */
     private SelectColumn[] selectColumns;
-
+    /**
+     * 条件树
+     */
     private ConditionTree conditionTree;
-
+    /**
+     * 查询计划
+     */
     private SelectPlan selectPlan;
+
+    private String groupByColumnName;
 
     private Integer limit;
 
     private Integer offset = 0;
-
+    /**
+     * 查询结果
+     */
     private QueryResult queryResult;
 
 
@@ -83,8 +93,12 @@ public class SelectCommand extends AbstractCommand {
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             List<Column[]> dataList = null;
             // select统计函数
-            if(isFunction()) {
-                dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
+            if(useFunction()) {
+                if(groupByColumnName == null) {
+                    dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
+                } else {
+                    dataList = getGroupByResultList(dataChunkNum, dataChunkStore);
+                }
             } else {
                 if(selectPlan == null) {
                     System.out.println("不使用索引");
@@ -112,17 +126,30 @@ public class SelectCommand extends AbstractCommand {
      * TODO当前只能做到SELECT后面全部是函数或者全部是字段
      * @return
      */
-    private boolean isFunction() {
+    private boolean useFunction() {
         // 如果第一个是函数，后面必须都是函数
         if (selectColumns[0].getFunctionName() != null) {
             for (SelectColumn c : selectColumns) {
-                if(c.getFunctionName() == null) {
+                if (c.getFunctionName() == null) {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+            }
+            return true;
+        } else if (groupByColumnName != null) {
+
+            if(selectColumns.length == 1) {
+                return true;
+            }
+
+            for (int i = 1; i <selectColumns.length; i++) {
+                SelectColumn c = selectColumns[i];
+                if (c.getFunctionName() == null) {
                     throw new SqlIllegalException("sql语法有误");
                 }
             }
             return true;
         }
-        // 否则就是查询zid
+        // 否则就是查询
         return false;
     }
 
@@ -270,37 +297,8 @@ public class SelectCommand extends AbstractCommand {
 
         List<Column[]> dataList = new ArrayList<>();
 
-
         // 1、初始化所有统计函数对象
-        List<StatFunction> statFunctions = new ArrayList<>(selectColumns.length);
-        for (SelectColumn selectColumn : selectColumns) {
-            String functionName = selectColumn.getFunctionName();
-            if(functionName == null) {
-                throw new SqlIllegalException("sql语法错误，functionName应当不为空");
-            }
-
-            String columnName = selectColumn.getArgs()[0];
-            if(columnName == null) {
-                throw new SqlIllegalException("sql语法错误，column应当不为空");
-            }
-            switch (functionName) {
-                case "count":
-                    statFunctions.add(new CountFunction(columnName));
-                    break;
-                case "sum":
-                    statFunctions.add(new SumFunction(columnName));
-                    break;
-                case "min":
-                    statFunctions.add(new MinFunction(columnName));
-                    break;
-                case "max":
-                    statFunctions.add(new MaxFunction(columnName));
-                    break;
-                default:
-                    throw new SqlIllegalException("sql语法错误，不支持该函数：" + functionName);
-            }
-        }
-
+        List<StatFunction> statFunctions = getFunctionList();
 
         // 2、遍历数据，执行计算函数
         for (int i = 0; i < dataChunkNum; i++) {
@@ -357,6 +355,120 @@ public class SelectCommand extends AbstractCommand {
 
 
         return dataList;
+    }
+
+
+    private List<Column[]> getGroupByResultList(int dataChunkNum, DataChunkStore dataChunkStore) {
+
+        List<Column[]> dataList = new ArrayList<>();
+        Map<Column, List<StatFunction>> groupByMap = new HashMap<>();
+
+        for (int i = 0; i < dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            if (chunk == null) {
+                break;
+            }
+            // 获取数据块包含的数据行
+            List<RowData> dataRowList = chunk.getDataRowList();
+            for (int j = 0; j < dataRowList.size(); j++) {
+                RowData rowData = dataRowList.get(j);
+                Column[] columnData = rowData.getColumnData(columns);
+                // 没有where条件
+                if(conditionTree == null) {
+                    Column column = getColumn(columnData, this.groupByColumnName);
+                    List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
+                    // 进入计算函数
+                    for (StatFunction statFunction : statFunctions) {
+                        statFunction.stat(columnData);
+                    }
+                    groupByMap.put(column, statFunctions);
+                } else {
+                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                    if(compareResult) {
+                        Column column = getColumn(columnData, this.groupByColumnName);
+                        List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
+                        // 进入计算函数
+                        for (StatFunction statFunction : statFunctions) {
+                            statFunction.stat(columnData);
+                        }
+                        groupByMap.put(column, statFunctions);
+                    }
+                }
+            }
+        }
+
+        // 汇总执行结果
+        for (Column groupByColumn : groupByMap.keySet()) {
+            List<StatFunction> statFunctions = groupByMap.get(groupByColumn);
+            Column[] resultColumns = new Column[statFunctions.size() + 1];
+            resultColumns[0] = groupByColumn;
+            for (int i = 0; i < statFunctions.size(); i++) {
+                int index = i + 1;
+                StatFunction statFunction = statFunctions.get(i);
+                Long statResult = statFunction.getValue();
+                Column resultColumn = null;
+                Column c = selectColumns[index].getColumn();
+                // 日期类型
+                if (!selectColumns[index].getFunctionName().equals("count")
+                        && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
+                    resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, index, 8);
+                    resultColumn.setValue(statResult == null ? null : new Date(statResult));
+                } else {
+                    // 数字类型
+                    resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.INT_8, index, 8);
+                    resultColumn.setValue(statResult);
+                }
+                resultColumns[index] = resultColumn;
+            }
+            dataList.add(resultColumns);
+        }
+
+
+        return dataList;
+    }
+
+    private Column getColumn(Column[] columns, String columnName) {
+        for (Column c : columns) {
+            if (c.getColumnName().equals(columnName)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+
+
+    private List<StatFunction> getFunctionList() {
+        List<StatFunction> statFunctions = new ArrayList<>(selectColumns.length);
+        for (SelectColumn selectColumn : selectColumns) {
+
+            String functionName = selectColumn.getFunctionName();
+            if (functionName == null) {
+               continue;
+            }
+
+            String columnName = selectColumn.getArgs()[0];
+            if (columnName == null) {
+                throw new SqlIllegalException("sql语法错误，column应当不为空");
+            }
+            switch (functionName) {
+                case "count":
+                    statFunctions.add(new CountFunction(columnName));
+                    break;
+                case "sum":
+                    statFunctions.add(new SumFunction(columnName));
+                    break;
+                case "min":
+                    statFunctions.add(new MinFunction(columnName));
+                    break;
+                case "max":
+                    statFunctions.add(new MaxFunction(columnName));
+                    break;
+                default:
+                    throw new SqlIllegalException("sql语法错误，不支持该函数：" + functionName);
+            }
+        }
+        return statFunctions;
     }
 
 
@@ -484,5 +596,13 @@ public class SelectCommand extends AbstractCommand {
     }
     public void setSelectPlan(SelectPlan selectPlan) {
         this.selectPlan = selectPlan;
+    }
+
+    public String getGroupByColumnName() {
+        return groupByColumnName;
+    }
+
+    public void setGroupByColumnName(String groupByColumnName) {
+        this.groupByColumnName = groupByColumnName;
     }
 }
