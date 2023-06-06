@@ -14,6 +14,7 @@ import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
+import com.moyu.test.util.AssertUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -97,12 +98,7 @@ public class SqlParser implements Parser {
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
-                        skipSpace();
-                        String ON = getNextKeyWord();
-                        if(!"ON".equals(ON)) {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
-
+                        assertNextKeywordIs("ON");
                         skipSpace();
                         String tableName = null;
                         int i = currIndex;
@@ -149,11 +145,7 @@ public class SqlParser implements Parser {
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
-                        skipSpace();
-                        String ON = getNextKeyWord();
-                        if(!"ON".equals(ON)) {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
+                        assertNextKeywordIs("ON");
                         skipSpace();
                         String tableName11 = getNextOriginalWord();
                         TableMetadata tableMeta = getTableMeta(tableName11);
@@ -180,11 +172,7 @@ public class SqlParser implements Parser {
                 String word12 = getNextOriginalWord();
                 return new DescTableCommand(this.connectSession.getDatabaseId(), word12);
             case TRUNCATE:
-                skipSpace();
-                String word = getNextKeyWord();
-                if(!"TABLE".endsWith(word)) {
-                    throw new SqlIllegalException("sql语法有误");
-                }
+                assertNextKeywordIs("TABLE");
                 skipSpace();
                 // tableName
                 String word13 = getNextOriginalWord();
@@ -216,12 +204,7 @@ public class SqlParser implements Parser {
                     return parseIndexCommand(tableName, CommonConstant.GENERAL_INDEX);
                 } else if("PRIMARY".equals(word0)) {
                     // ALTER TABLE tableName ADD PRIMARY KEY indexName(columnName);
-                    skipSpace();
-                    String word00 = getNextKeyWord();
-                    if(!"KEY".equals(word00)) {
-                        throw new SqlIllegalException("sql语法有误，" + word0 + "附近");
-                    }
-
+                    assertNextKeywordIs("KEY");
                     return parseIndexCommand(tableName, CommonConstant.PRIMARY_KEY);
                 }
             case "DROP":
@@ -400,7 +383,7 @@ public class SqlParser implements Parser {
     }
 
     /**
-     * TODO 当前直接查询全部，待优化
+     * TODO 待优化
      * @return
      */
     private SelectCommand getSelectCommand() {
@@ -496,11 +479,7 @@ public class SqlParser implements Parser {
         } else if ("ORDER".equals(nextKeyWord)) {
 
         } else if("GROUP".equals(nextKeyWord)) {
-            skipSpace();
-            String byKeyword = getNextKeyWord();
-            if(!"BY".equals(byKeyword)) {
-                throw new SqlIllegalException("SQL语法有误");
-            }
+            assertNextKeywordIs("BY");
             skipSpace();
             groupByColumnName = getNextOriginalWord();
 
@@ -520,6 +499,12 @@ public class SqlParser implements Parser {
         selectCommand.setSelectPlan(selectPlan);
 
         return selectCommand;
+    }
+
+    private void assertNextKeywordIs(String keyword) {
+        skipSpace();
+        String nextKeyWord = getNextKeyWord();
+        AssertUtil.assertTrue(keyword.equals(nextKeyWord), "Sql语法有误,在附近" + nextKeyWord);
     }
 
 
@@ -647,12 +632,10 @@ public class SqlParser implements Parser {
             }
             // 读到开始括号，创建一个条件树节点
             if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
-                ConditionTree newNode = new ConditionTree();
-                newNode.setJoinType(nextJoinType);
-                newNode.setChildNodes(new ArrayList<>());
-                childNodes.add(newNode);
+                ConditionTree childNode = createChildNode(nextJoinType);
+                childNodes.add(childNode);
                 currIndex++;
-                parseWhereCondition(newNode);
+                parseWhereCondition(childNode);
                 currConditionOpen = true;
                 if (currIndex >= sqlCharArr.length) {
                     break;
@@ -723,7 +706,9 @@ public class SqlParser implements Parser {
 
 
             // 遇到limit直接结束
-            if ("LIMIT".equals(getNextKeyWordUnMove()) && sqlCharArr[currIndex - 1] == ' ') {
+            String next = getNextKeyWordUnMove();
+            if (("LIMIT".equals(next) || "GROUP".equals(next))
+                    && sqlCharArr[currIndex - 1] == ' ') {
                 break;
             }
 
@@ -732,6 +717,13 @@ public class SqlParser implements Parser {
         return conditionTree;
     }
 
+
+    private ConditionTree createChildNode(String joinType) {
+        ConditionTree newNode = new ConditionTree();
+        newNode.setJoinType(joinType);
+        newNode.setChildNodes(new ArrayList<>());
+        return newNode;
+    }
 
     private Condition parseCondition() {
         skipSpace();

@@ -13,6 +13,8 @@ import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.cursor.RowEntity;
+import com.moyu.test.store.data.cursor.DefaultDataCursor;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
@@ -102,7 +104,7 @@ public class SelectCommand extends AbstractCommand {
             } else {
                 if(selectPlan == null) {
                     System.out.println("不使用索引");
-                    dataList = getColumnDataList(dataChunkNum, dataChunkStore);
+                    dataList = defaultCursorQuery(dataChunkStore);
                 } else if(selectPlan.getIndexType() == CommonConstant.PRIMARY_KEY) {
                     System.out.println("使用主键索引");
                     dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
@@ -154,49 +156,33 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    private List<Column[]> getColumnDataList(int dataChunkNum, DataChunkStore dataChunkStore) {
+    private List<Column[]> defaultCursorQuery(DataChunkStore dataChunkStore) {
+        DefaultDataCursor cursor = new DefaultDataCursor(dataChunkStore, this.columns);
         List<Column[]> dataList = new ArrayList<>();
-
         int currIndex = 0;
-        // 遍历数据块
-        for (int i = 0; i < dataChunkNum; i++) {
-            DataChunk chunk = dataChunkStore.getChunk(i);
-            if (chunk == null) {
-                break;
-            }
-            // 获取数据块包含的数据行
-            List<RowData> dataRowList = chunk.getDataRowList();
-            for (int j = 0; j < dataRowList.size(); j++) {
-                RowData rowData = dataRowList.get(j);
-                Column[] columnData = rowData.getColumnData(columns);
-                // 按照条件过滤
-                if (conditionTree == null) {
-                    Column[] filterColumns = filterColumns(columnData);
-                    // 判断是否符合limit、offset
-                    if(isLimitRow(currIndex)) {
+
+        RowEntity row = null;
+        while ((row = cursor.next()) != null) {
+            Column[] columnData = row.getColumns();
+            Column[] filterColumns = filterColumns(columnData);
+            if (conditionTree == null) {
+                if (isLimitRow(currIndex)) {
+                    dataList.add(filterColumns);
+                }
+            } else {
+                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                if (compareResult) {
+                    if (isLimitRow(currIndex)) {
                         dataList.add(filterColumns);
                     }
-                    if(limit != null && dataList.size()  >= limit) {
-                        return dataList;
-                    }
-                    currIndex++;
-                } else {
-                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
-                    if (compareResult) {
-                        Column[] filterColumns = filterColumns(columnData);
-                        // 判断是否符合limit、offset
-                        if(isLimitRow(currIndex)) {
-                            dataList.add(filterColumns);
-                        }
-                        if(limit != null && dataList.size()  >= limit) {
-                            return dataList;
-                        }
-                        currIndex++;
-                    }
+
                 }
             }
+            if (limit != null && dataList.size() >= limit) {
+                return dataList;
+            }
+            currIndex++;
         }
-
         return dataList;
     }
 

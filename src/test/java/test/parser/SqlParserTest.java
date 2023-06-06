@@ -27,12 +27,8 @@ public class SqlParserTest {
         testExecSQL("insert into xmz_g_1(id,name,time) value (1,'333','2023-05-20 00:00:00')");
 
 
-
         testExecSQL("select * from xmz_g_1");
         testExecSQL("select name,count(*) from xmz_g_1 group by name");
-
-
-
     }
 
 
