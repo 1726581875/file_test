@@ -7,14 +7,15 @@ import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.cursor.Cursor;
+import com.moyu.test.store.data.cursor.IndexCursor;
 import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data.cursor.DefaultDataCursor;
+import com.moyu.test.store.data.cursor.DefaultCursor;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
@@ -95,22 +96,20 @@ public class SelectCommand extends AbstractCommand {
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             List<Column[]> dataList = null;
             // select统计函数
-            if(useFunction()) {
-                if(groupByColumnName == null) {
-                    dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
-                } else {
-                    dataList = getGroupByResultList(dataChunkNum, dataChunkStore);
-                }
+            if (useFunction()) {
+                dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
+            } else if (useGroupBy()) {
+                dataList = getGroupByResultList(dataChunkNum, dataChunkStore);
             } else {
-                if(selectPlan == null) {
+                if (selectPlan == null) {
                     System.out.println("不使用索引");
-                    dataList = defaultCursorQuery(dataChunkStore);
-                } else if(selectPlan.getIndexType() == CommonConstant.PRIMARY_KEY) {
-                    System.out.println("使用主键索引");
-                    dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
-                } else if(selectPlan.getIndexType() == CommonConstant.GENERAL_INDEX) {
-                    System.out.println("使用普通索引");
-                    dataList = getColumnDataListUseIndex(selectPlan, dataChunkStore);
+                    DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.columns);
+                    dataList = cursorQuery(cursor);
+                } else {
+                    System.out.println("使用索引查询，索引:" + selectPlan.getIndexName());
+                    String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, selectPlan.getIndexName());
+                    IndexCursor cursor = new IndexCursor(dataChunkStore, columns, selectPlan.getIndexColumn(), indexPath);
+                    dataList = cursorQuery(cursor);
                 }
             }
             result.addAll(dataList);
@@ -137,13 +136,17 @@ public class SelectCommand extends AbstractCommand {
                 }
             }
             return true;
-        } else if (groupByColumnName != null) {
+        }
+        // 否则就是查询
+        return false;
+    }
 
-            if(selectColumns.length == 1) {
+    private boolean useGroupBy() {
+        if(groupByColumnName != null) {
+            if (selectColumns.length == 1) {
                 return true;
             }
-
-            for (int i = 1; i <selectColumns.length; i++) {
+            for (int i = 1; i < selectColumns.length; i++) {
                 SelectColumn c = selectColumns[i];
                 if (c.getFunctionName() == null) {
                     throw new SqlIllegalException("sql语法有误");
@@ -151,32 +154,20 @@ public class SelectCommand extends AbstractCommand {
             }
             return true;
         }
-        // 否则就是查询
         return false;
     }
 
 
-    private List<Column[]> defaultCursorQuery(DataChunkStore dataChunkStore) {
-        DefaultDataCursor cursor = new DefaultDataCursor(dataChunkStore, this.columns);
+    private List<Column[]> cursorQuery(Cursor cursor) {
         List<Column[]> dataList = new ArrayList<>();
         int currIndex = 0;
-
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
             Column[] columnData = row.getColumns();
-            Column[] filterColumns = filterColumns(columnData);
-            if (conditionTree == null) {
-                if (isLimitRow(currIndex)) {
-                    dataList.add(filterColumns);
-                }
-            } else {
-                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
-                if (compareResult) {
-                    if (isLimitRow(currIndex)) {
-                        dataList.add(filterColumns);
-                    }
-
-                }
+            boolean matchCondition = conditionTree == null ? true : ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+            if (matchCondition && isMatchLimit(currIndex)) {
+                Column[] resultColumns = filterColumns(columnData);
+                dataList.add(resultColumns);
             }
             if (limit != null && dataList.size() >= limit) {
                 return dataList;
@@ -237,7 +228,7 @@ public class SelectCommand extends AbstractCommand {
             if (conditionTree == null) {
                 Column[] filterColumns = filterColumns(columnData);
                 // 判断是否符合limit、offset
-                if (isLimitRow(currIndex.get())) {
+                if (isMatchLimit(currIndex.get())) {
                     dataList.add(filterColumns);
                 }
                 if (limit != null && dataList.size() >= limit) {
@@ -249,7 +240,7 @@ public class SelectCommand extends AbstractCommand {
                 if (compareResult) {
                     Column[] filterColumns = filterColumns(columnData);
                     // 判断是否符合limit、offset
-                    if (isLimitRow(currIndex.get())) {
+                    if (isMatchLimit(currIndex.get())) {
                         dataList.add(filterColumns);
                     }
                     if (limit != null && dataList.size() >= limit) {
@@ -267,7 +258,7 @@ public class SelectCommand extends AbstractCommand {
      * @param currIndex
      * @return
      */
-    private boolean isLimitRow(int currIndex) {
+    private boolean isMatchLimit(int currIndex) {
         if (offset != null && limit != null) {
             int beginIndex = offset;
             int endIndex = offset + limit - 1;

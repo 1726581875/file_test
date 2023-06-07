@@ -19,6 +19,37 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        testExecSQL("drop table xmz_5");
+
+        testExecSQL("create table xmz_5 (id int, name varchar(10), time timestamp)");
+        long beginTime = System.currentTimeMillis();
+        long time = beginTime;
+
+        List<Column[]> columnList = new ArrayList<>();
+        InsertCommand insertCommand = new InsertCommand(0, "xmz_5", null, null);
+        int rowNum = 10000;
+        for (int i = 1; i <= rowNum; i++) {
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
+            if (i % 10000 == 0) {
+                insertCommand.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+                time = System.currentTimeMillis();
+                columnList.clear();
+            }
+        }
+        testExecSQL("select count(*) from xmz_5");
+        testExecSQL("select * from xmz_5");
+
+        testExecSQL("ALTER TABLE xmz_3 ADD index indexName(id);");
+
+        testExecSQL("select * from xmz_3 where id = 1000");
+
+        testExecSQL("desc xmz_5");
+    }
+
+
+    private static void groupByTest(){
         testExecSQL("drop table xmz_g_1");
         testExecSQL("create table xmz_g_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_g_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");

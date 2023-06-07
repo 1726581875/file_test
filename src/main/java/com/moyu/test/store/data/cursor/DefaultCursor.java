@@ -11,7 +11,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/6
  */
-public class DefaultDataCursor implements Cursor {
+public class DefaultCursor implements Cursor {
 
     private Column[] columns;
 
@@ -24,7 +24,7 @@ public class DefaultDataCursor implements Cursor {
     private int currChunkNextRowIndex;
 
 
-    public DefaultDataCursor(DataChunkStore dataChunkStore, Column[] columns) {
+    public DefaultCursor(DataChunkStore dataChunkStore, Column[] columns) {
         this.dataChunkStore = dataChunkStore;
         this.columns = columns;
         this.nextChunkIndex = 0;
@@ -64,7 +64,7 @@ public class DefaultDataCursor implements Cursor {
             if(i > dataChunkNum - 1) {
                 return null;
             }
-            currChunk = dataChunkStore.getChunk(nextChunkIndex);
+            currChunk = dataChunkStore.getChunk(i);
             currChunkNextRowIndex = 0;
             if(currChunk == null) {
                 return null;
