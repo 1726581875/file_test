@@ -124,7 +124,7 @@ public class DataChunkStore {
         DataChunk newChunk = createChunk();
         DataChunk chunk = writeRow(rowBytes, newChunk.getStartPos());
         if (chunk != null) {
-            return dataChunk.getStartPos();
+            return chunk.getStartPos();
         } else {
             return null;
         }

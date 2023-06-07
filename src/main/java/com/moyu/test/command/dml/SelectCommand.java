@@ -8,6 +8,7 @@ import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.FunctionConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
@@ -429,16 +430,16 @@ public class SelectCommand extends AbstractCommand {
                 throw new SqlIllegalException("sql语法错误，column应当不为空");
             }
             switch (functionName) {
-                case "count":
+                case FunctionConstant.FUNC_COUNT:
                     statFunctions.add(new CountFunction(columnName));
                     break;
-                case "sum":
+                case FunctionConstant.FUNC_SUM:
                     statFunctions.add(new SumFunction(columnName));
                     break;
-                case "min":
+                case FunctionConstant.FUNC_MIN:
                     statFunctions.add(new MinFunction(columnName));
                     break;
-                case "max":
+                case FunctionConstant.FUNC_MAX:
                     statFunctions.add(new MaxFunction(columnName));
                     break;
                 default:

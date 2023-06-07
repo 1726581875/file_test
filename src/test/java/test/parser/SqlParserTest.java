@@ -19,6 +19,13 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
+        batchInsertData();
+        testFunction();
+    }
+
+
+
+    private static void test0606(){
         testExecSQL("drop table xmz_5");
 
         testExecSQL("create table xmz_5 (id int, name varchar(10), time timestamp)");
@@ -47,6 +54,8 @@ public class SqlParserTest {
 
         testExecSQL("desc xmz_5");
     }
+
+
 
 
     private static void groupByTest(){
@@ -212,7 +221,7 @@ public class SqlParserTest {
         long beginTime = System.currentTimeMillis();
 
         long time = beginTime;
-        for (int i = 1; i <= 100000; i++) {
+        for (int i = 1; i <= 10000; i++) {
 
             String insertSQL = "insert into table_1(id,name,time) value ("+ i + ",'name_"+ i +"','2023-05-19 00:00:00')";
             testExecSQL2(insertSQL);

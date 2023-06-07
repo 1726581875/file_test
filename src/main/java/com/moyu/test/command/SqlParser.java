@@ -552,66 +552,87 @@ public class SqlParser implements Parser {
         SelectColumn[] selectColumns = new SelectColumn[selectColumnStrArr.length];
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String selectColumnStr = selectColumnStrArr[i].trim();
-            Column column = null;
-            String selectColumnName = selectColumnStr;
-            String functionName = null;
-            String[] args = null;
-
-            // count函数
-            if (selectColumnStr.startsWith("count(") && selectColumnStr.endsWith(")")) {
-                args = new String[1];
-                String functionArg = selectColumnStr.substring(6, selectColumnStr.length() - 1).trim();
-                if ("*".equals(functionArg)) {
-                    args[0] = "*";
-                } else {
-                    column = columnMap.get(functionArg);
-                    if (column == null) {
-                        throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
-                    }
-                    args[0] = functionArg;
-                }
-                functionName = "count";
-                // sum函数
-            } else if (selectColumnStr.startsWith("sum(") && selectColumnStr.endsWith(")")) {
-                args = new String[1];
-                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
-                column = columnMap.get(functionArg);
-                if (column == null) {
-                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
-                }
-                args[0] = functionArg;
-                functionName = "sum";
-                // max函数
-            } else if (selectColumnStr.startsWith("max(") && selectColumnStr.endsWith(")")) {
-                args = new String[1];
-                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
-                column = columnMap.get(functionArg);
-                if (column == null) {
-                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
-                }
-                args[0] = functionArg;
-                functionName = "max";
-                // min函数
-            } else if (selectColumnStr.startsWith("min(") && selectColumnStr.endsWith(")")) {
-                args = new String[1];
-                String functionArg = selectColumnStr.substring(4, selectColumnStr.length() - 1).trim();
-                column = columnMap.get(functionArg);
-                if (column == null) {
-                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
-                }
-                args[0] = functionArg;
-                functionName = "min";
-                // 字段
+            //函数
+            if (isFunctionColumn(selectColumnsStr)){
+                selectColumns[i] = parseFunction(columnMap, selectColumnsStr);
             } else {
-                column = columnMap.get(selectColumnStr);
+                // 普通字段
+                Column column = columnMap.get(selectColumnStr);
                 if (column == null) {
                     throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
                 }
+                selectColumns[i] = new SelectColumn(column, selectColumnStr, null, null);
             }
-            selectColumns[i] = new SelectColumn(column, selectColumnName, functionName, args);
         }
         return selectColumns;
     }
+
+
+    private boolean isFunctionColumn(String functionStr) {
+        String upperCase = functionStr.toUpperCase();
+        if (upperCase.startsWith(FunctionConstant.FUNC_COUNT + "(")
+                || upperCase.startsWith(FunctionConstant.FUNC_MAX + "(")
+                || upperCase.startsWith(FunctionConstant.FUNC_MIN + "(")
+                || upperCase.startsWith(FunctionConstant.FUNC_SUM + "(")) {
+            if (upperCase.endsWith(")")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private SelectColumn parseFunction(Map<String, Column> columnMap, String functionStr) {
+        String selectColumnStr = functionStr.trim();
+
+        Column column = null;
+        String selectColumnName = selectColumnStr;
+        String[] args = null;
+
+        int i = functionStr.indexOf('(');
+        if(i == -1) {
+            throw new SqlIllegalException("sql不合法，" + functionStr);
+        }
+        String functionName = functionStr.substring(0, i).toUpperCase();
+
+        switch (functionName) {
+            case FunctionConstant.FUNC_COUNT:
+                args = new String[1];
+                String arg = getFunctionArg(functionStr);
+                if ("*".equals(arg)) {
+                    args[0] = "*";
+                    break;
+                }
+            case FunctionConstant.FUNC_MAX:
+            case FunctionConstant.FUNC_MIN:
+            case FunctionConstant.FUNC_SUM:
+                args = new String[1];
+                String columnName = getFunctionArg(functionStr);;
+                column = columnMap.get(columnName);
+                if (column == null) {
+                    throw new SqlIllegalException("sql不合法，字段" + columnName + "不存在");
+                }
+                args[0] = columnName;
+                break;
+            default:
+                throw new SqlIllegalException("sql不合法，不支持函数" + functionName);
+        }
+
+        SelectColumn selectColumn = new SelectColumn(column, selectColumnName, functionName, args);
+        return selectColumn;
+    }
+
+
+    private String getFunctionArg(String functionStr) {
+        int start = functionStr.indexOf('(');
+        int end = functionStr.indexOf(')');
+        if (start < 0 || end < 0 || start > end) {
+            throw new SqlIllegalException("sql不合法，" + functionStr);
+        }
+        return functionStr.substring(start + 1, end).trim();
+    }
+
+
 
 
 
