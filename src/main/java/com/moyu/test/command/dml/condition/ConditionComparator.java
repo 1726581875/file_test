@@ -99,12 +99,15 @@ public class ConditionComparator {
         boolean result = false;
         List<String> conditionValueList = condition.getValue();
 
+
         Map<String, Column> columnMap = new HashMap<>();
         for (Column column : columns) {
-            columnMap.put(column.getColumnName(), column);
+            String tableAlias = column.getTableAlias() == null ? "" : column.getTableAlias() + ".";
+            columnMap.put(tableAlias + column.getColumnName(), column);
         }
 
-        String columnName = condition.getKey();
+        String tableAlias = condition.getTableAlias() == null ? "" : condition.getTableAlias() + ".";
+        String columnName = tableAlias + condition.getKey();
         Column column = columnMap.get(columnName);
         if(column == null) {
             throw new SqlQueryException("字段" + columnName + "不存在");

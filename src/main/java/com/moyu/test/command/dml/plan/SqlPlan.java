@@ -20,7 +20,8 @@ public class SqlPlan {
 
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : columns) {
-            columnMap.put(c.getColumnName(), c);
+            String tableAlias = c.getTableAlias() == null ? "" : c.getTableAlias() + ".";
+            columnMap.put(tableAlias + c.getColumnName(), c);
         }
 
         Map<String, IndexMetadata> indexMap = new HashMap<>();

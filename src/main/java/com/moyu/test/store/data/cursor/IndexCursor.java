@@ -131,6 +131,13 @@ public class IndexCursor implements Cursor {
         }
     }
 
+    @Override
+    public void reset() {
+        currChunk = null;
+        nextPosIndex = 0;
+        currChunkNextRowIndex = 0;
+    }
+
 
     private boolean isIndexRow(RowEntity dbRow) {
         for (Column c : dbRow.getColumns()) {

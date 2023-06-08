@@ -73,37 +73,40 @@ public class ColumnMetadataStore {
 
 
     public void dropColumnBlock(Integer tableId) {
-        TableColumnBlock columnBlock = columnBlockMap.get(tableId);
 
-        if (columnBlock == null) {
-            throw new RuntimeException("删除失败，不存在tableId:" + tableId);
-        }
+        synchronized (ColumnMetadataStore.class) {
+            TableColumnBlock columnBlock = columnBlockMap.get(tableId);
 
-        long startPos = columnBlock.getStartPos();
-        long endPos = columnBlock.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
-        if (endPos >= fileStore.getEndPosition()) {
-            fileStore.truncate(startPos);
-        } else {
-            int blockIndex = columnBlock.getBlockIndex();
-            long oldNextStarPos = endPos;
-            while (oldNextStarPos < fileStore.getEndPosition()) {
-                ByteBuffer readBuffer = fileStore.read(oldNextStarPos, TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE);
-                TableColumnBlock block = new TableColumnBlock(readBuffer);
-                block.setBlockIndex(blockIndex);
-
-                fileStore.write(block.getByteBuffer(), startPos);
-                startPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
-                oldNextStarPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
-                blockIndex++;
+            if (columnBlock == null) {
+                throw new RuntimeException("删除失败，不存在tableId:" + tableId);
             }
-            fileStore.truncate(startPos);
-        }
 
-        try {
-            init();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("init error");
+            long startPos = columnBlock.getStartPos();
+            long endPos = columnBlock.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+            if (endPos >= fileStore.getEndPosition()) {
+                fileStore.truncate(startPos);
+            } else {
+                int blockIndex = columnBlock.getBlockIndex();
+                long oldNextStarPos = endPos;
+                while (oldNextStarPos < fileStore.getEndPosition()) {
+                    ByteBuffer readBuffer = fileStore.read(oldNextStarPos, TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE);
+                    TableColumnBlock block = new TableColumnBlock(readBuffer);
+                    block.setBlockIndex(blockIndex);
+                    block.setStartPos(startPos);
+                    fileStore.write(block.getByteBuffer(), startPos);
+                    startPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+                    oldNextStarPos += TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
+                    blockIndex++;
+                }
+                fileStore.truncate(startPos);
+            }
+
+            try {
+                init();
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("init error");
+            }
         }
 
     }

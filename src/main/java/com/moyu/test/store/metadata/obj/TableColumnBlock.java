@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class TableColumnBlock {
 
-    public static final int TABLE_COLUMN_BLOCK_SIZE = 1024;
+    public static final int TABLE_COLUMN_BLOCK_SIZE = 4096;
 
     private int usedByteLen;
 

@@ -4,6 +4,7 @@ import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
+import com.moyu.test.command.dml.condition.TableOperation;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.*;
@@ -44,8 +45,6 @@ public class SqlParser implements Parser {
 
     private int currIndex;
 
-    private int cursorIndex;
-
 
     private static final String CREATE = "CREATE";
     private static final String UPDATE = "UPDATE";
@@ -75,7 +74,6 @@ public class SqlParser implements Parser {
         this.upperCaseSql = sql.toUpperCase();
         this.sqlCharArr = this.upperCaseSql.toCharArray();
         this.currIndex = 0;
-        this.cursorIndex = 0;
 
         String firstKeyWord = getNextKeyWord();
 
@@ -382,6 +380,7 @@ public class SqlParser implements Parser {
         return new DeleteCommand(connectSession.getDatabaseId(), tableName, columns, root);
     }
 
+
     /**
      * TODO 待优化
      * @return
@@ -392,6 +391,8 @@ public class SqlParser implements Parser {
         String tableName = null;
         int startIndex = currIndex;
         int endIndex = currIndex;
+
+        TableOperation mainTable = null;
         while (true) {
             skipSpace();
             if(currIndex >= sqlCharArr.length) {
@@ -399,22 +400,73 @@ public class SqlParser implements Parser {
             }
             endIndex = currIndex;
             String word = getNextKeyWord();
-            if("FROM".equals(word)
-                    && sqlCharArr[endIndex - 1] == ' '
-                    && sqlCharArr[currIndex] == ' ') {
+            // 解析form后面 至 where前面这段语句。可能会有join操作
+            if("FROM".equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
                 skipSpace();
-                tableName = getNextOriginalWord();
+                TableOperation table = getTableInfo();
+                if(mainTable == null) {
+                    mainTable = table;
+                    table.setJoinTables(new ArrayList<>());
+                }
+                while (true) {
+                    skipSpace();
+                    if(currIndex >= sqlCharArr.length) {
+                        break;
+                    }
+
+                    String word11 = getNextKeyWordUnMove();
+                    if ("WHERE".equals(word11)
+                            || "LIMIT".equals(word11)
+                            || "GROUP".equals(word11)
+                            || currIndex >= sqlCharArr.length) {
+                        break;
+                    }
+
+                    if("INNER".equals(word11)) {
+                        String inner = getNextKeyWord();
+                        String join = getNextKeyWord();
+                        if(!"JOIN".equals(join)) {
+                            throw new SqlIllegalException("sql语法有误");
+                        }
+
+                        TableOperation joinTable = getTableInfo();
+                        mainTable.setJoinInType(word11);
+                        mainTable.getJoinTables().add(joinTable);
+
+                        String word12 = getNextKeyWord();
+                        if(!"ON".equals(word12)) {
+                            throw new SqlIllegalException("sql语法有误");
+                        }
+                        Condition condition = parseCondition();
+                        ConditionTree joinCondition = new ConditionTree();
+                        joinCondition.setLeaf(true);
+                        joinCondition.setJoinType(ConditionConstant.AND);
+                        joinCondition.setCondition(condition);
+                        joinTable.setJoinCondition(joinCondition);
+                    } else {
+                        break;
+                    }
+                }
                 break;
             }
         }
 
-        if(tableName == null) {
-            throw new SqlIllegalException("sql语法有误,tableName为空");
+
+        tableName = mainTable.getTableName();
+
+        List<TableOperation> joinTables = mainTable.getJoinTables();
+        Column[] mainColumns = getColumns(mainTable.getTableName());
+        Column.setColumnAlias(mainColumns, mainTable.getAlias());
+        for (TableOperation joinTable : joinTables) {
+            Column[] joinColumns = getColumns(joinTable.getTableName());
+            Column.setColumnAlias(joinColumns, joinTable.getAlias());
+            mainColumns = Column.mergeColumns(mainColumns, joinColumns);
         }
-        Column[] allColumns = getColumns(tableName);
+
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-        SelectColumn[] selectColumns = getSelectColumns(tableName, selectColumnsStr, allColumns);
+
+        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, mainColumns);
 
 
         List<ConditionTree> conditionTreeList = new ArrayList<>();
@@ -463,7 +515,7 @@ public class SqlParser implements Parser {
             } else if ("ORDER".equals(nextKeyWord2)) {
 
             }
-         // table后面直接接limit,如:select * from table limit 10
+            // table后面直接接limit,如:select * from table limit 10
         } else if("LIMIT".equals(nextKeyWord)) {
             skipSpace();
             String limitNum = getNextKeyWord().trim();
@@ -485,21 +537,51 @@ public class SqlParser implements Parser {
 
         }
 
-        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns);
+        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, mainColumns, selectColumns);
         selectCommand.setConditionTree(root);
         selectCommand.setLimit(limit);
         selectCommand.setOffset(offset == null ? 0 : offset);
         selectCommand.setGroupByColumnName(groupByColumnName);
+        selectCommand.setMainTable(mainTable);
 
 
         // 当前索引列表
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
         // 设置查询计划（是否使用索引）
-        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns, indexMetadataList);
+        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, mainColumns, indexMetadataList);
         selectCommand.setSelectPlan(selectPlan);
 
         return selectCommand;
     }
+
+    private TableOperation getTableInfo() {
+        String tableName = getNextOriginalWord();
+
+        Column[] columns = getColumns(tableName);
+        TableOperation table = new TableOperation(tableName, columns, null);
+
+        String next = getNextKeyWordUnMove();
+        if("AS".equals(next)) {
+            getNextKeyWord();
+            String alias = getNextOriginalWord();
+            table.setAlias(alias);
+            Column.setColumnAlias(table.getAllColumns(), table.getAlias());
+        } else if(!"GROUP".equals(next) && !"LIMIT".equals(next) && !"WHERE".equals(next)) {
+            if(next == null) {
+                String alias = tableName;
+                table.setAlias(alias);
+            } else {
+                table.setAlias(next);
+            }
+            Column.setColumnAlias(table.getAllColumns(), table.getAlias());
+        }
+
+        return table;
+    }
+
+
+
+
 
     private void assertNextKeywordIs(String keyword) {
         skipSpace();
@@ -530,14 +612,13 @@ public class SqlParser implements Parser {
 
 
 
-    private SelectColumn[] getSelectColumns(String tableName, String selectColumnsStr, Column[] allColumns) {
-
-
+    private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns) {
         // SELECT *
         if("*".equals(selectColumnsStr)) {
             SelectColumn[] selectColumns = new SelectColumn[allColumns.length];
             for (int i = 0; i < allColumns.length; i++) {
                 selectColumns[i] = new SelectColumn(allColumns[i], allColumns[i].getColumnName(), null, null);
+                selectColumns[i].setTableAlias(allColumns[i].getTableAlias());
             }
             return selectColumns;
         }
@@ -546,23 +627,40 @@ public class SqlParser implements Parser {
         // SELECT count(*)...
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : allColumns) {
-            columnMap.put(c.getColumnName(), c);
+            String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
+            columnMap.put(tableAlias + c.getColumnName(), c);
         }
         String[] selectColumnStrArr = selectColumnsStr.split(",");
         SelectColumn[] selectColumns = new SelectColumn[selectColumnStrArr.length];
         for (int i = 0; i < selectColumnStrArr.length; i++) {
-            String selectColumnStr = selectColumnStrArr[i].trim();
+            String str = selectColumnStrArr[i].trim();
+            // columnName AS aliasName
+            String[] split = str.split("\\s+");
+            String columnStr = split[0];
+            String alias = null;
+            if(split.length == 2) {
+                alias = split[1];
+            } else if(split.length == 3) {
+                if(!"AS".equals(split[1].toUpperCase())) {
+                    throw new SqlIllegalException("sql语法有误，在" + str + "附近");
+                }
+                alias = split[2];
+            }
+
+            SelectColumn selectColumn = null;
             //函数
-            if (isFunctionColumn(selectColumnsStr)){
-                selectColumns[i] = parseFunction(columnMap, selectColumnsStr);
+            if (isFunctionColumn(columnStr)){
+                selectColumn = parseFunction(columnMap, columnStr);
             } else {
                 // 普通字段
-                Column column = columnMap.get(selectColumnStr);
+                Column column = columnMap.get(columnStr);
                 if (column == null) {
-                    throw new SqlIllegalException("表" + tableName + "不存在字段" + selectColumnStr);
+                    throw new SqlIllegalException("字段" + columnStr + "不存在");
                 }
-                selectColumns[i] = new SelectColumn(column, selectColumnStr, null, null);
+                selectColumn = new SelectColumn(column, columnStr, null, null);
             }
+            selectColumn.setAlias(alias);
+            selectColumns[i] = selectColumn;
         }
         return selectColumns;
     }
@@ -1126,7 +1224,7 @@ public class SqlParser implements Parser {
         int columnIndex = 0;
         for (String columnStr : columnStrArr) {
             String trimColumn = columnStr.trim();
-            Column column = parseColumn(columnIndex++, trimColumn);
+            Column column = parseCreateTableColumn(columnIndex++, trimColumn);
             columnList.add(column);
         }
 
@@ -1174,9 +1272,9 @@ public class SqlParser implements Parser {
      * @param columnStr
      * @return
      */
-    private Column parseColumn(int columnIndex, String columnStr) {
+    private Column parseCreateTableColumn(int columnIndex, String columnStr) {
 
-        String[] columnKeyWord = columnStr.trim().split(" ");
+        String[] columnKeyWord = columnStr.trim().split("\\s+");
         if(columnKeyWord.length < 2) {
             throw new SqlIllegalException("sql语法异常," + columnStr);
         }
@@ -1288,6 +1386,7 @@ public class SqlParser implements Parser {
 
 
     private String getNextKeyWord() {
+        skipSpace();
         int i = currIndex;
         while (i < sqlCharArr.length) {
             if (sqlCharArr[i] == ' ') {
@@ -1304,6 +1403,7 @@ public class SqlParser implements Parser {
     }
 
     private String getNextKeyWordUnMove() {
+        skipSpace();
         int i = currIndex;
         while (i < sqlCharArr.length) {
             if (sqlCharArr[i] == ' ') {
@@ -1318,6 +1418,7 @@ public class SqlParser implements Parser {
     }
 
     private String getNextOriginalWord() {
+        skipSpace();
         int i = currIndex;
         while (i < sqlCharArr.length) {
             if (sqlCharArr[i] == ' ') {

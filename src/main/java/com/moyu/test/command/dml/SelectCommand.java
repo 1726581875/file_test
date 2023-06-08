@@ -2,8 +2,10 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
+import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.command.dml.condition.TableOperation;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
@@ -13,10 +15,7 @@ import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.data.cursor.Cursor;
-import com.moyu.test.store.data.cursor.IndexCursor;
-import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data.cursor.DefaultCursor;
+import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
@@ -64,6 +63,9 @@ public class SelectCommand extends AbstractCommand {
     private QueryResult queryResult;
 
 
+    private TableOperation mainTable;
+
+
     public SelectCommand(Integer databaseId,
                          String tableName,
                          Column[] columns,
@@ -78,7 +80,12 @@ public class SelectCommand extends AbstractCommand {
     public String execute() {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
-        QueryResult queryResult = execQuery();
+        QueryResult queryResult = null;
+        if(mainTable.getJoinTables() == null || mainTable.getJoinTables().size() == 0) {
+            queryResult = execQuery();
+        } else {
+            queryResult = joinQuery();
+        }
         long queryEndTime = System.currentTimeMillis();
 
         // 解析结果，打印拼接结果字符串
@@ -123,6 +130,103 @@ public class SelectCommand extends AbstractCommand {
         this.queryResult = result;
         return this.queryResult;
     }
+
+
+    public QueryResult joinQuery() {
+        QueryResult result = new QueryResult();
+        result.setSelectColumns(selectColumns);
+        result.setResultRows(new ArrayList<>());
+        DataChunkStore mainTableStore = null;
+        DataChunkStore joinTableStore = null;
+
+        List<TableOperation> joinTables = mainTable.getJoinTables();
+        int currIndex = 0;
+        try {
+            mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mainTable.getTableName()));
+            List<Column[]> dataList = new ArrayList<>();
+            Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getAllColumns());
+            // join table
+            for (TableOperation joinTable : joinTables) {
+                joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
+                DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getAllColumns());
+                mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition());
+            }
+
+            RowEntity mainRow = null;
+            while ((mainRow = mainCursor.next()) != null) {
+                Column[] columnData = mainRow.getColumns();
+                ConditionTree tableCondition = mainTable.getTableCondition();
+                boolean matchCondition = tableCondition == null ? true : ConditionComparator.analyzeConditionTree(tableCondition, columnData);
+                if (matchCondition && isMatchLimit(currIndex)) {
+                    Column[] resultColumns = filterColumns(columnData);
+                    dataList.add(resultColumns);
+                }
+                currIndex++;
+            }
+
+            result.addAll(dataList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mainTableStore.close();
+        }
+
+        this.queryResult = result;
+        return this.queryResult;
+    }
+
+
+    private Cursor joinTable(Cursor mainCursor, Cursor joinCursor, ConditionTree joinCondition) {
+
+        List<RowEntity> resultList = new ArrayList<>();
+        RowEntity mainRow = null;
+        while ((mainRow = mainCursor.next()) != null) {
+            Column[] mainColumnData = mainRow.getColumns();
+            RowEntity joinRow = null;
+            while ((joinRow = joinCursor.next()) != null) {
+                Column[] joinColumnData = joinRow.getColumns();
+                if (matchJoinCondition(mainRow, joinRow, joinCondition)) {
+                    Column[] allColumn = Column.mergeColumns(mainColumnData, joinColumnData);
+                    resultList.add(new RowEntity(allColumn));
+                }
+
+            }
+            joinCursor.reset();
+        }
+
+        return new MemoryTemTableCursor(resultList);
+    }
+
+
+
+
+    private boolean matchJoinCondition(RowEntity mainRow,  RowEntity joinRow, ConditionTree joinCondition) {
+        Condition condition = joinCondition.getCondition();
+
+        Column[] mainColumnData = mainRow.getColumns();
+        String key1 = condition.getKey();
+        String[] key1Split = key1.split("\\.");
+        Object value1 = null;
+        for (Column c : mainColumnData) {
+            if(c.getColumnName().equals(key1Split[1])) {
+                value1 = c.getValue();
+            }
+        }
+
+        Column[] joinColumnData = joinRow.getColumns();
+        String key2 = condition.getValue().get(0);
+        String[] key2Split = key2.split("\\.");
+        Object value2 = null;
+        for (Column c : joinColumnData) {
+            if(c.getColumnName().equals(key2Split[1])) {
+                value2 = c.getValue();
+            }
+        }
+
+        return value1 != null && value1.equals(value2);
+    }
+
+
 
     /**
      * TODO当前只能做到SELECT后面全部是函数或者全部是字段
@@ -317,7 +421,7 @@ public class SelectCommand extends AbstractCommand {
             Column resultColumn = null;
             Column c = selectColumns[i].getColumn();
             // 日期类型
-            if(!selectColumns[i].getFunctionName().equals("count")
+            if(!selectColumns[i].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
                     && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
                 resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, i, 8);
                 resultColumn.setValue(statResult == null ? null : new Date(statResult));
@@ -387,7 +491,7 @@ public class SelectCommand extends AbstractCommand {
                 Column resultColumn = null;
                 Column c = selectColumns[index].getColumn();
                 // 日期类型
-                if (!selectColumns[index].getFunctionName().equals("count")
+                if (!selectColumns[index].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
                         && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
                     resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, index, 8);
                     resultColumn.setValue(statResult == null ? null : new Date(statResult));
@@ -454,9 +558,14 @@ public class SelectCommand extends AbstractCommand {
     private Column[] filterColumns(Column[] columnData) {
         Column[] resultColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
-            if(selectColumns[i].getColumn() != null) {
-                Column c = selectColumns[i].getColumn();
-                resultColumns[i] = columnData[c.getColumnIndex()];
+            for (Column c : columnData) {
+                String selectColumnName = selectColumns[i].getSelectColumnName();
+                String tableAlias = c.getTableAlias() == null ? "" : c.getTableAlias() + ".";
+                if (selectColumnName.equals(c.getColumnName())) {
+                    resultColumns[i] = c;
+                } else if(selectColumnName.equals(tableAlias + c.getColumnName())) {
+                    resultColumns[i] = c;
+                }
             }
         }
         return resultColumns;
@@ -497,7 +606,7 @@ public class SelectCommand extends AbstractCommand {
         // 表头
         String tableHeaderStr = "";
         for (SelectColumn column : selectColumns) {
-            String value = column.getSelectColumnName();
+            String value = getColumnNameStr(column);
             tableHeaderStr = tableHeaderStr + " | " + value;
         }
         stringBuilder.append(tableHeaderStr + " | " + "\n");
@@ -514,7 +623,7 @@ public class SelectCommand extends AbstractCommand {
             for (int j = 0; j < rowValues.length; j++) {
                 Object value = rowValues[j];
                 String valueStr = (value == null ? "" : valueToString(value));
-                int length = resultColumns[j].getSelectColumnName().length();
+                int length = getColumnNameStr(resultColumns[j]).length();
                 if(length > valueStr.length()) {
                     int spaceNum = (length - valueStr.length()) / 2;
                     rowStr = rowStr + " | "+ getStr(' ',spaceNum) + valueStr + getStr(' ',spaceNum);
@@ -528,6 +637,15 @@ public class SelectCommand extends AbstractCommand {
         stringBuilder.append("查询结果行数:" +  resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms");
 
         return stringBuilder.toString();
+    }
+
+
+    private String getColumnNameStr(SelectColumn column) {
+        String value = column.getAlias() == null ? column.getSelectColumnName() : column.getAlias();
+        if (column.getTableAlias() != null) {
+            value = column.getTableAlias() + "." + value;
+        }
+        return value;
     }
 
     private String valueToString(Object value) {
@@ -582,5 +700,10 @@ public class SelectCommand extends AbstractCommand {
 
     public void setGroupByColumnName(String groupByColumnName) {
         this.groupByColumnName = groupByColumnName;
+    }
+
+
+    public void setMainTable(TableOperation mainTable) {
+        this.mainTable = mainTable;
     }
 }

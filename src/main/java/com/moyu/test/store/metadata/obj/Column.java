@@ -8,6 +8,10 @@ public class Column {
 
     private String columnName;
 
+    private String alias;
+
+    private String tableAlias;
+
     private byte columnType;
 
     private int columnIndex;
@@ -31,6 +35,8 @@ public class Column {
     public Column createNullValueColumn() {
         Column column = new Column(columnName, columnType, columnIndex, columnLength);
         column.setIsPrimaryKey(isPrimaryKey);
+        column.setTableAlias(tableAlias);
+        column.setAlias(alias);
         column.setValue(null);
         return column;
     }
@@ -84,6 +90,22 @@ public class Column {
         this.isPrimaryKey = isPrimaryKey;
     }
 
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public String getTableAlias() {
+        return tableAlias;
+    }
+
+    public void setTableAlias(String tableAlias) {
+        this.tableAlias = tableAlias;
+    }
+
     @Override
     public boolean equals(Object o) {
         Column c = (Column) o;
@@ -95,13 +117,36 @@ public class Column {
         return (value != null ? value.hashCode() : 0);
     }
 
+
+    public static Column[] mergeColumns(Column[] mainColumns, Column[] joinColumns) {
+        int l = mainColumns.length + joinColumns.length;
+        Column[] allColumns = new Column[l];
+        for (int i = 0; i < l; i++) {
+            if (i < mainColumns.length) {
+                allColumns[i] = mainColumns[i];
+            } else {
+                allColumns[i] = joinColumns[i - mainColumns.length];
+            }
+        }
+        return allColumns;
+    }
+
+    public static void setColumnAlias(Column[] columns, String tableAlias) {
+        for (Column c : columns) {
+            c.setTableAlias(tableAlias);
+        }
+    }
+
+
     @Override
     public String toString() {
         return "Column{" +
                 "columnName='" + columnName + '\'' +
+                ", alias='" + alias + '\'' +
                 ", columnType=" + columnType +
                 ", columnIndex=" + columnIndex +
                 ", columnLength=" + columnLength +
+                ", isPrimaryKey=" + isPrimaryKey +
                 ", value=" + value +
                 '}';
     }

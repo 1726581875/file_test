@@ -14,6 +14,14 @@ public class SelectColumn {
      * 字段名
      */
     private String selectColumnName;
+
+    /**
+     * 字段别名
+     */
+    private String alias;
+
+    private String tableAlias;
+
     /**
      * 函数名
      * 如count、sum、max、min等等
@@ -62,5 +70,21 @@ public class SelectColumn {
 
     public void setArgs(String[] args) {
         this.args = args;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public String getTableAlias() {
+        return tableAlias;
+    }
+
+    public void setTableAlias(String tableAlias) {
+        this.tableAlias = tableAlias;
     }
 }

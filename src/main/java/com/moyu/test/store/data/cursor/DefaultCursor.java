@@ -81,4 +81,12 @@ public class DefaultCursor implements Cursor {
         }
     }
 
+
+    @Override
+    public void reset() {
+        this.currChunk = null;
+        this.nextChunkIndex = 0;
+        this.currChunkNextRowIndex = 0;
+    }
+
 }

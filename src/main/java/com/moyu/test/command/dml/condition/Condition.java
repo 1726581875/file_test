@@ -8,6 +8,8 @@ import java.util.List;
  */
 public class Condition {
 
+    private String tableAlias;
+
     private String key;
 
     /**
@@ -40,5 +42,13 @@ public class Condition {
 
     public void setOperator(String operator) {
         this.operator = operator;
+    }
+
+    public String getTableAlias() {
+        return tableAlias;
+    }
+
+    public void setTableAlias(String tableAlias) {
+        this.tableAlias = tableAlias;
     }
 }

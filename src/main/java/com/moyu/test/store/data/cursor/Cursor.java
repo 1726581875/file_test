@@ -8,4 +8,6 @@ public interface Cursor {
 
     RowEntity next();
 
+    void reset();
+
 }

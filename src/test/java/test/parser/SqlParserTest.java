@@ -19,8 +19,41 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        batchInsertData();
-        testFunction();
+        joinTest();
+    }
+
+
+    private static void joinTest(){
+
+        testExecSQL("drop table xmz_00");
+        testExecSQL("create table xmz_00 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_00(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_00(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_00(id,name,time) value (3,'333','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_00(id,name,time) value (4,'444','2023-05-20 00:00:00')");
+
+        testExecSQL("drop table xmz_01");
+        testExecSQL("create table xmz_01 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_01(id,name,time) value (1,'111.','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (2,'222.','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (3,'333.','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (4,'444.','2023-05-20 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (4,'555.','2023-05-21 00:00:00')");
+
+
+        testExecSQL("drop table xmz_02");
+        testExecSQL("create table xmz_02 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_02(id,name,time) value (1,'111.2','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_02(id,name,time) value (2,'222.2','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_02(id,name,time) value (3,'333.2','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_02(id,name,time) value (4,'444.2','2023-05-20 00:00:00')");
+        testExecSQL("insert into xmz_02(id,name,time) value (4,'555.2','2023-05-21 00:00:00')");
+
+
+        testExecSQL("select * from xmz_00 as a inner join xmz_01 as b on a.id = b.id inner join xmz_02 as c on a.id = c.id");
+        //testExecSQL("select a.id,b.id,c.id from xmz_00 as a left join xmz_01 as b on a.id = b.id left join xmz_02 as c on a.id = c.id");
+/*        testExecSQL("select * from xmz_00 as a left join xmz_01 as b on a.id = b.id");
+        testExecSQL("select * from xmz_00 as a left join xmz_01 as b on a.id = b.id where b.id = 4");*/
     }
 
 
@@ -304,7 +337,10 @@ public class SqlParserTest {
     }
 
 
-    private static void testSelectCondition(){
+    private static void testSelectCondition() {
+        testExecSQL("drop table xmz_table");
+        testExecSQL("create table xmz_table (id int, name varchar(10))");
+        testInsertSQL();
         testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
         testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼123')");
         testExecSQL("select * from xmz_table where (name = '摸鱼' or name = '摸鱼')");
