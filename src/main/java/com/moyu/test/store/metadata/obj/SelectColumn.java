@@ -40,6 +40,11 @@ public class SelectColumn {
         this.args = args;
     }
 
+
+    public String getTableAliasColumnName() {
+       return column.getTableAliasColumnName();
+    }
+
     public Column getColumn() {
         return column;
     }

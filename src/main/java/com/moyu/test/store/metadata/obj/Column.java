@@ -138,6 +138,12 @@ public class Column {
     }
 
 
+    public String getTableAliasColumnName() {
+        String tableAlias = this.tableAlias == null ? "" : this.tableAlias + ".";
+        return tableAlias + columnName;
+    }
+
+
     @Override
     public String toString() {
         return "Column{" +

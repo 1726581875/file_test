@@ -51,6 +51,10 @@ public class SqlParserTest {
 
 
         testExecSQL("select * from xmz_00 as a inner join xmz_01 as b on a.id = b.id inner join xmz_02 as c on a.id = c.id");
+
+
+        testExecSQL("select a.id,b.name from xmz_00 as a inner join xmz_01 as b on a.id = b.id");
+        testExecSQL("select * from xmz_01 limit 2");
         //testExecSQL("select a.id,b.id,c.id from xmz_00 as a left join xmz_01 as b on a.id = b.id left join xmz_02 as c on a.id = c.id");
 /*        testExecSQL("select * from xmz_00 as a left join xmz_01 as b on a.id = b.id");
         testExecSQL("select * from xmz_00 as a left join xmz_01 as b on a.id = b.id where b.id = 4");*/

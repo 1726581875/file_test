@@ -11,6 +11,7 @@ import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
+import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
@@ -558,14 +559,14 @@ public class SelectCommand extends AbstractCommand {
     private Column[] filterColumns(Column[] columnData) {
         Column[] resultColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
+            SelectColumn selectColumn = selectColumns[i];
             for (Column c : columnData) {
-                String selectColumnName = selectColumns[i].getSelectColumnName();
-                String tableAlias = c.getTableAlias() == null ? "" : c.getTableAlias() + ".";
-                if (selectColumnName.equals(c.getColumnName())) {
-                    resultColumns[i] = c;
-                } else if(selectColumnName.equals(tableAlias + c.getColumnName())) {
+                if(selectColumn.getTableAliasColumnName().equals(c.getTableAliasColumnName())) {
                     resultColumns[i] = c;
                 }
+            }
+            if(resultColumns[i] == null) {
+                throw new SqlExecutionException("字段不存在:" + selectColumn.getTableAliasColumnName());
             }
         }
         return resultColumns;

@@ -617,8 +617,10 @@ public class SqlParser implements Parser {
         if("*".equals(selectColumnsStr)) {
             SelectColumn[] selectColumns = new SelectColumn[allColumns.length];
             for (int i = 0; i < allColumns.length; i++) {
-                selectColumns[i] = new SelectColumn(allColumns[i], allColumns[i].getColumnName(), null, null);
-                selectColumns[i].setTableAlias(allColumns[i].getTableAlias());
+                Column column = allColumns[i];
+                SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
+                selectColumn.setTableAlias(column.getTableAlias());
+                selectColumns[i] = selectColumn;
             }
             return selectColumns;
         }
