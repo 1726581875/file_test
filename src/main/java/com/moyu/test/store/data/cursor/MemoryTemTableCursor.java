@@ -1,5 +1,7 @@
 package com.moyu.test.store.data.cursor;
 
+import com.moyu.test.store.metadata.obj.Column;
+
 import java.util.List;
 
 /**
@@ -10,11 +12,14 @@ public class MemoryTemTableCursor implements Cursor {
 
     private int nextIndex;
 
+    private Column[] columns;
+
     private List<RowEntity> rows;
 
 
-    public MemoryTemTableCursor(List<RowEntity> rows) {
+    public MemoryTemTableCursor(List<RowEntity> rows, Column[] columns) {
         this.rows = rows;
+        this.columns = columns;
         this.nextIndex = 0;
     }
 
@@ -34,6 +39,11 @@ public class MemoryTemTableCursor implements Cursor {
     @Override
     public void reset() {
         nextIndex = 0;
+    }
+
+    @Override
+    public Column[] getColumns() {
+        throw new UnsupportedOperationException();
     }
 
 }

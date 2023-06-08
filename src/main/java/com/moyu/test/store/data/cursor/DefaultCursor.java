@@ -89,4 +89,9 @@ public class DefaultCursor implements Cursor {
         this.currChunkNextRowIndex = 0;
     }
 
+    @Override
+    public Column[] getColumns() {
+        return columns;
+    }
+
 }

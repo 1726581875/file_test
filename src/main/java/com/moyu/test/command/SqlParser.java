@@ -422,15 +422,16 @@ public class SqlParser implements Parser {
                         break;
                     }
 
-                    if("INNER".equals(word11)) {
-                        String inner = getNextKeyWord();
+                    if(CommonConstant.JOIN_TYPE_INNER.equals(word11)
+                            || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
+                            || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
+                        String joinType = getNextKeyWord();
                         String join = getNextKeyWord();
                         if(!"JOIN".equals(join)) {
                             throw new SqlIllegalException("sql语法有误");
                         }
 
                         TableOperation joinTable = getTableInfo();
-                        mainTable.setJoinInType(word11);
                         mainTable.getJoinTables().add(joinTable);
 
                         String word12 = getNextKeyWord();
@@ -443,6 +444,7 @@ public class SqlParser implements Parser {
                         joinCondition.setJoinType(ConditionConstant.AND);
                         joinCondition.setCondition(condition);
                         joinTable.setJoinCondition(joinCondition);
+                        joinTable.setJoinInType(word11);
                     } else {
                         break;
                     }

@@ -138,6 +138,11 @@ public class IndexCursor implements Cursor {
         currChunkNextRowIndex = 0;
     }
 
+    @Override
+    public Column[] getColumns() {
+        return columns;
+    }
+
 
     private boolean isIndexRow(RowEntity dbRow) {
         for (Column c : dbRow.getColumns()) {
