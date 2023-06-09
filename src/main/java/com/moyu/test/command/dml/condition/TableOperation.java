@@ -39,6 +39,10 @@ public class TableOperation {
      * 连接的表
      */
     private List<TableOperation> joinTables;
+    /**
+     * 子查询
+     */
+    private TableOperation subQuery;
 
 
     public TableOperation(String tableName, Column[] allColumns, ConditionTree tableCondition) {
@@ -101,5 +105,13 @@ public class TableOperation {
 
     public void setAllColumns(Column[] allColumns) {
         this.allColumns = allColumns;
+    }
+
+    public TableOperation getSubQuery() {
+        return subQuery;
+    }
+
+    public void setSubQuery(TableOperation subQuery) {
+        this.subQuery = subQuery;
     }
 }

@@ -19,6 +19,11 @@ public class Condition {
 
     private List<String> value;
 
+    /**
+     * 作为连接条件时候，右边表的别名
+     */
+    private String rightTableAlias;
+
 
     public String getKey() {
         return key;
@@ -50,5 +55,13 @@ public class Condition {
 
     public void setTableAlias(String tableAlias) {
         this.tableAlias = tableAlias;
+    }
+
+    public String getRightTableAlias() {
+        return rightTableAlias;
+    }
+
+    public void setRightTableAlias(String rightTableAlias) {
+        this.rightTableAlias = rightTableAlias;
     }
 }

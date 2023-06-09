@@ -46,7 +46,7 @@ public class ConditionComparator {
 
 
     /**
-     * 是否事匹配条件的行数据
+     * 判断数据行是否是匹配查询条件
      * @param row
      * @param conditionTree
      * @return

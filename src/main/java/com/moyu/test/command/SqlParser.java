@@ -403,50 +403,7 @@ public class SqlParser implements Parser {
             // 解析form后面 至 where前面这段语句。可能会有join操作
             if("FROM".equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
                 skipSpace();
-                TableOperation table = getTableInfo();
-                if(mainTable == null) {
-                    mainTable = table;
-                    table.setJoinTables(new ArrayList<>());
-                }
-                while (true) {
-                    skipSpace();
-                    if(currIndex >= sqlCharArr.length) {
-                        break;
-                    }
-
-                    String word11 = getNextKeyWordUnMove();
-                    if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
-                            || currIndex >= sqlCharArr.length) {
-                        break;
-                    }
-                    // 判断连接类型
-                    if(CommonConstant.JOIN_TYPE_INNER.equals(word11)
-                            || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
-                            || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
-                        String joinType = getNextKeyWord();
-                        String join = getNextKeyWord();
-                        if(!"JOIN".equals(join)) {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
-
-                        TableOperation joinTable = getTableInfo();
-                        mainTable.getJoinTables().add(joinTable);
-
-                        String word12 = getNextKeyWord();
-                        if(!"ON".equals(word12)) {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
-                        Condition condition = parseCondition();
-                        ConditionTree joinCondition = new ConditionTree();
-                        joinCondition.setLeaf(true);
-                        joinCondition.setJoinType(ConditionConstant.AND);
-                        joinCondition.setCondition(condition);
-                        joinTable.setJoinCondition(joinCondition);
-                        joinTable.setJoinInType(word11);
-                    } else {
-                        break;
-                    }
-                }
+                mainTable = getFormTableOperation();
                 break;
             }
         }
@@ -454,19 +411,19 @@ public class SqlParser implements Parser {
 
         tableName = mainTable.getTableName();
 
+        // 合并所有表的所有字段
         List<TableOperation> joinTables = mainTable.getJoinTables();
-        Column[] mainColumns = getColumns(mainTable.getTableName());
-        Column.setColumnAlias(mainColumns, mainTable.getAlias());
+        Column[] allColumns = getColumns(mainTable.getTableName());
+        Column.setColumnAlias(allColumns, mainTable.getAlias());
         for (TableOperation joinTable : joinTables) {
             Column[] joinColumns = getColumns(joinTable.getTableName());
             Column.setColumnAlias(joinColumns, joinTable.getAlias());
-            mainColumns = Column.mergeColumns(mainColumns, joinColumns);
+            allColumns = Column.mergeColumns(allColumns, joinColumns);
         }
 
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-
-        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, mainColumns);
+        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns);
 
 
         List<ConditionTree> conditionTreeList = new ArrayList<>();
@@ -537,7 +494,7 @@ public class SqlParser implements Parser {
 
         }
 
-        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, mainColumns, selectColumns);
+        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns);
         selectCommand.setConditionTree(root);
         selectCommand.setLimit(limit);
         selectCommand.setOffset(offset == null ? 0 : offset);
@@ -548,13 +505,72 @@ public class SqlParser implements Parser {
         // 当前索引列表
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
         // 设置查询计划（是否使用索引）
-        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, mainColumns, indexMetadataList);
+        SelectPlan selectPlan = SqlPlan.getSelectPlan(root, allColumns, indexMetadataList);
         selectCommand.setSelectPlan(selectPlan);
 
         return selectCommand;
     }
 
+
+    private TableOperation getFormTableOperation() {
+
+        String nextWord = getNextKeyWordUnMove();
+        // 存在子查询
+        if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
+            // todo
+        }
+        TableOperation mainTable = getTableInfo();
+        mainTable.setJoinTables(new ArrayList<>());
+        while (true) {
+            skipSpace();
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+
+            String word11 = getNextKeyWordUnMove();
+            if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
+                    || currIndex >= sqlCharArr.length) {
+                break;
+            }
+            // 判断连接类型
+            if (CommonConstant.JOIN_TYPE_INNER.equals(word11)
+                    || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
+                    || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
+                String joinType = getNextKeyWord();
+                String join = getNextKeyWord();
+                if (!"JOIN".equals(join)) {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+
+                TableOperation joinTable = getTableInfo();
+                mainTable.getJoinTables().add(joinTable);
+
+                String word12 = getNextKeyWord();
+                if (!"ON".equals(word12)) {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+                Condition condition = parseJoinCondition();
+                // todo 目前只支持单条件连接
+                ConditionTree joinCondiTree = new ConditionTree();
+                joinCondiTree.setLeaf(true);
+                joinCondiTree.setJoinType(ConditionConstant.AND);
+                joinCondiTree.setCondition(condition);
+                joinTable.setJoinCondition(joinCondiTree);
+                joinTable.setJoinInType(word11);
+            } else {
+                break;
+            }
+        }
+        return mainTable;
+    }
+
+
+    /**
+     * 解析表信息，表名、表别名
+     * @return
+     */
     private TableOperation getTableInfo() {
+
         String tableName = getNextOriginalWord();
 
         Column[] columns = getColumns(tableName);
@@ -567,13 +583,13 @@ public class SqlParser implements Parser {
             table.setAlias(alias);
             Column.setColumnAlias(table.getAllColumns(), table.getAlias());
         } else if(!"GROUP".equals(next) && !"LIMIT".equals(next) && !"WHERE".equals(next)) {
+            String alias;
             if(next == null) {
-                String alias = tableName;
-                table.setAlias(alias);
+                alias = tableName;
             } else {
-                String alias = getNextOriginalWord();
-                table.setAlias(alias);
+                alias = getNextOriginalWord();
             }
+            table.setAlias(alias);
             Column.setColumnAlias(table.getAllColumns(), table.getAlias());
         }
 
@@ -845,6 +861,35 @@ public class SqlParser implements Parser {
         newNode.setJoinType(joinType);
         newNode.setChildNodes(new ArrayList<>());
         return newNode;
+    }
+
+    private Condition parseJoinCondition() {
+
+        Condition condition = parseCondition();
+        String columnName = condition.getKey();
+        String operator = condition.getOperator();
+        List<String> values = condition.getValue();
+
+        if(operator.equals("=")) {
+            condition.setOperator(operator);
+
+            String[] columnNameSplit = columnName.split("\\.");
+            String[] valueSplit = values.get(0).split("\\.");
+            if(columnNameSplit.length == 2) {
+                condition.setTableAlias(columnNameSplit[0]);
+                condition.setKey(columnNameSplit[1]);
+            }
+            if(valueSplit.length == 2) {
+                condition.setRightTableAlias(valueSplit[0]);
+                condition.setValue(Arrays.asList(valueSplit[1]));
+            }
+        } else {
+            condition.setKey(columnName);
+            condition.setOperator(operator);
+            condition.setValue(values);
+        }
+
+        return condition;
     }
 
     private Condition parseCondition() {

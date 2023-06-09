@@ -201,7 +201,7 @@ public class SelectCommand extends AbstractCommand {
                 List<RowEntity> rows = new ArrayList<>();
                 RowEntity rightRow = null;
                 while ((rightRow = rightCursor.next()) != null) {
-                    if (matchJoinCondition(leftRow, rightRow, joinCondition)) {
+                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
                         RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
                         rows.add(rowEntity);
                     }
@@ -224,7 +224,7 @@ public class SelectCommand extends AbstractCommand {
                 RowEntity leftRow = null;
                 List<RowEntity> rows = new ArrayList<>();
                 while ((leftRow = leftCursor.next()) != null) {
-                    if (matchJoinCondition(leftRow, rightRow, joinCondition)) {
+                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
                         RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
                         rows.add(rowEntity);
                     }
@@ -247,30 +247,16 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    private boolean matchJoinCondition(RowEntity mainRow,  RowEntity joinRow, ConditionTree joinCondition) {
+    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree joinCondition) {
+
         Condition condition = joinCondition.getCondition();
+        // 左表字段
+        Column leftColumn = leftRow.getColumn(condition.getKey(), condition.getTableAlias());
+        // 右边字段
+        String rightColumnName = condition.getValue().get(0);
+        Column rightColumn = rightRow.getColumn(rightColumnName, condition.getRightTableAlias());
 
-        Column[] mainColumnData = mainRow.getColumns();
-        String key1 = condition.getKey();
-        String[] key1Split = key1.split("\\.");
-        Object value1 = null;
-        for (Column c : mainColumnData) {
-            if(c.getColumnName().equals(key1Split[1])) {
-                value1 = c.getValue();
-            }
-        }
-
-        Column[] joinColumnData = joinRow.getColumns();
-        String key2 = condition.getValue().get(0);
-        String[] key2Split = key2.split("\\.");
-        Object value2 = null;
-        for (Column c : joinColumnData) {
-            if(c.getColumnName().equals(key2Split[1])) {
-                value2 = c.getValue();
-            }
-        }
-
-        return value1 != null && value1.equals(value2);
+        return leftColumn.getValue() != null  && leftColumn.getValue().equals(rightColumn.getValue());
     }
 
 
@@ -315,9 +301,9 @@ public class SelectCommand extends AbstractCommand {
         int currIndex = 0;
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            Column[] columnData = row.getColumns();
-            boolean matchCondition = conditionTree == null ? true : ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+            boolean matchCondition = ConditionComparator.isMatchRow(row, conditionTree);
             if (matchCondition && isMatchLimit(currIndex)) {
+                Column[] columnData = row.getColumns();
                 Column[] resultColumns = filterColumns(columnData);
                 dataList.add(resultColumns);
             }
