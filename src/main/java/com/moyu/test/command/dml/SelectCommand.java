@@ -139,29 +139,38 @@ public class SelectCommand extends AbstractCommand {
         result.setSelectColumns(selectColumns);
         result.setResultRows(new ArrayList<>());
         DataChunkStore mainTableStore = null;
-        DataChunkStore joinTableStore = null;
-
-        List<TableOperation> joinTables = mainTable.getJoinTables();
         int currIndex = 0;
         try {
             mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mainTable.getTableName()));
             List<Column[]> dataList = new ArrayList<>();
             Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getAllColumns());
             // join table
+            List<TableOperation> joinTables = mainTable.getJoinTables();
             for (TableOperation joinTable : joinTables) {
-                joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
-                DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getAllColumns());
-                mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                DataChunkStore joinTableStore = null;
+                try {
+                    joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
+                    DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getAllColumns());
+                    // 进行连表操作
+                    mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    joinTableStore.close();
+                }
             }
 
+            // 连表后的数据结果再按条件进行筛选
             RowEntity mainRow = null;
             while ((mainRow = mainCursor.next()) != null) {
-                Column[] columnData = mainRow.getColumns();
-                ConditionTree tableCondition = mainTable.getTableCondition();
-                boolean matchCondition = tableCondition == null ? true : ConditionComparator.analyzeConditionTree(tableCondition, columnData);
+                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, mainTable.getTableCondition());
                 if (matchCondition && isMatchLimit(currIndex)) {
+                    Column[] columnData = mainRow.getColumns();
                     Column[] resultColumns = filterColumns(columnData);
                     dataList.add(resultColumns);
+                }
+                if (limit != null && dataList.size() >= limit) {
+                    break;
                 }
                 currIndex++;
             }
@@ -184,74 +193,49 @@ public class SelectCommand extends AbstractCommand {
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
 
         List<RowEntity> resultList = new ArrayList<>();
-        // 内连接
-        if (CommonConstant.JOIN_TYPE_INNER.equals(joinType)) {
+        // 内连接、左连接
+        if (CommonConstant.JOIN_TYPE_INNER.equals(joinType)
+                || CommonConstant.JOIN_TYPE_LEFT.equals(joinType)) {
             RowEntity leftRow = null;
             while ((leftRow = leftCursor.next()) != null) {
-                Column[] leftColumnData = leftRow.getColumns();
+                List<RowEntity> rows = new ArrayList<>();
                 RowEntity rightRow = null;
                 while ((rightRow = rightCursor.next()) != null) {
-                    Column[] rightColumnData = rightRow.getColumns();
                     if (matchJoinCondition(leftRow, rightRow, joinCondition)) {
-                        Column[] allColumn = Column.mergeColumns(leftColumnData, rightColumnData);
-                        resultList.add(new RowEntity(allColumn));
+                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
+                        rows.add(rowEntity);
                     }
                 }
+                // 左连接，如果右表没有匹配行，要加一个空行
+                if (CommonConstant.JOIN_TYPE_LEFT.equals(joinType) && rows.size() == 0) {
+                    RowEntity rightNullRow = new RowEntity(rightCursor.getColumns());
+                    RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightNullRow);
+                    rows.add(rowEntity);
+                }
+
                 rightCursor.reset();
+                resultList.addAll(rows);
             }
             return new MemoryTemTableCursor(resultList, columns);
-
-            // 左连接
-        } else if (CommonConstant.JOIN_TYPE_LEFT.equals(joinType)) {
-            RowEntity leftRow = null;
-            while ((leftRow = leftCursor.next()) != null) {
-                Column[] leftColumnData = leftRow.getColumns();
-                RowEntity rightRow = null;
-                List<RowEntity> list = new ArrayList<>();
-                while ((rightRow = rightCursor.next()) != null) {
-                    Column[] rightColumnData = rightRow.getColumns();
-                    if (matchJoinCondition(leftRow, rightRow, joinCondition)) {
-                        Column[] allColumn = Column.mergeColumns(leftColumnData, rightColumnData);
-                        list.add(new RowEntity(allColumn));
-                    }
-                }
-                if(list.size() == 0) {
-                    Column[] rightColumns = rightCursor.getColumns();
-                    for (Column c : rightColumns) {
-                        c.setValue(null);
-                    }
-                    Column[] allColumn = Column.mergeColumns(leftColumnData, rightColumns);
-                    list.add(new RowEntity(allColumn));
-                }
-                resultList.addAll(list);
-                rightCursor.reset();
-            }
-
-            return new MemoryTemTableCursor(resultList, columns);
-
             // 右连接
         } else if (CommonConstant.JOIN_TYPE_RIGHT.equals(joinType)) {
             RowEntity rightRow = null;
             while ((rightRow = rightCursor.next()) != null) {
-                Column[] rightColumnData = rightRow.getColumns();
                 RowEntity leftRow = null;
-                List<RowEntity> list = new ArrayList<>();
+                List<RowEntity> rows = new ArrayList<>();
                 while ((leftRow = leftCursor.next()) != null) {
-                    Column[] leftColumnData = leftRow.getColumns();
                     if (matchJoinCondition(leftRow, rightRow, joinCondition)) {
-                        Column[] allColumn = Column.mergeColumns(leftColumnData, rightColumnData);
-                        list.add(new RowEntity(allColumn));
+                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
+                        rows.add(rowEntity);
                     }
                 }
-                if(list.size() == 0) {
-                    Column[] leftColumns = leftCursor.getColumns();
-                    for (Column c : leftColumns) {
-                        c.setValue(null);
-                    }
-                    Column[] allColumn = Column.mergeColumns(leftColumns, rightColumnData);
-                    list.add(new RowEntity(allColumn));
+                // 右连接，左表没有匹配行，加一个空行
+                if (rows.size() == 0) {
+                    RowEntity leftNullRow = new RowEntity(leftCursor.getColumns());
+                    RowEntity rowEntity = RowEntity.mergeRow(leftNullRow, rightRow);
+                    rows.add(rowEntity);
                 }
-                resultList.addAll(list);
+                resultList.addAll(rows);
                 leftCursor.reset();
             }
             return new MemoryTemTableCursor(resultList, columns);

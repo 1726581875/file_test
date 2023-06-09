@@ -4,6 +4,7 @@ import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.exception.SqlQueryException;
+import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.HashMap;
@@ -43,6 +44,19 @@ public class ConditionComparator {
         return result;
     }
 
+
+    /**
+     * 是否事匹配条件的行数据
+     * @param row
+     * @param conditionTree
+     * @return
+     */
+    public static boolean isMatchRow(RowEntity row, ConditionTree conditionTree) {
+        if(conditionTree == null) {
+            return true;
+        }
+        return analyzeConditionTree(conditionTree, row.getColumns());
+    }
 
     /**
      * 分析条件树，判断行数据是否满足条件

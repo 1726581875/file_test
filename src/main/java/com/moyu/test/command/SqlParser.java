@@ -415,13 +415,11 @@ public class SqlParser implements Parser {
                     }
 
                     String word11 = getNextKeyWordUnMove();
-                    if ("WHERE".equals(word11)
-                            || "LIMIT".equals(word11)
-                            || "GROUP".equals(word11)
+                    if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
                             || currIndex >= sqlCharArr.length) {
                         break;
                     }
-
+                    // 判断连接类型
                     if(CommonConstant.JOIN_TYPE_INNER.equals(word11)
                             || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
                             || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
@@ -573,7 +571,8 @@ public class SqlParser implements Parser {
                 String alias = tableName;
                 table.setAlias(alias);
             } else {
-                table.setAlias(next);
+                String alias = getNextOriginalWord();
+                table.setAlias(alias);
             }
             Column.setColumnAlias(table.getAllColumns(), table.getAlias());
         }

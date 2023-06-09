@@ -18,4 +18,9 @@ public class RowEntity {
         return columns;
     }
 
+    public static RowEntity mergeRow(RowEntity leftRow, RowEntity rightRow) {
+        Column[] columns = Column.mergeColumns(leftRow.getColumns(), rightRow.getColumns());
+        return new RowEntity(columns);
+    }
+
 }
