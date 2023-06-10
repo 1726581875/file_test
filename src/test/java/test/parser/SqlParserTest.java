@@ -19,7 +19,7 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        testSelectCondition();
+        joinTest2();
     }
 
 
@@ -51,7 +51,7 @@ public class SqlParserTest {
         testExecSQL("select * from xmz_00 a left join xmz_01 b on a.id = b.id");
         testExecSQL("select * from xmz_00 a inner join xmz_01 b on a.id = b.id");
 
-        testExecSQL("select id,count(*) from xmz_01 group by id");
+        //testExecSQL("select id,count(*) from xmz_01 group by id");
     }
 
 

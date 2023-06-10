@@ -4,7 +4,7 @@ import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
-import com.moyu.test.command.dml.condition.TableOperation;
+import com.moyu.test.command.dml.sql.TableFilter;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.*;
@@ -392,7 +392,7 @@ public class SqlParser implements Parser {
         int startIndex = currIndex;
         int endIndex = currIndex;
 
-        TableOperation mainTable = null;
+        TableFilter mainTable = null;
         while (true) {
             skipSpace();
             if(currIndex >= sqlCharArr.length) {
@@ -412,10 +412,10 @@ public class SqlParser implements Parser {
         tableName = mainTable.getTableName();
 
         // 合并所有表的所有字段
-        List<TableOperation> joinTables = mainTable.getJoinTables();
+        List<TableFilter> joinTables = mainTable.getJoinTables();
         Column[] allColumns = getColumns(mainTable.getTableName());
         Column.setColumnAlias(allColumns, mainTable.getAlias());
-        for (TableOperation joinTable : joinTables) {
+        for (TableFilter joinTable : joinTables) {
             Column[] joinColumns = getColumns(joinTable.getTableName());
             Column.setColumnAlias(joinColumns, joinTable.getAlias());
             allColumns = Column.mergeColumns(allColumns, joinColumns);
@@ -512,14 +512,14 @@ public class SqlParser implements Parser {
     }
 
 
-    private TableOperation getFormTableOperation() {
+    private TableFilter getFormTableOperation() {
 
         String nextWord = getNextKeyWordUnMove();
         // 存在子查询
         if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
             // todo
         }
-        TableOperation mainTable = getTableInfo();
+        TableFilter mainTable = getTableInfo();
         mainTable.setJoinTables(new ArrayList<>());
         while (true) {
             skipSpace();
@@ -542,7 +542,7 @@ public class SqlParser implements Parser {
                     throw new SqlIllegalException("sql语法有误");
                 }
 
-                TableOperation joinTable = getTableInfo();
+                TableFilter joinTable = getTableInfo();
                 mainTable.getJoinTables().add(joinTable);
 
                 String word12 = getNextKeyWord();
@@ -569,12 +569,12 @@ public class SqlParser implements Parser {
      * 解析表信息，表名、表别名
      * @return
      */
-    private TableOperation getTableInfo() {
+    private TableFilter getTableInfo() {
 
         String tableName = getNextOriginalWord();
 
         Column[] columns = getColumns(tableName);
-        TableOperation table = new TableOperation(tableName, columns, null);
+        TableFilter table = new TableFilter(tableName, columns, null);
 
         String next = getNextKeyWordUnMove();
         if("AS".equals(next)) {

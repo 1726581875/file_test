@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.condition;
 
+import com.moyu.test.command.dml.sql.Condition2;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -191,6 +192,7 @@ public class ConditionComparator {
 
         return result;
     }
+
 
 
 }

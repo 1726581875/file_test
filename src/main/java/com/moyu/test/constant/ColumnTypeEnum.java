@@ -1,5 +1,7 @@
 package com.moyu.test.constant;
 
+import com.moyu.test.exception.DbException;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/16
@@ -39,6 +41,35 @@ public enum ColumnTypeEnum {
         }
         return null;
     }
+
+
+    public static Class<?> getJavaTypeClass(byte type) {
+        for (ColumnTypeEnum typeEnum : ColumnTypeEnum.values()) {
+            if(typeEnum.getColumnType().equals(type)) {
+                return getJavaTypeClass(typeEnum);
+            }
+        }
+        throw new DbException("类型不合法,type=" + type);
+    }
+
+
+    public static Class<?> getJavaTypeClass(ColumnTypeEnum typeEnum) {
+
+        switch (typeEnum) {
+            case INT_4:
+            case INT:
+                return Integer.class;
+            case VARCHAR:
+            case CHAR:
+                return String.class;
+            case BIGINT:
+            case TIMESTAMP:
+                return Long.class;
+            default:
+                throw new DbException("类型不合法,type=" + typeEnum);
+        }
+    }
+
 
     public String getTypeName() {
         return typeName;

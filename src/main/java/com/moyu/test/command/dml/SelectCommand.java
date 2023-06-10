@@ -5,7 +5,7 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.condition.ConditionTree;
-import com.moyu.test.command.dml.condition.TableOperation;
+import com.moyu.test.command.dml.sql.TableFilter;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.constant.ColumnTypeEnum;
@@ -65,7 +65,7 @@ public class SelectCommand extends AbstractCommand {
     private QueryResult queryResult;
 
 
-    private TableOperation mainTable;
+    private TableFilter mainTable;
 
 
     public SelectCommand(Integer databaseId,
@@ -145,8 +145,8 @@ public class SelectCommand extends AbstractCommand {
             List<Column[]> dataList = new ArrayList<>();
             Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getAllColumns());
             // join table
-            List<TableOperation> joinTables = mainTable.getJoinTables();
-            for (TableOperation joinTable : joinTables) {
+            List<TableFilter> joinTables = mainTable.getJoinTables();
+            for (TableFilter joinTable : joinTables) {
                 DataChunkStore joinTableStore = null;
                 try {
                     joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
@@ -736,7 +736,7 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    public void setMainTable(TableOperation mainTable) {
+    public void setMainTable(TableFilter mainTable) {
         this.mainTable = mainTable;
     }
 }

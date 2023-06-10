@@ -1,5 +1,6 @@
-package com.moyu.test.command.dml.condition;
+package com.moyu.test.command.dml.sql;
 
+import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/7
  */
-public class TableOperation {
+public class TableFilter {
     /**
      * 表名
      */
@@ -38,14 +39,14 @@ public class TableOperation {
     /**
      * 连接的表
      */
-    private List<TableOperation> joinTables;
+    private List<TableFilter> joinTables;
     /**
      * 子查询
      */
-    private TableOperation subQuery;
+    private TableFilter subQuery;
 
 
-    public TableOperation(String tableName, Column[] allColumns, ConditionTree tableCondition) {
+    public TableFilter(String tableName, Column[] allColumns, ConditionTree tableCondition) {
         this.tableName = tableName;
         this.allColumns = allColumns;
         this.tableCondition = tableCondition;
@@ -83,11 +84,11 @@ public class TableOperation {
         this.joinInType = joinInType;
     }
 
-    public List<TableOperation> getJoinTables() {
+    public List<TableFilter> getJoinTables() {
         return joinTables;
     }
 
-    public void setJoinTables(List<TableOperation> joinTables) {
+    public void setJoinTables(List<TableFilter> joinTables) {
         this.joinTables = joinTables;
     }
 
@@ -107,11 +108,11 @@ public class TableOperation {
         this.allColumns = allColumns;
     }
 
-    public TableOperation getSubQuery() {
+    public TableFilter getSubQuery() {
         return subQuery;
     }
 
-    public void setSubQuery(TableOperation subQuery) {
+    public void setSubQuery(TableFilter subQuery) {
         this.subQuery = subQuery;
     }
 }
