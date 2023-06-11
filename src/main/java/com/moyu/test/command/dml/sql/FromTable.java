@@ -1,6 +1,5 @@
 package com.moyu.test.command.dml.sql;
 
-import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.List;
@@ -9,7 +8,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/7
  */
-public class TableFilter {
+public class FromTable {
     /**
      * 表名
      */
@@ -19,9 +18,15 @@ public class TableFilter {
      */
     private String alias;
     /**
-     * 当前表所有字段信息
+     * 所有字段信息,包含连接表字段
      */
     private Column[] allColumns;
+
+    /**
+     * 当前表所有字段信息
+     */
+    private Column[] tableColumns;
+
     /**
      * 查询条件
      */
@@ -39,16 +44,16 @@ public class TableFilter {
     /**
      * 连接的表
      */
-    private List<TableFilter> joinTables;
+    private List<FromTable> joinTables;
     /**
      * 子查询
      */
-    private TableFilter subQuery;
+    private Query subQuery;
 
 
-    public TableFilter(String tableName, Column[] allColumns, ConditionTree2 tableCondition) {
+    public FromTable(String tableName, Column[] tableColumns, ConditionTree2 tableCondition) {
         this.tableName = tableName;
-        this.allColumns = allColumns;
+        this.tableColumns = tableColumns;
         this.tableCondition = tableCondition;
     }
 
@@ -84,11 +89,11 @@ public class TableFilter {
         this.joinInType = joinInType;
     }
 
-    public List<TableFilter> getJoinTables() {
+    public List<FromTable> getJoinTables() {
         return joinTables;
     }
 
-    public void setJoinTables(List<TableFilter> joinTables) {
+    public void setJoinTables(List<FromTable> joinTables) {
         this.joinTables = joinTables;
     }
 
@@ -108,11 +113,19 @@ public class TableFilter {
         this.allColumns = allColumns;
     }
 
-    public TableFilter getSubQuery() {
+    public Query getSubQuery() {
         return subQuery;
     }
 
-    public void setSubQuery(TableFilter subQuery) {
+    public void setSubQuery(Query subQuery) {
         this.subQuery = subQuery;
+    }
+
+    public Column[] getTableColumns() {
+        return tableColumns;
+    }
+
+    public void setTableColumns(Column[] tableColumns) {
+        this.tableColumns = tableColumns;
     }
 }

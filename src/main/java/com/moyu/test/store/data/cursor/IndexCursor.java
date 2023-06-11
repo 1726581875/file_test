@@ -1,6 +1,7 @@
 package com.moyu.test.store.data.cursor;
 
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
@@ -13,7 +14,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/6
  */
-public class IndexCursor implements Cursor {
+public class IndexCursor extends AbstractCursor {
 
     private Column[] columns;
 
@@ -65,6 +66,10 @@ public class IndexCursor implements Cursor {
 
     @Override
     public RowEntity next() {
+
+        if(closed) {
+            throw new DbException("游标已关闭");
+        }
 
         int dataChunkNum = dataChunkStore.getDataChunkNum();
         if (dataChunkNum == 0) {
@@ -141,6 +146,12 @@ public class IndexCursor implements Cursor {
     @Override
     public Column[] getColumns() {
         return columns;
+    }
+
+
+    @Override
+    void closeCursor() {
+        dataChunkStore.close();
     }
 
 

@@ -6,7 +6,7 @@ import com.moyu.test.store.metadata.obj.Column;
  * @author xiaomingzhang
  * @date 2023/5/29
  */
-public class SelectPlan {
+public class SelectIndex {
     /**
      * 表名
      */

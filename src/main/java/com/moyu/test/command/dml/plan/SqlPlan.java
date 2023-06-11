@@ -1,10 +1,7 @@
 package com.moyu.test.command.dml.plan;
-import com.moyu.test.command.dml.condition.Condition;
-import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.dml.sql.Condition2;
 import com.moyu.test.command.dml.sql.ConditionEqOrNq;
 import com.moyu.test.command.dml.sql.ConditionTree2;
-import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
 
@@ -19,7 +16,7 @@ import java.util.Map;
 public class SqlPlan {
 
 
-    public static SelectPlan getSelectPlan(ConditionTree2 conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
+    public static SelectIndex getSelectPlan(ConditionTree2 conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
 
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : columns) {
@@ -39,9 +36,9 @@ public class SqlPlan {
     }
 
 
-    private static SelectPlan analyzeTree(ConditionTree2 conditionTree,
-                                          Map<String,Column> columnMap,
-                                          Map<String, IndexMetadata> indexMap) {
+    private static SelectIndex analyzeTree(ConditionTree2 conditionTree,
+                                           Map<String,Column> columnMap,
+                                           Map<String, IndexMetadata> indexMap) {
         if(conditionTree.isLeaf()) {
             // TODO 目前只处理最简单的情况，按单个索引查询
             Condition2 condition = conditionTree.getCondition();
@@ -53,7 +50,7 @@ public class SqlPlan {
                     IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
                     if(indexMetadata != null) {
                         column.setValue(eqCondition.getValue());
-                        SelectPlan selectPlan = new SelectPlan();
+                        SelectIndex selectPlan = new SelectIndex();
                         selectPlan.setTableName(column.getColumnName());
                         selectPlan.setUseIndex(true);
                         selectPlan.setIndexType(indexMetadata.getIndexType());
@@ -70,7 +67,7 @@ public class SqlPlan {
             List<ConditionTree2> childNodes = conditionTree.getChildNodes();
             if (childNodes != null) {
                 for (int i = 0; i < childNodes.size(); i++) {
-                    SelectPlan selectPlan = analyzeTree(childNodes.get(i), columnMap, indexMap);
+                    SelectIndex selectPlan = analyzeTree(childNodes.get(i), columnMap, indexMap);
                     if(selectPlan != null) {
                         return selectPlan;
                     }

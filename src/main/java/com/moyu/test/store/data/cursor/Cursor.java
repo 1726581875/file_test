@@ -14,4 +14,6 @@ public interface Cursor {
 
     Column[] getColumns();
 
+    void close();
+
 }

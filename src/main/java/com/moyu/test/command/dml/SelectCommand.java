@@ -3,12 +3,9 @@ package com.moyu.test.command.dml;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.dml.condition.ConditionComparator;
-import com.moyu.test.command.dml.sql.Condition2;
-import com.moyu.test.command.dml.sql.ConditionLeftRight;
-import com.moyu.test.command.dml.sql.ConditionTree2;
-import com.moyu.test.command.dml.sql.TableFilter;
+import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.function.*;
-import com.moyu.test.command.dml.plan.SelectPlan;
+import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
@@ -43,40 +40,36 @@ public class SelectCommand extends AbstractCommand {
      * 表所有的字段
      */
     private Column[] columns;
-    /**
-     * 要查询的列/字段
-     */
-    private SelectColumn[] selectColumns;
 
     private ConditionTree2 conditionTree2;
 
     /**
      * 查询计划
      */
-    private SelectPlan selectPlan;
+    private SelectIndex selectPlan;
 
     private String groupByColumnName;
-
-    private Integer limit;
-
-    private Integer offset = 0;
     /**
      * 查询结果
      */
     private QueryResult queryResult;
 
 
-    private TableFilter mainTable;
+    private FromTable mainTable;
+    
+    private Query query;
 
 
-    public SelectCommand(Integer databaseId,
-                         String tableName,
-                         Column[] columns,
-                         SelectColumn[] selectColumns) {
+    public SelectCommand(Integer databaseId, Query query) {
         this.databaseId = databaseId;
-        this.tableName = tableName;
-        this.columns = columns;
-        this.selectColumns = selectColumns;
+        this.mainTable = query.getMainTable();
+        this.tableName = mainTable.getTableName();
+        this.columns = mainTable.getAllColumns();
+        this.query = query;
+        this.groupByColumnName = query.getGroupByColumnName();
+        this.selectPlan = query.getSelectIndex();
+        this.conditionTree2 = query.getConditionTree();
+
     }
 
     @Override
@@ -84,8 +77,11 @@ public class SelectCommand extends AbstractCommand {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
         QueryResult queryResult = null;
-        if(mainTable.getJoinTables() == null || mainTable.getJoinTables().size() == 0) {
+        if((mainTable.getJoinTables() == null || mainTable.getJoinTables().size() == 0)
+                && mainTable.getSubQuery() == null) {
             queryResult = execQuery();
+        } else if(mainTable.getSubQuery() != null) {
+           queryResult = subQuery();
         } else {
             queryResult = joinQuery();
         }
@@ -98,7 +94,7 @@ public class SelectCommand extends AbstractCommand {
 
     public QueryResult execQuery() {
         QueryResult result = new QueryResult();
-        result.setSelectColumns(selectColumns);
+        result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
         DataChunkStore dataChunkStore = null;
         try {
@@ -135,23 +131,135 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
+    public QueryResult subQuery() {
+        QueryResult result = new QueryResult();
+        result.setSelectColumns(query.getSelectColumns());
+        result.setResultRows(new ArrayList<>());
+        List<Column[]> dataList = new ArrayList<>();
+        int currIndex = 0;
+
+        Cursor mainCursor = null;
+        try {
+            Stack<Query> queryStack = new Stack<>();
+            Query q = query;
+            while ((q = q.getMainTable().getSubQuery()) != null){
+                queryStack.add(q);
+            }
+
+            mainCursor = execSubQuery(queryStack);
+
+            // 连表后的数据结果再按条件进行筛选
+            RowEntity mainRow = null;
+            while ((mainRow = mainCursor.next()) != null) {
+                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, query.getConditionTree());
+                if (matchCondition && isMatchLimit(currIndex)) {
+                    Column[] columnData = mainRow.getColumns();
+                    Column[] resultColumns = filterColumns(columnData);
+                    dataList.add(resultColumns);
+                }
+                if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
+                    break;
+                }
+                currIndex++;
+            }
+
+            result.addAll(dataList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            mainCursor.close();
+        }
+
+        this.queryResult = result;
+        return this.queryResult;
+    }
+
+
+    private Cursor execSubQuery(Stack<Query> queryStack) {
+        Cursor mainCursor = null;
+
+        while (!queryStack.isEmpty()) {
+            Query q = queryStack.pop();
+            FromTable fromTable = q.getMainTable();
+            if(fromTable.getSubQuery() == null) {
+                mainCursor = subQueryTest(q);
+            }
+            RowEntity mainRow = null;
+            int currIndex = 0;
+            List<RowEntity> rowEntityList = new ArrayList<>();
+            while ((mainRow = mainCursor.next()) != null) {
+                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, q.getConditionTree());
+                if (matchCondition && isMatchLimit(currIndex)) {
+                    Column[] columnData = mainRow.getColumns();
+                    Column[] resultColumns = filterColumns(columnData);
+                    rowEntityList.add(new RowEntity(resultColumns));
+                }
+                if (q.getLimit() != null && rowEntityList.size() >= q.getLimit()) {
+                    break;
+                }
+                currIndex++;
+            }
+
+            mainCursor = new MemoryTemTableCursor(rowEntityList, mainCursor.getColumns());
+        }
+
+        return mainCursor;
+    }
+
+
+
+    private Cursor subQueryTest(Query query) {
+
+        DataChunkStore mainTableStore = null;
+        Cursor mainCursor = null;
+        try {
+            FromTable mTable = query.getMainTable();
+            mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mTable.getTableName()));
+            mainCursor = new DefaultCursor(mainTableStore, mTable.getTableColumns());
+
+            List<FromTable> joinTables = mTable.getJoinTables();
+            // join table
+            if(joinTables != null && joinTables.size() > 0) {
+                for (FromTable joinTable : joinTables) {
+                    DataChunkStore joinTableStore = null;
+                    try {
+                        joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
+                        DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getTableColumns());
+                        // 进行连表操作
+                        mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        joinTableStore.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+           // mainTableStore.close();
+        }
+        return mainCursor;
+    }
+
+
     public QueryResult joinQuery() {
         QueryResult result = new QueryResult();
-        result.setSelectColumns(selectColumns);
+        result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
         DataChunkStore mainTableStore = null;
         int currIndex = 0;
         try {
             mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mainTable.getTableName()));
             List<Column[]> dataList = new ArrayList<>();
-            Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getAllColumns());
+            Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getTableColumns());
             // join table
-            List<TableFilter> joinTables = mainTable.getJoinTables();
-            for (TableFilter joinTable : joinTables) {
+            List<FromTable> joinTables = mainTable.getJoinTables();
+            for (FromTable joinTable : joinTables) {
                 DataChunkStore joinTableStore = null;
                 try {
                     joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
-                    DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getAllColumns());
+                    DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getTableColumns());
                     // 进行连表操作
                     mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
                 } catch (Exception e) {
@@ -170,7 +278,7 @@ public class SelectCommand extends AbstractCommand {
                     Column[] resultColumns = filterColumns(columnData);
                     dataList.add(resultColumns);
                 }
-                if (limit != null && dataList.size() >= limit) {
+                if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
                     break;
                 }
                 currIndex++;
@@ -272,8 +380,8 @@ public class SelectCommand extends AbstractCommand {
      */
     private boolean useFunction() {
         // 如果第一个是函数，后面必须都是函数
-        if (selectColumns[0].getFunctionName() != null) {
-            for (SelectColumn c : selectColumns) {
+        if (query.getSelectColumns()[0].getFunctionName() != null) {
+            for (SelectColumn c : query.getSelectColumns()) {
                 if (c.getFunctionName() == null) {
                     throw new SqlIllegalException("sql语法有误");
                 }
@@ -286,11 +394,11 @@ public class SelectCommand extends AbstractCommand {
 
     private boolean useGroupBy() {
         if(groupByColumnName != null) {
-            if (selectColumns.length == 1) {
+            if (query.getSelectColumns().length == 1) {
                 return true;
             }
-            for (int i = 1; i < selectColumns.length; i++) {
-                SelectColumn c = selectColumns[i];
+            for (int i = 1; i < query.getSelectColumns().length; i++) {
+                SelectColumn c = query.getSelectColumns()[i];
                 if (c.getFunctionName() == null) {
                     throw new SqlIllegalException("sql语法有误");
                 }
@@ -312,7 +420,7 @@ public class SelectCommand extends AbstractCommand {
                 Column[] resultColumns = filterColumns(columnData);
                 dataList.add(resultColumns);
             }
-            if (limit != null && dataList.size() >= limit) {
+            if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
                 return dataList;
             }
             currIndex++;
@@ -323,7 +431,7 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    private List<Column[]> getColumnDataListUseIndex(SelectPlan selectPlan, DataChunkStore dataChunkStore) {
+    private List<Column[]> getColumnDataListUseIndex(SelectIndex selectPlan, DataChunkStore dataChunkStore) {
         List<Column[]> dataList = new ArrayList<>();
         try {
             // 索引文件位置
@@ -370,11 +478,11 @@ public class SelectCommand extends AbstractCommand {
             // 按照条件过滤
             if (conditionTree2 == null) {
                 Column[] filterColumns = filterColumns(columnData);
-                // 判断是否符合limit、offset
+                // 判断是否符合query.getLimit()、query.getOffset()
                 if (isMatchLimit(currIndex.get())) {
                     dataList.add(filterColumns);
                 }
-                if (limit != null && dataList.size() >= limit) {
+                if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
                     break;
                 }
                 currIndex.addAndGet(1);
@@ -382,11 +490,11 @@ public class SelectCommand extends AbstractCommand {
                 boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
                 if (compareResult) {
                     Column[] filterColumns = filterColumns(columnData);
-                    // 判断是否符合limit、offset
+                    // 判断是否符合query.getLimit()、query.getOffset()
                     if (isMatchLimit(currIndex.get())) {
                         dataList.add(filterColumns);
                     }
-                    if (limit != null && dataList.size() >= limit) {
+                    if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
                         break;
                     }
                     currIndex.addAndGet(1);
@@ -397,14 +505,14 @@ public class SelectCommand extends AbstractCommand {
 
 
     /**
-     * 是否是符合offset和limit条件的行
+     * 是否是符合query.getOffset()和query.getLimit()条件的行
      * @param currIndex
      * @return
      */
     private boolean isMatchLimit(int currIndex) {
-        if (offset != null && limit != null) {
-            int beginIndex = offset;
-            int endIndex = offset + limit - 1;
+        if (query.getOffset() != null && query.getLimit() != null) {
+            int beginIndex = query.getOffset();
+            int endIndex = query.getOffset() + query.getLimit() - 1;
             if (currIndex < beginIndex || currIndex > endIndex) {
                 return false;
             }
@@ -457,9 +565,9 @@ public class SelectCommand extends AbstractCommand {
 
             Long statResult = statFunction.getValue();
             Column resultColumn = null;
-            Column c = selectColumns[i].getColumn();
+            Column c = query.getSelectColumns()[i].getColumn();
             // 日期类型
-            if(!selectColumns[i].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
+            if(!query.getSelectColumns()[i].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
                     && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
                 resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, i, 8);
                 resultColumn.setValue(statResult == null ? null : new Date(statResult));
@@ -527,9 +635,9 @@ public class SelectCommand extends AbstractCommand {
                 StatFunction statFunction = statFunctions.get(i);
                 Long statResult = statFunction.getValue();
                 Column resultColumn = null;
-                Column c = selectColumns[index].getColumn();
+                Column c = query.getSelectColumns()[index].getColumn();
                 // 日期类型
-                if (!selectColumns[index].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
+                if (!query.getSelectColumns()[index].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
                         && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
                     resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, index, 8);
                     resultColumn.setValue(statResult == null ? null : new Date(statResult));
@@ -559,8 +667,8 @@ public class SelectCommand extends AbstractCommand {
 
 
     private List<StatFunction> getFunctionList() {
-        List<StatFunction> statFunctions = new ArrayList<>(selectColumns.length);
-        for (SelectColumn selectColumn : selectColumns) {
+        List<StatFunction> statFunctions = new ArrayList<>(query.getSelectColumns().length);
+        for (SelectColumn selectColumn : query.getSelectColumns()) {
 
             String functionName = selectColumn.getFunctionName();
             if (functionName == null) {
@@ -594,9 +702,9 @@ public class SelectCommand extends AbstractCommand {
 
 
     private Column[] filterColumns(Column[] columnData) {
-        Column[] resultColumns = new Column[selectColumns.length];
-        for (int i = 0; i < selectColumns.length; i++) {
-            SelectColumn selectColumn = selectColumns[i];
+        Column[] resultColumns = new Column[query.getSelectColumns().length];
+        for (int i = 0; i < query.getSelectColumns().length; i++) {
+            SelectColumn selectColumn = query.getSelectColumns()[i];
             for (Column c : columnData) {
                 if(selectColumn.getTableAliasColumnName().equals(c.getTableAliasColumnName())) {
                     resultColumns[i] = c;
@@ -613,7 +721,7 @@ public class SelectCommand extends AbstractCommand {
 
     private void appendLine(StringBuilder stringBuilder) {
         stringBuilder.append(" ");
-        for (SelectColumn column : selectColumns) {
+        for (SelectColumn column : query.getSelectColumns()) {
             int length = column.getSelectColumnName().length();
             while (length > 0) {
                 stringBuilder.append("--");
@@ -643,7 +751,7 @@ public class SelectCommand extends AbstractCommand {
         SelectColumn[] selectColumns = queryResult.getSelectColumns();
         // 表头
         String tableHeaderStr = "";
-        for (SelectColumn column : selectColumns) {
+        for (SelectColumn column : query.getSelectColumns()) {
             String value = getColumnNameStr(column);
             tableHeaderStr = tableHeaderStr + " | " + value;
         }
@@ -703,25 +811,19 @@ public class SelectCommand extends AbstractCommand {
 
 
     public Integer getLimit() {
-        return limit;
+        return query.getLimit();
     }
 
-    public void setLimit(Integer limit) {
-        this.limit = limit;
-    }
 
     public Integer getOffset() {
-        return offset;
+        return query.getOffset();
     }
 
-    public void setOffset(Integer offset) {
-        this.offset = offset;
-    }
 
-    public SelectPlan getSelectPlan() {
+    public SelectIndex getSelectPlan() {
         return selectPlan;
     }
-    public void setSelectPlan(SelectPlan selectPlan) {
+    public void setSelectPlan(SelectIndex selectPlan) {
         this.selectPlan = selectPlan;
     }
 
@@ -734,7 +836,7 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    public void setMainTable(TableFilter mainTable) {
+    public void setMainTable(FromTable mainTable) {
         this.mainTable = mainTable;
     }
 

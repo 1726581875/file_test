@@ -1,5 +1,6 @@
 package com.moyu.test.store.data.cursor;
 
+import com.moyu.test.exception.DbException;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/8
  */
-public class MemoryTemTableCursor implements Cursor {
+public class MemoryTemTableCursor extends AbstractCursor {
 
     private int nextIndex;
 
@@ -25,6 +26,10 @@ public class MemoryTemTableCursor implements Cursor {
 
     @Override
     public RowEntity next() {
+
+        if(closed) {
+            throw new DbException("游标已关闭");
+        }
 
         if(rows == null || rows.size() == 0) {
             return null;
@@ -43,7 +48,13 @@ public class MemoryTemTableCursor implements Cursor {
 
     @Override
     public Column[] getColumns() {
-        throw new UnsupportedOperationException();
+        return columns;
+    }
+
+
+    @Override
+    void closeCursor() {
+        rows.clear();
     }
 
 }

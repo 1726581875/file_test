@@ -15,9 +15,79 @@ public class TotalSqlTest {
     public static void main(String[] args) {
 /*        testDatabaseDDL();
         testTableDDL();
-        testInsert();*/
+        testInsert();
         testSimpleSelect();
+        testUseIndex();
+        testJoinTable();*/
+        testSubQuery();
     }
+
+
+    public static void testSubQuery() {
+
+        testExecSQL("drop table xmz_yan");
+        testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_yan(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("select * from (select * from xmz_yan ) t");
+        testExecSQL("select * from (select * from xmz_yan where id = 1) t");
+        testExecSQL("select * from (select * from xmz_yan ) t where id = 1");
+        testExecSQL("select * from (select * from (select * from xmz_yan where id = 1 ) t0 ) t");
+
+
+    }
+
+
+    public static void testJoinTable() {
+
+        testExecSQL("drop table xmz_00");
+        testExecSQL("create table xmz_00 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_00(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_00(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_00(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("drop table xmz_01");
+        testExecSQL("create table xmz_01 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_01(id,name,time) value (1,'111.','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (4,'444.','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_01(id,name,time) value (5,'555.','2023-05-19 00:00:00')");
+
+
+        testExecSQL("drop table xmz_02");
+        testExecSQL("create table xmz_02 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_02(id,name,time) value (1,'111.2','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_02(id,name,time) value (3,'222.2','2023-05-19 00:00:00')");
+
+
+        testExecSQL("select * from xmz_00 as a inner join xmz_01 as b on a.id = b.id inner join xmz_02 as c on a.id = c.id");
+
+
+        testExecSQL("select * from xmz_00 a right join xmz_01 b on a.id = b.id");
+        testExecSQL("select * from xmz_00 a left join xmz_01 b on a.id = b.id");
+        testExecSQL("select * from xmz_00 a inner join xmz_01 b on a.id = b.id");
+    }
+
+
+
+    public static void testUseIndex() {
+        testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_table_1(id,name,time) value (3,'333','2023-05-19 00:00:00')");
+
+
+
+        testExecSQL("create index id_idx on xmz_table_1(id)");
+
+        testExecSQL("select * from xmz_table_1 where id = 3");
+
+
+        testExecSQL("drop table xmz_table_1");
+    }
+
+
 
     public static void testSimpleSelect() {
 
@@ -40,6 +110,8 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
 
         testExecSQL("select * from xmz_table where name like 摸鱼");
+        testExecSQL("select * from xmz_table where name is null");
+        testExecSQL("select * from xmz_table where name is not null");
 
         testExecSQL("drop table xmz_table");
     }
