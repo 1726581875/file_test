@@ -1,6 +1,6 @@
 package com.moyu.test.command.dml.condition;
 
-import com.moyu.test.command.dml.sql.Condition2;
+import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -52,33 +52,33 @@ public class ConditionComparator {
      * @param conditionTree
      * @return
      */
-    public static boolean isMatchRow(RowEntity row, ConditionTree conditionTree) {
+    public static boolean isMatchRow(RowEntity row, ConditionTree2 conditionTree) {
         if(conditionTree == null) {
             return true;
         }
-        return analyzeConditionTree(conditionTree, row.getColumns());
+        return analyzeConditionTree(conditionTree, row);
     }
 
     /**
      * 分析条件树，判断行数据是否满足条件
      * @param node
-     * @param columnData
+     * @param row
      * @return
      */
-    public static boolean analyzeConditionTree(ConditionTree node, Column[] columnData) {
+    public static boolean analyzeConditionTree(ConditionTree2 node, RowEntity row) {
         boolean result;
         if (node.isLeaf()) {
-            result = ConditionComparator.compareCondition(node.getCondition(), columnData);
+            result = node.getCondition().getResult(row);
         } else {
             result = true;
-            List<ConditionTree> childNodes = node.getChildNodes();
+            List<ConditionTree2> childNodes = node.getChildNodes();
 
             for (int i = 0; i < childNodes.size(); i++) {
 
-                ConditionTree conditionNode = childNodes.get(i);
+                ConditionTree2 conditionNode = childNodes.get(i);
 
                 String joinType = conditionNode.getJoinType();
-                boolean childResult = analyzeConditionTree(conditionNode, columnData);
+                boolean childResult = analyzeConditionTree(conditionNode, row);
                 // 第一个条件
                 if (i == 0) {
                     result = childResult;

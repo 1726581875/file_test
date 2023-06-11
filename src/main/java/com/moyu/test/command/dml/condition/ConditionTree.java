@@ -1,5 +1,7 @@
 package com.moyu.test.command.dml.condition;
 
+import com.moyu.test.command.dml.sql.Condition2;
+
 import java.util.List;
 
 /**
@@ -22,7 +24,7 @@ public class ConditionTree {
     /**
      * 叶子节点不为null
      */
-    private Condition condition;
+    private Condition2 condition;
     /**
      * 是否叶子节点
      */
@@ -53,11 +55,11 @@ public class ConditionTree {
         this.childNodes = childNodes;
     }
 
-    public Condition getCondition() {
+    public Condition2 getCondition() {
         return condition;
     }
 
-    public void setCondition(Condition condition) {
+    public void setCondition(Condition2 condition) {
         this.condition = condition;
     }
 

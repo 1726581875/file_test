@@ -44,4 +44,15 @@ public class ConditionEqOrNq extends AbstractCondition2 {
         }
     }
 
+    public Column getColumn() {
+        return column;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public boolean isEq() {
+        return isEq;
+    }
 }

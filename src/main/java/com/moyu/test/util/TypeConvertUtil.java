@@ -15,10 +15,10 @@ public class TypeConvertUtil {
         if (Integer.class.equals(typeClass)) {
             return Integer.valueOf(value);
         }
-        if (Integer.class.equals(typeClass)) {
+        if (Long.class.equals(typeClass)) {
             return Long.valueOf(value);
         }
-        if (Integer.class.equals(typeClass)) {
+        if (String.class.equals(typeClass)) {
             return value;
         } else {
             throw new DbException("类型不支持");

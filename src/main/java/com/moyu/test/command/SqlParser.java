@@ -4,7 +4,7 @@ import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
-import com.moyu.test.command.dml.sql.TableFilter;
+import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
 import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.*;
@@ -325,16 +325,16 @@ public class SqlParser implements Parser {
 
 
         // 解析where条件
-        ConditionTree root = null;
+        ConditionTree2 root = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if("WHERE".equals(nextKeyWord)) {
             skipSpace();
-            root = new ConditionTree();
+            root = new ConditionTree2();
             root.setLeaf(false);
             root.setJoinType(ConditionConstant.AND);
             root.setChildNodes(new ArrayList<>());
-            parseWhereCondition(root);
+            parseWhereCondition2(root, getColumnMap(columns));
         }
 
         return new UpdateCommand(this.connectSession.getDatabaseId(),
@@ -365,18 +365,20 @@ public class SqlParser implements Parser {
             throw new SqlIllegalException("sql语法有误,tableName为空");
         }
 
-        ConditionTree root = null;
+        Column[] columns = getColumns(tableName);
+
+        ConditionTree2 root = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if("WHERE".equals(nextKeyWord)) {
             skipSpace();
-            root = new ConditionTree();
+            root = new ConditionTree2();
             root.setLeaf(false);
             root.setJoinType(ConditionConstant.AND);
             root.setChildNodes(new ArrayList<>());
-            parseWhereCondition(root);
+            parseWhereCondition2(root, getColumnMap(columns));
         }
-        Column[] columns = getColumns(tableName);
+
         return new DeleteCommand(connectSession.getDatabaseId(), tableName, columns, root);
     }
 
@@ -426,9 +428,9 @@ public class SqlParser implements Parser {
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns);
 
 
-        List<ConditionTree> conditionTreeList = new ArrayList<>();
+        List<ConditionTree2> conditionTreeList = new ArrayList<>();
         // 解析条件
-        ConditionTree root = new ConditionTree();
+        ConditionTree2 root = new ConditionTree2();
         root.setLeaf(false);
         root.setJoinType(ConditionConstant.AND);
         root.setChildNodes(conditionTreeList);
@@ -452,7 +454,13 @@ public class SqlParser implements Parser {
          */
         if("WHERE".equals(nextKeyWord)) {
             skipSpace();
-            parseWhereCondition(root);
+
+            Map<String, Column> columnMap = new HashMap<>();
+            for (Column c : allColumns) {
+                String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
+                columnMap.put(tableAlias + c.getColumnName(), c);
+            }
+            parseWhereCondition2(root, columnMap);
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
             String nextKeyWord2 = getNextKeyWord();
@@ -495,7 +503,7 @@ public class SqlParser implements Parser {
         }
 
         SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), tableName, allColumns, selectColumns);
-        selectCommand.setConditionTree(root);
+        selectCommand.setConditionTree2(root);
         selectCommand.setLimit(limit);
         selectCommand.setOffset(offset == null ? 0 : offset);
         selectCommand.setGroupByColumnName(groupByColumnName);
@@ -519,8 +527,18 @@ public class SqlParser implements Parser {
         if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
             // todo
         }
+
+        Map<String,Column> columnMap = new HashMap<>();
         TableFilter mainTable = getTableInfo();
         mainTable.setJoinTables(new ArrayList<>());
+
+
+        Column[] columns = getColumns(mainTable.getTableName());
+        Column.setColumnAlias(columns, mainTable.getAlias());
+        for (Column c : columns) {
+            columnMap.put(c.getTableAliasColumnName(), c);
+        }
+
         while (true) {
             skipSpace();
             if (currIndex >= sqlCharArr.length) {
@@ -545,13 +563,20 @@ public class SqlParser implements Parser {
                 TableFilter joinTable = getTableInfo();
                 mainTable.getJoinTables().add(joinTable);
 
+
+                Column[] columns2 = getColumns(joinTable.getTableName());
+                Column.setColumnAlias(columns2, joinTable.getAlias());
+                for (Column c : columns2) {
+                    columnMap.put(c.getTableAliasColumnName(), c);
+                }
+
                 String word12 = getNextKeyWord();
                 if (!"ON".equals(word12)) {
                     throw new SqlIllegalException("sql语法有误");
                 }
-                Condition condition = parseJoinCondition();
+                Condition2 condition = parseJoinCondition(columnMap);
                 // todo 目前只支持单条件连接
-                ConditionTree joinCondiTree = new ConditionTree();
+                ConditionTree2 joinCondiTree = new ConditionTree2();
                 joinCondiTree.setLeaf(true);
                 joinCondiTree.setJoinType(ConditionConstant.AND);
                 joinCondiTree.setCondition(condition);
@@ -754,14 +779,15 @@ public class SqlParser implements Parser {
 
 
 
+
     /**
      * a = '1' and b=1
      * @param conditionTree
      * @return
      */
-    private ConditionTree parseWhereCondition(ConditionTree conditionTree) {
+    private ConditionTree2 parseWhereCondition2(ConditionTree2 conditionTree, Map<String, Column> columnMap) {
 
-        List<ConditionTree> childNodes = conditionTree.getChildNodes();
+        List<ConditionTree2> childNodes = conditionTree.getChildNodes();
         String nextJoinType = ConditionConstant.AND;
         boolean currConditionOpen = false;
         while (true) {
@@ -770,10 +796,10 @@ public class SqlParser implements Parser {
             }
             // 读到开始括号，创建一个条件树节点
             if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
-                ConditionTree childNode = createChildNode(nextJoinType);
+                ConditionTree2 childNode = createChildNode2(nextJoinType);
                 childNodes.add(childNode);
                 currIndex++;
-                parseWhereCondition(childNode);
+                parseWhereCondition2(childNode, columnMap);
                 currConditionOpen = true;
                 if (currIndex >= sqlCharArr.length) {
                     break;
@@ -798,12 +824,12 @@ public class SqlParser implements Parser {
 
             // 读到开始括号，创建一个条件树节点
             if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
-                ConditionTree newNode = new ConditionTree();
+                ConditionTree2 newNode = new ConditionTree2();
                 newNode.setJoinType(nextJoinType);
                 newNode.setChildNodes(new ArrayList<>());
                 childNodes.add(newNode);
                 currIndex++;
-                parseWhereCondition(newNode);
+                parseWhereCondition2(newNode, columnMap);
                 currConditionOpen = true;
                 if (currIndex >= sqlCharArr.length) {
                     break;
@@ -818,9 +844,9 @@ public class SqlParser implements Parser {
             // 条件开始
             if (sqlCharArr[currIndex] != ' ' && sqlCharArr[currIndex] != '(') {
                 // 解析条件
-                Condition condition = parseCondition();
+                Condition2 condition = parseCondition2(columnMap);
                 // 构造条件树的叶子节点
-                ConditionTree node = new ConditionTree();
+                ConditionTree2 node = new ConditionTree2();
                 node.setLeaf(true);
                 node.setJoinType(nextJoinType);
                 node.setCondition(condition);
@@ -856,53 +882,31 @@ public class SqlParser implements Parser {
     }
 
 
-    private ConditionTree createChildNode(String joinType) {
-        ConditionTree newNode = new ConditionTree();
+    private ConditionTree2 createChildNode2(String joinType) {
+        ConditionTree2 newNode = new ConditionTree2();
         newNode.setJoinType(joinType);
         newNode.setChildNodes(new ArrayList<>());
         return newNode;
     }
 
-    private Condition parseJoinCondition() {
+    private Condition2 parseJoinCondition(Map<String, Column> columnMap) {
 
-        Condition condition = parseCondition();
-        String columnName = condition.getKey();
-        String operator = condition.getOperator();
-        List<String> values = condition.getValue();
+        Condition2 condition = parseCondition2(columnMap);
 
-        if(operator.equals("=")) {
-            condition.setOperator(operator);
-
-            String[] columnNameSplit = columnName.split("\\.");
-            String[] valueSplit = values.get(0).split("\\.");
-            if(columnNameSplit.length == 2) {
-                condition.setTableAlias(columnNameSplit[0]);
-                condition.setKey(columnNameSplit[1]);
-            }
-            if(valueSplit.length == 2) {
-                condition.setRightTableAlias(valueSplit[0]);
-                condition.setValue(Arrays.asList(valueSplit[1]));
-            }
-        } else {
-            condition.setKey(columnName);
-            condition.setOperator(operator);
-            condition.setValue(values);
-        }
 
         return condition;
     }
 
-    private Condition parseCondition() {
+
+    private Condition2 parseCondition2(Map<String,Column> columnMap) {
         skipSpace();
         int start = currIndex;
-        Condition condition = new Condition();
-        String columnName = null;
+        Condition2 condition = null;
+        Column column = null;
         String operator = null;
         List<String> values = new ArrayList<>();
-        // 1表示下一个是字段、2表示下一个为算子、3表示下一个为值
+        // 1表示下一个是字段、2表示下一个为算子
         int flag = 1;
-        // 标记字符串 "'" 符号是否打开状态
-        boolean strOpen = false;
         while (true) {
             if (currIndex >= sqlCharArr.length) {
                 break;
@@ -913,7 +917,12 @@ public class SqlParser implements Parser {
                             || sqlCharArr[currIndex] == '='
                             || sqlCharArr[currIndex] == '!'
                             || sqlCharArr[currIndex] == '<')) {
-                columnName = originalSql.substring(start, currIndex);
+                String columnName = originalSql.substring(start, currIndex);
+                column = columnMap.get(columnName);
+                if(column == null) {
+                    throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
+                }
+
                 flag = 2;
                 skipSpace();
                 start = currIndex;
@@ -923,22 +932,45 @@ public class SqlParser implements Parser {
             // flag=1，当前为算子
             if (flag == 2) {
                 String nextKeyWord = getNextKeyWord();
+                skipSpace();
+                start = currIndex;
                 switch (nextKeyWord) {
                     case OperatorConstant.EQUAL:
+                        String nextValue = getNextOriginalWordUnMove();
+                        Column rightColumn = columnMap.get(nextValue);
+                        if(rightColumn == null) {
+                            // attribute = value
+                            values = parseConditionValues(start, OperatorConstant.EQUAL);
+                            condition = new ConditionEqOrNq(column, values.get(0), true);
+                        } else {
+                            // attribute = attribute
+                            condition = new ConditionLeftRight(column, rightColumn);
+                        }
+                        break;
                     case OperatorConstant.NOT_EQUAL_1:
                     case OperatorConstant.NOT_EQUAL_2:
+                        values = parseConditionValues(start, nextKeyWord);
+                        condition = new ConditionEqOrNq(column, values.get(0) , false);
+                        break;
                     case OperatorConstant.IN:
+                        values = parseConditionValues(start, nextKeyWord);
+                        condition = new ConditionInOrNot(column, values , true);
                     case OperatorConstant.EXISTS:
                     case OperatorConstant.LIKE:
-                        operator = nextKeyWord;
+                        values = parseConditionValues(start, OperatorConstant.LIKE);
+                        condition = new ConditionLikeOrNot(column, values.get(0) , true);
                         break;
                     case "NOT":
                         skipSpace();
                         String word0 = getNextKeyWord();
                         if ("IN".equals(word0)) {
                             operator = OperatorConstant.NOT_IN;
+                            values = parseConditionValues(start, operator);
+                            condition = new ConditionInOrNot(column, values , false);
                         } else if ("LIKE".equals(word0)) {
                             operator = OperatorConstant.NOT_LIKE;
+                            values = parseConditionValues(start, operator);
+                            condition = new ConditionLikeOrNot(column, values.get(0) , false);
                         } else if ("EXISTS".equals(word0)) {
                             operator = OperatorConstant.NOT_EXISTS;
                         }
@@ -959,64 +991,71 @@ public class SqlParser implements Parser {
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
-                flag = 3;
-                skipSpace();
-                start = currIndex;
-                continue;
-            }
 
-            // flag=3，当前为值
-            if (flag == 3) {
-
-                if (OperatorConstant.EQUAL.equals(operator)
-                        || OperatorConstant.NOT_EQUAL_1.equals(operator)
-                        || OperatorConstant.NOT_EQUAL_2.equals(operator)
-                        || OperatorConstant.LIKE.equals(operator)) {
-
-                    // 字符串开始
-                    if (sqlCharArr[currIndex] == '\'' && !strOpen) {
-                        strOpen = true;
-                        if (currIndex + 1 < sqlCharArr.length) {
-                            start = currIndex + 1;
-                        } else {
-                            throw new SqlIllegalException("sql语法有误");
-                        }
-                    } else if (sqlCharArr[currIndex] == '\'' && strOpen) {
-                        // 字符串结束
-                        values.add(originalSql.substring(start, currIndex));
-                        currIndex++;
-                        break;
-                        // 数值结束
-                    } else if ((isEndChar(sqlCharArr[currIndex]) || currIndex == sqlCharArr.length - 1) && !strOpen) {
-                        // 数值就是最后一个
-                        if((currIndex == sqlCharArr.length - 1) && !isEndChar(sqlCharArr[currIndex])) {
-                            values.add(originalSql.substring(start, sqlCharArr.length));
-                        } else {
-                            values.add(originalSql.substring(start, currIndex));
-                        }
-                        break;
-                    }
-                }
+                break;
             }
             currIndex++;
         }
 
         // 校验是否合法
-        if (columnName == null || operator == null) {
+        if (condition == null) {
             throw new SqlIllegalException("sql语法有误");
         }
-        if(!OperatorConstant.IS_NULL.equals(operator)
+/*        if(!OperatorConstant.IS_NULL.equals(operator)
                 && !OperatorConstant.IS_NOT_NULL.equals(operator)
                 && values.size() == 0) {
             throw new SqlIllegalException("sql语法有误");
-        }
-
-        condition.setKey(columnName);
-        condition.setOperator(operator);
-        condition.setValue(values);
+        }*/
 
         return condition;
     }
+
+
+    private List<String> parseConditionValues(Integer start, String operator) {
+        List<String> values = new ArrayList<>();
+        // 标记字符串 "'" 符号是否打开状态
+        boolean strOpen = false;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+            if (OperatorConstant.EQUAL.equals(operator)
+                    || OperatorConstant.NOT_EQUAL_1.equals(operator)
+                    || OperatorConstant.NOT_EQUAL_2.equals(operator)
+                    || OperatorConstant.LIKE.equals(operator)) {
+
+                // 字符串开始
+                if (sqlCharArr[currIndex] == '\'' && !strOpen) {
+                    strOpen = true;
+                    if (currIndex + 1 < sqlCharArr.length) {
+                        start = currIndex + 1;
+                    } else {
+                        throw new SqlIllegalException("sql语法有误");
+                    }
+                } else if (sqlCharArr[currIndex] == '\'' && strOpen) {
+                    // 字符串结束
+                    values.add(originalSql.substring(start, currIndex));
+                    currIndex++;
+                    break;
+                    // 数值结束
+                } else if ((isEndChar(sqlCharArr[currIndex]) || currIndex == sqlCharArr.length - 1) && !strOpen) {
+                    // 数值就是最后一个
+                    if ((currIndex == sqlCharArr.length - 1) && !isEndChar(sqlCharArr[currIndex])) {
+                        values.add(originalSql.substring(start, sqlCharArr.length));
+                    } else {
+                        values.add(originalSql.substring(start, currIndex));
+                    }
+                    break;
+                }
+            }
+
+            currIndex++;
+        }
+
+        return values;
+    }
+
+
 
 
     private boolean isEndChar(char c) {
@@ -1176,6 +1215,15 @@ public class SqlParser implements Parser {
     private boolean isNullValue(String value) {
         return "null".equals(value) || "NULL".equals(value);
     }
+
+    private Map<String, Column> getColumnMap(Column[] columns) {
+        Map<String, Column> columnMap = new HashMap<>();
+        for (Column c : columns) {
+            columnMap.put(c.getTableAliasColumnName(), c);
+        }
+        return columnMap;
+    }
+
 
 
     private Column[] getColumns(String tableName) {
@@ -1479,6 +1527,22 @@ public class SqlParser implements Parser {
         }
         String word = originalSql.substring(currIndex, i);
         currIndex = i;
+        return word;
+    }
+
+    private String getNextOriginalWordUnMove() {
+        skipSpace();
+        int i = currIndex;
+        while (i < sqlCharArr.length) {
+            if (sqlCharArr[i] == ' ') {
+                break;
+            }
+            if (sqlCharArr[i] == ';') {
+                break;
+            }
+            i++;
+        }
+        String word = originalSql.substring(currIndex, i);
         return word;
     }
 

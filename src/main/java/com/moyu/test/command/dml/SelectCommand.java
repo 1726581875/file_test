@@ -2,9 +2,10 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionComparator;
-import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.command.dml.sql.Condition2;
+import com.moyu.test.command.dml.sql.ConditionLeftRight;
+import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.command.dml.sql.TableFilter;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectPlan;
@@ -12,6 +13,7 @@ import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
@@ -45,10 +47,9 @@ public class SelectCommand extends AbstractCommand {
      * 要查询的列/字段
      */
     private SelectColumn[] selectColumns;
-    /**
-     * 条件树
-     */
-    private ConditionTree conditionTree;
+
+    private ConditionTree2 conditionTree2;
+
     /**
      * 查询计划
      */
@@ -187,7 +188,7 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    private Cursor joinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree joinCondition, String joinType) {
+    private Cursor joinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree2 joinCondition, String joinType) {
 
         // 字段元数据
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
@@ -247,16 +248,20 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree joinCondition) {
+    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree2 joinCondition) {
 
-        Condition condition = joinCondition.getCondition();
-        // 左表字段
-        Column leftColumn = leftRow.getColumn(condition.getKey(), condition.getTableAlias());
-        // 右边字段
-        String rightColumnName = condition.getValue().get(0);
-        Column rightColumn = rightRow.getColumn(rightColumnName, condition.getRightTableAlias());
+        Condition2 condition = joinCondition.getCondition();
+        if(condition instanceof ConditionLeftRight) {
+            ConditionLeftRight leftRight = (ConditionLeftRight) condition;
+            // 左表字段
+            Column leftColumn = leftRow.getColumn(leftRight.getLeft().getColumnName(), leftRight.getLeft().getTableAlias());
+            // 右边字段
+            Column rightColumn = rightRow.getColumn(leftRight.getRight().getColumnName(), leftRight.getRight().getTableAlias());
 
-        return leftColumn.getValue() != null  && leftColumn.getValue().equals(rightColumn.getValue());
+            return leftColumn.getValue() != null && leftColumn.getValue().equals(rightColumn.getValue());
+        } else {
+            throw new DbException("不支持连接条件");
+        }
     }
 
 
@@ -301,7 +306,7 @@ public class SelectCommand extends AbstractCommand {
         int currIndex = 0;
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            boolean matchCondition = ConditionComparator.isMatchRow(row, conditionTree);
+            boolean matchCondition = ConditionComparator.isMatchRow(row, conditionTree2);
             if (matchCondition && isMatchLimit(currIndex)) {
                 Column[] columnData = row.getColumns();
                 Column[] resultColumns = filterColumns(columnData);
@@ -363,7 +368,7 @@ public class SelectCommand extends AbstractCommand {
             RowData rowData = dataRowList.get(j);
             Column[] columnData = rowData.getColumnData(columns);
             // 按照条件过滤
-            if (conditionTree == null) {
+            if (conditionTree2 == null) {
                 Column[] filterColumns = filterColumns(columnData);
                 // 判断是否符合limit、offset
                 if (isMatchLimit(currIndex.get())) {
@@ -374,7 +379,7 @@ public class SelectCommand extends AbstractCommand {
                 }
                 currIndex.addAndGet(1);
             } else {
-                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
                 if (compareResult) {
                     Column[] filterColumns = filterColumns(columnData);
                     // 判断是否符合limit、offset
@@ -427,14 +432,14 @@ public class SelectCommand extends AbstractCommand {
                 RowData rowData = dataRowList.get(j);
                 Column[] columnData = rowData.getColumnData(columns);
                 // 没有where条件
-                if(conditionTree == null) {
+                if(conditionTree2 == null) {
                     // 进入计算函数
                     for (StatFunction statFunction : statFunctions) {
                         statFunction.stat(columnData);
                     }
                     // 按where条件过滤
                 } else {
-                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                    boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
                     if(compareResult) {
                         // 进入计算函数
                         for (StatFunction statFunction : statFunctions) {
@@ -489,7 +494,7 @@ public class SelectCommand extends AbstractCommand {
                 RowData rowData = dataRowList.get(j);
                 Column[] columnData = rowData.getColumnData(columns);
                 // 没有where条件
-                if(conditionTree == null) {
+                if(conditionTree2 == null) {
                     Column column = getColumn(columnData, this.groupByColumnName);
                     List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
                     // 进入计算函数
@@ -498,7 +503,7 @@ public class SelectCommand extends AbstractCommand {
                     }
                     groupByMap.put(column, statFunctions);
                 } else {
-                    boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                    boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
                     if(compareResult) {
                         Column column = getColumn(columnData, this.groupByColumnName);
                         List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
@@ -696,13 +701,6 @@ public class SelectCommand extends AbstractCommand {
         return queryResult;
     }
 
-    public ConditionTree getConditionTree() {
-        return conditionTree;
-    }
-
-    public void setConditionTree(ConditionTree conditionTree) {
-        this.conditionTree = conditionTree;
-    }
 
     public Integer getLimit() {
         return limit;
@@ -738,5 +736,9 @@ public class SelectCommand extends AbstractCommand {
 
     public void setMainTable(TableFilter mainTable) {
         this.mainTable = mainTable;
+    }
+
+    public void setConditionTree2(ConditionTree2 conditionTree2) {
+        this.conditionTree2 = conditionTree2;
     }
 }

@@ -25,7 +25,7 @@ public class TableFilter {
     /**
      * 查询条件
      */
-    private ConditionTree tableCondition;
+    private ConditionTree2 tableCondition;
     /**
      * 连接类型
      * LEFT 左连接
@@ -35,7 +35,7 @@ public class TableFilter {
     /**
      * 连接条件
      */
-    private ConditionTree joinCondition;
+    private ConditionTree2 joinCondition;
     /**
      * 连接的表
      */
@@ -46,7 +46,7 @@ public class TableFilter {
     private TableFilter subQuery;
 
 
-    public TableFilter(String tableName, Column[] allColumns, ConditionTree tableCondition) {
+    public TableFilter(String tableName, Column[] allColumns, ConditionTree2 tableCondition) {
         this.tableName = tableName;
         this.allColumns = allColumns;
         this.tableCondition = tableCondition;
@@ -68,11 +68,11 @@ public class TableFilter {
         this.alias = alias;
     }
 
-    public ConditionTree getTableCondition() {
+    public ConditionTree2 getTableCondition() {
         return tableCondition;
     }
 
-    public void setTableCondition(ConditionTree tableCondition) {
+    public void setTableCondition(ConditionTree2 tableCondition) {
         this.tableCondition = tableCondition;
     }
 
@@ -92,11 +92,11 @@ public class TableFilter {
         this.joinTables = joinTables;
     }
 
-    public ConditionTree getJoinCondition() {
+    public ConditionTree2 getJoinCondition() {
         return joinCondition;
     }
 
-    public void setJoinCondition(ConditionTree joinCondition) {
+    public void setJoinCondition(ConditionTree2 joinCondition) {
         this.joinCondition = joinCondition;
     }
 

@@ -1,8 +1,5 @@
 package com.moyu.test.command.dml.sql;
 
-import com.moyu.test.command.dml.condition.Condition;
-import com.moyu.test.command.dml.condition.ConditionTree;
-
 import java.util.List;
 
 /**

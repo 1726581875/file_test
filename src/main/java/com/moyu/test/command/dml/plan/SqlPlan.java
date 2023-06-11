@@ -1,6 +1,9 @@
 package com.moyu.test.command.dml.plan;
 import com.moyu.test.command.dml.condition.Condition;
 import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.command.dml.sql.Condition2;
+import com.moyu.test.command.dml.sql.ConditionEqOrNq;
+import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -16,7 +19,7 @@ import java.util.Map;
 public class SqlPlan {
 
 
-    public static SelectPlan getSelectPlan(ConditionTree conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
+    public static SelectPlan getSelectPlan(ConditionTree2 conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
 
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : columns) {
@@ -36,31 +39,35 @@ public class SqlPlan {
     }
 
 
-    private static SelectPlan analyzeTree(ConditionTree conditionTree,
+    private static SelectPlan analyzeTree(ConditionTree2 conditionTree,
                                           Map<String,Column> columnMap,
                                           Map<String, IndexMetadata> indexMap) {
         if(conditionTree.isLeaf()) {
             // TODO 目前只处理最简单的情况，按单个索引查询
-            Condition condition = conditionTree.getCondition();
-            String key = condition.getKey();
-            Column column = columnMap.get(key);
-            if(column == null) {
-                throw new SqlIllegalException("字段" + key + "不存在");
+            Condition2 condition = conditionTree.getCondition();
+
+            if(condition instanceof ConditionEqOrNq) {
+                ConditionEqOrNq eqCondition = (ConditionEqOrNq) condition;
+                if(eqCondition.isEq()) {
+                    Column column = eqCondition.getColumn();
+                    IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
+                    if(indexMetadata != null) {
+                        column.setValue(eqCondition.getValue());
+                        SelectPlan selectPlan = new SelectPlan();
+                        selectPlan.setTableName(column.getColumnName());
+                        selectPlan.setUseIndex(true);
+                        selectPlan.setIndexType(indexMetadata.getIndexType());
+                        selectPlan.setIndexColumn(column);
+                        selectPlan.setTableId(indexMetadata.getTableId());
+                        selectPlan.setIndexName(indexMetadata.getIndexName());
+                        return selectPlan;
+                    }
+                }
             }
-            IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
-            if(indexMetadata != null) {
-                column.setValue(condition.getValue().get(0));
-                SelectPlan selectPlan = new SelectPlan();
-                selectPlan.setTableName(column.getColumnName());
-                selectPlan.setUseIndex(true);
-                selectPlan.setIndexType(indexMetadata.getIndexType());
-                selectPlan.setIndexColumn(column);
-                selectPlan.setTableId(indexMetadata.getTableId());
-                selectPlan.setIndexName(indexMetadata.getIndexName());
-                return selectPlan;
-            }
+
+
         } else {
-            List<ConditionTree> childNodes = conditionTree.getChildNodes();
+            List<ConditionTree2> childNodes = conditionTree.getChildNodes();
             if (childNodes != null) {
                 for (int i = 0; i < childNodes.size(); i++) {
                     SelectPlan selectPlan = analyzeTree(childNodes.get(i), columnMap, indexMap);

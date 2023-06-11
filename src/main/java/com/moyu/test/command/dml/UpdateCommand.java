@@ -3,10 +3,12 @@ package com.moyu.test.command.dml;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.PathUtil;
 
@@ -26,14 +28,14 @@ public class UpdateCommand extends AbstractCommand {
 
     private Column[] columns;
 
-    private ConditionTree conditionTree;
+    private ConditionTree2 conditionTree;
 
 
     public UpdateCommand(Integer databaseId,
                          String tableName,
                          Column[] columns,
                          Column[] updateColumns,
-                         ConditionTree conditionTree) {
+                         ConditionTree2 conditionTree) {
         this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
@@ -68,7 +70,7 @@ public class UpdateCommand extends AbstractCommand {
                         chunk.updateRow(j, newRow);
                         updateRowNum++;
                     } else {
-                        boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                        boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree);
                         if (compareResult) {
                             updateColumnData(columnData);
                             RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData));

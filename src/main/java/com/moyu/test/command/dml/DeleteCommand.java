@@ -2,13 +2,14 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
-import com.moyu.test.command.dml.condition.ConditionTree;
+import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -28,12 +29,12 @@ public class DeleteCommand extends AbstractCommand {
 
     private Column[] columns;
 
-    private ConditionTree conditionTree;
+    private ConditionTree2 conditionTree;
 
     private List<IndexMetadata> indexList;
 
 
-    public DeleteCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree conditionTree) {
+    public DeleteCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree2 conditionTree) {
         this.databaseId = databaseId;
         this.tableName = tableName;
         this.columns = columns;
@@ -110,7 +111,7 @@ public class DeleteCommand extends AbstractCommand {
             do {
                 RowData rowData = dataRowList.get(k);
                 Column[] columnData = rowData.getColumnData(columns);
-                boolean compareResult = ConditionComparator.analyzeConditionTree(conditionTree, columnData);
+                boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree);
                 // 只移除符合条件的行
                 if (compareResult) {
                     // 删除行

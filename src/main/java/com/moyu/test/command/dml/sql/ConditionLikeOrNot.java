@@ -3,7 +3,6 @@ package com.moyu.test.command.dml.sql;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.util.TypeConvertUtil;
-import com.sun.deploy.util.StringUtils;
 
 /**
  * @author xiaomingzhang

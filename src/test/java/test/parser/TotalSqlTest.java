@@ -13,9 +13,9 @@ import java.util.Arrays;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
-        testInsert();
+        testInsert();*/
         testSimpleSelect();
     }
 
@@ -30,6 +30,7 @@ public class TotalSqlTest {
 
         testExecSQL("insert into  xmz_table (id, name) value (5, 'aaaa');");
         testExecSQL("insert into  xmz_table (id, name) value (6, '啊啊啊');");
+        testExecSQL("insert into  xmz_table (id, name) value (6, '摸鱼');");
 
         testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
         testExecSQL("select * from xmz_table where (name = '摸鱼' and name = '摸鱼123')");
@@ -37,6 +38,8 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table");
         testExecSQL("select * from xmz_table where name = '摸鱼' or (id = 1)");
         testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
+
+        testExecSQL("select * from xmz_table where name like 摸鱼");
 
         testExecSQL("drop table xmz_table");
     }
