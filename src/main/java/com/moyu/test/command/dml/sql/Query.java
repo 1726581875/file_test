@@ -2,7 +2,6 @@ package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.store.data.cursor.Cursor;
-import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 
 /**

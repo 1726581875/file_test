@@ -13,7 +13,7 @@ import java.util.Date;
 public class SumFunction extends StatFunction{
 
     public SumFunction(String columnName) {
-        super(columnName,null);
+        super(columnName,0L);
     }
 
     @Override

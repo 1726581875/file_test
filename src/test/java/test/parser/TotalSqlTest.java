@@ -18,8 +18,49 @@ public class TotalSqlTest {
         testInsert();
         testSimpleSelect();
         testUseIndex();
-        testJoinTable();*/
-        testSubQuery();
+        testJoinTable();
+        testSubQuery();*/
+        testFunction();
+    }
+
+
+    private static void testFunction(){
+
+        testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("desc table_1");
+
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into table_1(id,name,time) value (1,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("select * from table_1");
+
+        testExecSQL("update table_1 set name = 'aaa' where id = 1");
+
+        testExecSQL("select * from table_1");
+
+
+        testExecSQL("select count(*) from table_1");
+        testExecSQL("select sum(id) from table_1");
+        testExecSQL("select max(id) from table_1");
+        testExecSQL("select min(id) from table_1");
+
+        testExecSQL("select count(*),sum(id) from table_1");
+        testExecSQL("select max(id),sum(id) from table_1");
+        testExecSQL("select min(id),sum(id) from table_1");
+        testExecSQL("select max(id),min(id) from table_1");
+
+        testExecSQL("select count(time) from table_1 where id = 2");
+        testExecSQL("select sum(time) from table_1 where id = 2");
+        testExecSQL("select max(time) from table_1 where id = 2");
+        testExecSQL("select min(time) from table_1 where id = 2");
+
+
+        testExecSQL("truncate table table_1");
+
+        testExecSQL("drop table table_1");
+
+
     }
 
 
@@ -31,7 +72,7 @@ public class TotalSqlTest {
         testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_yan(id,name,time) value (3,'222','2023-05-19 00:00:00')");
 
-        testExecSQL("select * from (select * from xmz_yan ) t");
+        testExecSQL("select * from (select * from xmz_yan) t");
         testExecSQL("select * from (select * from xmz_yan where id = 1) t");
         testExecSQL("select * from (select * from xmz_yan ) t where id = 1");
         testExecSQL("select * from (select * from (select * from xmz_yan where id = 1 ) t0 ) t");

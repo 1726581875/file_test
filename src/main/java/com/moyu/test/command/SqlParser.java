@@ -386,14 +386,14 @@ public class SqlParser implements Parser {
      * @return
      */
     private SelectCommand getSelectCommand() {
-        Query query = parseQuery();
+        Query query = parseQuery(null);
         SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), query);
         return selectCommand;
     }
 
 
 
-    private Query parseQuery() {
+    private Query parseQuery(StartEndIndex startEnd) {
 
         Query query = new Query();
 
@@ -408,6 +408,10 @@ public class SqlParser implements Parser {
             if(currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
+            if(startEnd != null && currIndex > startEnd.getEnd()) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+
             endIndex = currIndex;
             String word = getNextKeyWord();
             // 解析form后面 至 where前面这段语句。可能会有join操作
@@ -415,18 +419,22 @@ public class SqlParser implements Parser {
                 String nextWord = getNextKeyWordUnMove();
                 // 存在子查询
                 if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
+                    StartEndIndex subStartEnd = getNextBracketStartEnd();
+
                     currIndex++;
                     String nextKeyWord = getNextKeyWord();
                     if(!SELECT.equals(nextKeyWord)) {
                         throw new SqlIllegalException("sql语法有误");
                     }
-                    subQuery = parseQuery();
+                    subQuery = parseQuery(subStartEnd);
                     String tbName = getNextOriginalWord();
+                    if("".equals(tbName)) {
+                       // throw new SqlIllegalException("sql语法有误");
+                    }
                     mainTable = new FromTable(tbName, subQuery.getMainTable().getAllColumns(), null);
                     mainTable.setSubQuery(subQuery);
                     mainTable.setJoinTables(new ArrayList<>());
                 } else {
-
                     // 解析表信息
                     mainTable = getFormTableOperation();
                 }
@@ -553,7 +561,7 @@ public class SqlParser implements Parser {
 
     private FromTable getFormTableOperation() {
         Map<String,Column> columnMap = new HashMap<>();
-        FromTable mainTable = getTableInfo();
+        FromTable mainTable = parseTableInfo();
         mainTable.setJoinTables(new ArrayList<>());
 
 
@@ -571,7 +579,8 @@ public class SqlParser implements Parser {
 
             String word11 = getNextKeyWordUnMove();
             if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
-                    || currIndex >= sqlCharArr.length) {
+                    || currIndex >= sqlCharArr.length
+                    || sqlCharArr[currIndex] == ')') {
                 break;
             }
             // 判断连接类型
@@ -584,7 +593,7 @@ public class SqlParser implements Parser {
                     throw new SqlIllegalException("sql语法有误");
                 }
 
-                FromTable joinTable = getTableInfo();
+                FromTable joinTable = parseTableInfo();
                 mainTable.getJoinTables().add(joinTable);
 
 
@@ -618,9 +627,14 @@ public class SqlParser implements Parser {
      * 解析表信息，表名、表别名
      * @return
      */
-    private FromTable getTableInfo() {
+    private FromTable parseTableInfo() {
 
         String tableName = getNextOriginalWord();
+
+        if(tableName.endsWith(")")) {
+            tableName = tableName.substring(0, tableName.length() - 1);
+            currIndex--;
+        }
 
         Column[] columns = getColumns(tableName);
         FromTable table = new FromTable(tableName, columns, null);
@@ -639,6 +653,9 @@ public class SqlParser implements Parser {
                 alias = tableName;
             } else {
                 alias = getNextOriginalWord();
+                if(alias.length() > 1 && alias.endsWith(")")) {
+                    alias = alias.substring(0, alias.length() - 1);
+                }
             }
             table.setAlias(alias);
             Column.setColumnAlias(table.getTableColumns(), table.getAlias());
@@ -697,7 +714,7 @@ public class SqlParser implements Parser {
         // SELECT count(*)...
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : allColumns) {
-            String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
+            String tableAlias = (c.getTableAlias() == null || "".equals(c.getTableAlias())) ? "" :  c.getTableAlias() + ".";
             columnMap.put(tableAlias + c.getColumnName(), c);
         }
         String[] selectColumnStrArr = selectColumnsStr.split(",");

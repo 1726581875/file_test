@@ -5,27 +5,20 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.function.*;
-import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
-import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.cursor.*;
-import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.PathUtil;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author xiaomingzhang
@@ -34,41 +27,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SelectCommand extends AbstractCommand {
 
     private Integer databaseId;
-
-    private String tableName;
-    /**
-     * 表所有的字段
-     */
-    private Column[] columns;
-
-    private ConditionTree2 conditionTree2;
-
-    /**
-     * 查询计划
-     */
-    private SelectIndex selectPlan;
-
-    private String groupByColumnName;
     /**
      * 查询结果
      */
     private QueryResult queryResult;
-
-
-    private FromTable mainTable;
     
     private Query query;
 
 
     public SelectCommand(Integer databaseId, Query query) {
         this.databaseId = databaseId;
-        this.mainTable = query.getMainTable();
-        this.tableName = mainTable.getTableName();
-        this.columns = mainTable.getAllColumns();
         this.query = query;
-        this.groupByColumnName = query.getGroupByColumnName();
-        this.selectPlan = query.getSelectIndex();
-        this.conditionTree2 = query.getConditionTree();
 
     }
 
@@ -77,10 +46,10 @@ public class SelectCommand extends AbstractCommand {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
         QueryResult queryResult = null;
-        if((mainTable.getJoinTables() == null || mainTable.getJoinTables().size() == 0)
-                && mainTable.getSubQuery() == null) {
+        if((query.getMainTable().getJoinTables() == null || query.getMainTable().getJoinTables().size() == 0)
+                && query.getMainTable().getSubQuery() == null) {
             queryResult = execQuery();
-        } else if(mainTable.getSubQuery() != null) {
+        } else if(query.getMainTable().getSubQuery() != null) {
            queryResult = subQuery();
         } else {
             queryResult = joinQuery();
@@ -98,24 +67,26 @@ public class SelectCommand extends AbstractCommand {
         result.setResultRows(new ArrayList<>());
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.query.getMainTable().getTableName());
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             List<Column[]> dataList = null;
             // select统计函数
             if (useFunction()) {
-                dataList = getFunctionResultList(dataChunkNum, dataChunkStore);
+                DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
+                dataList = getFunctionResultList(cursor);
             } else if (useGroupBy()) {
-                dataList = getGroupByResultList(dataChunkNum, dataChunkStore);
+                DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
+                dataList = getGroupByResultList(cursor);
             } else {
-                if (selectPlan == null) {
+                if (this.query.getSelectIndex() == null) {
                     System.out.println("不使用索引");
-                    DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.columns);
+                    DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
                     dataList = cursorQuery(cursor);
                 } else {
-                    System.out.println("使用索引查询，索引:" + selectPlan.getIndexName());
-                    String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, selectPlan.getIndexName());
-                    IndexCursor cursor = new IndexCursor(dataChunkStore, columns, selectPlan.getIndexColumn(), indexPath);
+                    System.out.println("使用索引查询，索引:" + this.query.getSelectIndex().getIndexName());
+                    String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.query.getMainTable().getTableName(), this.query.getSelectIndex().getIndexName());
+                    IndexCursor cursor = new IndexCursor(dataChunkStore, this.query.getMainTable().getAllColumns(), this.query.getSelectIndex().getIndexColumn(), indexPath);
                     dataList = cursorQuery(cursor);
                 }
             }
@@ -135,41 +106,23 @@ public class SelectCommand extends AbstractCommand {
         QueryResult result = new QueryResult();
         result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
-        List<Column[]> dataList = new ArrayList<>();
-        int currIndex = 0;
-
-        Cursor mainCursor = null;
         try {
             Stack<Query> queryStack = new Stack<>();
             Query q = query;
-            while ((q = q.getMainTable().getSubQuery()) != null){
+            while ((q = q.getMainTable().getSubQuery()) != null) {
                 queryStack.add(q);
             }
 
-            mainCursor = execSubQuery(queryStack);
+            Cursor mainCursor = execSubQuery(queryStack);
 
             // 连表后的数据结果再按条件进行筛选
-            RowEntity mainRow = null;
-            while ((mainRow = mainCursor.next()) != null) {
-                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, query.getConditionTree());
-                if (matchCondition && isMatchLimit(currIndex)) {
-                    Column[] columnData = mainRow.getColumns();
-                    Column[] resultColumns = filterColumns(columnData);
-                    dataList.add(resultColumns);
-                }
-                if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
-                    break;
-                }
-                currIndex++;
-            }
+            List<Column[]> dataList = lastFilter(mainCursor);
+            result.addAll(dataList);
 
             result.addAll(dataList);
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            mainCursor.close();
         }
-
         this.queryResult = result;
         return this.queryResult;
     }
@@ -182,7 +135,7 @@ public class SelectCommand extends AbstractCommand {
             Query q = queryStack.pop();
             FromTable fromTable = q.getMainTable();
             if(fromTable.getSubQuery() == null) {
-                mainCursor = subQueryTest(q);
+                mainCursor = getQueryCursor(q);
             }
             RowEntity mainRow = null;
             int currIndex = 0;
@@ -208,7 +161,7 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    private Cursor subQueryTest(Query query) {
+    private Cursor getQueryCursor(Query query) {
 
         DataChunkStore mainTableStore = null;
         Cursor mainCursor = null;
@@ -247,33 +200,26 @@ public class SelectCommand extends AbstractCommand {
         QueryResult result = new QueryResult();
         result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
-        DataChunkStore mainTableStore = null;
-        int currIndex = 0;
         try {
-            mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mainTable.getTableName()));
-            List<Column[]> dataList = new ArrayList<>();
-            Cursor mainCursor = new DefaultCursor(mainTableStore, mainTable.getTableColumns());
-            // join table
-            List<FromTable> joinTables = mainTable.getJoinTables();
-            for (FromTable joinTable : joinTables) {
-                DataChunkStore joinTableStore = null;
-                try {
-                    joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
-                    DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getTableColumns());
-                    // 进行连表操作
-                    mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    joinTableStore.close();
-                }
-            }
+            Cursor mainCursor = getQueryCursor(this.query);
+            List<Column[]> dataList = lastFilter(mainCursor);
 
-            // 连表后的数据结果再按条件进行筛选
-            RowEntity mainRow = null;
-            while ((mainRow = mainCursor.next()) != null) {
-                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, mainTable.getTableCondition());
-                if (matchCondition && isMatchLimit(currIndex)) {
+            result.addAll(dataList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        this.queryResult = result;
+        return this.queryResult;
+    }
+
+
+    private List<Column[]> lastFilter(Cursor cursor) {
+        List<Column[]> dataList = new ArrayList<>();
+        int currIndex = 0;
+        RowEntity mainRow = null;
+        try {
+            while ((mainRow = cursor.next()) != null) {
+                if (isMatchLimit(currIndex) && ConditionComparator.isMatchRow(mainRow, query.getMainTable().getTableCondition())) {
                     Column[] columnData = mainRow.getColumns();
                     Column[] resultColumns = filterColumns(columnData);
                     dataList.add(resultColumns);
@@ -283,16 +229,12 @@ public class SelectCommand extends AbstractCommand {
                 }
                 currIndex++;
             }
-
-            result.addAll(dataList);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            mainTableStore.close();
+            cursor.close();
         }
-
-        this.queryResult = result;
-        return this.queryResult;
+        return dataList;
     }
 
 
@@ -393,7 +335,7 @@ public class SelectCommand extends AbstractCommand {
     }
 
     private boolean useGroupBy() {
-        if(groupByColumnName != null) {
+        if(this.query.getGroupByColumnName() != null) {
             if (query.getSelectColumns().length == 1) {
                 return true;
             }
@@ -414,7 +356,7 @@ public class SelectCommand extends AbstractCommand {
         int currIndex = 0;
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            boolean matchCondition = ConditionComparator.isMatchRow(row, conditionTree2);
+            boolean matchCondition = ConditionComparator.isMatchRow(row, this.query.getConditionTree());
             if (matchCondition && isMatchLimit(currIndex)) {
                 Column[] columnData = row.getColumns();
                 Column[] resultColumns = filterColumns(columnData);
@@ -429,79 +371,6 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-
-
-    private List<Column[]> getColumnDataListUseIndex(SelectIndex selectPlan, DataChunkStore dataChunkStore) {
-        List<Column[]> dataList = new ArrayList<>();
-        try {
-            // 索引文件位置
-            String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;
-            String indexPath = dirPath + File.separator + tableName +"_" + selectPlan.getIndexName() +".idx";
-
-            Column indexColumn = selectPlan.getIndexColumn();
-            // 根据索引拿到，数据块位置数组
-            Long[] startPosArr = null;
-            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-                startPosArr = bpTreeMap.get(Integer.valueOf((String) indexColumn.getValue()));
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
-                BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-                startPosArr = bpTreeMap.get(Long.valueOf((String) indexColumn.getValue()));
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-                startPosArr = bpTreeMap.get((String)indexColumn.getValue());
-            }
-
-            if (startPosArr == null || startPosArr.length == 0) {
-                return new ArrayList<>();
-            }
-
-            // 遍历数据块，拿到符合条件的数据
-            AtomicInteger currIndex = new AtomicInteger(0);
-            for (Long starPos : startPosArr) {
-                DataChunk dataChunk = dataChunkStore.getChunkByPos(starPos);
-                analyzeDataChunkGetRowList(dataChunk, dataList, currIndex);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return dataList;
-    }
-
-
-    public void analyzeDataChunkGetRowList(DataChunk dataChunk, List<Column[]> dataList, AtomicInteger currIndex) {
-        List<RowData> dataRowList = dataChunk.getDataRowList();
-        for (int j = 0; j < dataRowList.size(); j++) {
-            RowData rowData = dataRowList.get(j);
-            Column[] columnData = rowData.getColumnData(columns);
-            // 按照条件过滤
-            if (conditionTree2 == null) {
-                Column[] filterColumns = filterColumns(columnData);
-                // 判断是否符合query.getLimit()、query.getOffset()
-                if (isMatchLimit(currIndex.get())) {
-                    dataList.add(filterColumns);
-                }
-                if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
-                    break;
-                }
-                currIndex.addAndGet(1);
-            } else {
-                boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
-                if (compareResult) {
-                    Column[] filterColumns = filterColumns(columnData);
-                    // 判断是否符合query.getLimit()、query.getOffset()
-                    if (isMatchLimit(currIndex.get())) {
-                        dataList.add(filterColumns);
-                    }
-                    if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
-                        break;
-                    }
-                    currIndex.addAndGet(1);
-                }
-            }
-        }
-    }
 
 
     /**
@@ -521,63 +390,25 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    private List<Column[]> getFunctionResultList(int dataChunkNum, DataChunkStore dataChunkStore) {
+    private List<Column[]> getFunctionResultList(Cursor cursor) {
 
         List<Column[]> dataList = new ArrayList<>();
-
         // 1、初始化所有统计函数对象
         List<StatFunction> statFunctions = getFunctionList();
-
         // 2、遍历数据，执行计算函数
-        for (int i = 0; i < dataChunkNum; i++) {
-            DataChunk chunk = dataChunkStore.getChunk(i);
-            if (chunk == null) {
-                break;
-            }
-            // 获取数据块包含的数据行
-            List<RowData> dataRowList = chunk.getDataRowList();
-            for (int j = 0; j < dataRowList.size(); j++) {
-                RowData rowData = dataRowList.get(j);
-                Column[] columnData = rowData.getColumnData(columns);
-                // 没有where条件
-                if(conditionTree2 == null) {
-                    // 进入计算函数
-                    for (StatFunction statFunction : statFunctions) {
-                        statFunction.stat(columnData);
-                    }
-                    // 按where条件过滤
-                } else {
-                    boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
-                    if(compareResult) {
-                        // 进入计算函数
-                        for (StatFunction statFunction : statFunctions) {
-                            statFunction.stat(columnData);
-                        }
-                    }
+        RowEntity row = null;
+        while ((row = cursor.next()) != null) {
+            if (ConditionComparator.isMatchRow(row, this.query.getConditionTree())) {
+                for (StatFunction statFunction : statFunctions) {
+                    statFunction.stat(row.getColumns());
                 }
             }
         }
-
-        // 汇总执行结果
+        // 处理执行结果
         Column[] resultColumns = new Column[statFunctions.size()];
         for (int i = 0; i < statFunctions.size(); i++) {
             StatFunction statFunction = statFunctions.get(i);
-
-            Long statResult = statFunction.getValue();
-            Column resultColumn = null;
-            Column c = query.getSelectColumns()[i].getColumn();
-            // 日期类型
-            if(!query.getSelectColumns()[i].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
-                    && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
-                resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, i, 8);
-                resultColumn.setValue(statResult == null ? null : new Date(statResult));
-            } else {
-                // 数字类型
-                resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.INT_8, i, 8);
-                resultColumn.setValue(statResult);
-            }
-
-            resultColumns[i] = resultColumn;
+            resultColumns[i] = functionResultToColumn(statFunction, i);
         }
         dataList.add(resultColumns);
 
@@ -586,42 +417,39 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    private List<Column[]> getGroupByResultList(int dataChunkNum, DataChunkStore dataChunkStore) {
+    private Column functionResultToColumn(StatFunction statFunction, int columnIndex) {
+        Long statResult = statFunction.getValue();
+        Column resultColumn = null;
+        Column c = query.getSelectColumns()[columnIndex].getColumn();
+        // 日期类型
+        if (!query.getSelectColumns()[columnIndex].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
+                && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
+            resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, columnIndex, 8);
+            resultColumn.setValue(statResult == null ? null : new Date(statResult));
+        } else {
+            // 数字类型
+            resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.INT_8, columnIndex, 8);
+            resultColumn.setValue(statResult);
+        }
+        return resultColumn;
+    }
+
+
+    private List<Column[]> getGroupByResultList(Cursor cursor) {
 
         List<Column[]> dataList = new ArrayList<>();
         Map<Column, List<StatFunction>> groupByMap = new HashMap<>();
 
-        for (int i = 0; i < dataChunkNum; i++) {
-            DataChunk chunk = dataChunkStore.getChunk(i);
-            if (chunk == null) {
-                break;
-            }
-            // 获取数据块包含的数据行
-            List<RowData> dataRowList = chunk.getDataRowList();
-            for (int j = 0; j < dataRowList.size(); j++) {
-                RowData rowData = dataRowList.get(j);
-                Column[] columnData = rowData.getColumnData(columns);
-                // 没有where条件
-                if(conditionTree2 == null) {
-                    Column column = getColumn(columnData, this.groupByColumnName);
-                    List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
-                    // 进入计算函数
-                    for (StatFunction statFunction : statFunctions) {
-                        statFunction.stat(columnData);
-                    }
-                    groupByMap.put(column, statFunctions);
-                } else {
-                    boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree2);
-                    if(compareResult) {
-                        Column column = getColumn(columnData, this.groupByColumnName);
-                        List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
-                        // 进入计算函数
-                        for (StatFunction statFunction : statFunctions) {
-                            statFunction.stat(columnData);
-                        }
-                        groupByMap.put(column, statFunctions);
-                    }
+        RowEntity row = null;
+        while ((row = cursor.next()) != null) {
+            if (ConditionComparator.isMatchRow(row, this.query.getConditionTree())) {
+                Column column = getColumn(row.getColumns(), this.query.getGroupByColumnName());
+                List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
+                // 进入计算函数
+                for (StatFunction statFunction : statFunctions) {
+                    statFunction.stat(row.getColumns());
                 }
+                groupByMap.put(column, statFunctions);
             }
         }
 
@@ -629,24 +457,13 @@ public class SelectCommand extends AbstractCommand {
         for (Column groupByColumn : groupByMap.keySet()) {
             List<StatFunction> statFunctions = groupByMap.get(groupByColumn);
             Column[] resultColumns = new Column[statFunctions.size() + 1];
+            // 第一列为group by字段
             resultColumns[0] = groupByColumn;
+            // 其余字段为统计函数
             for (int i = 0; i < statFunctions.size(); i++) {
                 int index = i + 1;
                 StatFunction statFunction = statFunctions.get(i);
-                Long statResult = statFunction.getValue();
-                Column resultColumn = null;
-                Column c = query.getSelectColumns()[index].getColumn();
-                // 日期类型
-                if (!query.getSelectColumns()[index].getFunctionName().equals(FunctionConstant.FUNC_COUNT)
-                        && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
-                    resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.TIMESTAMP, index, 8);
-                    resultColumn.setValue(statResult == null ? null : new Date(statResult));
-                } else {
-                    // 数字类型
-                    resultColumn = new Column(statFunction.getColumnName(), DbColumnTypeConstant.INT_8, index, 8);
-                    resultColumn.setValue(statResult);
-                }
-                resultColumns[index] = resultColumn;
+                resultColumns[index] = functionResultToColumn(statFunction, i);
             }
             dataList.add(resultColumns);
         }
@@ -818,29 +635,5 @@ public class SelectCommand extends AbstractCommand {
     public Integer getOffset() {
         return query.getOffset();
     }
-
-
-    public SelectIndex getSelectPlan() {
-        return selectPlan;
-    }
-    public void setSelectPlan(SelectIndex selectPlan) {
-        this.selectPlan = selectPlan;
-    }
-
-    public String getGroupByColumnName() {
-        return groupByColumnName;
-    }
-
-    public void setGroupByColumnName(String groupByColumnName) {
-        this.groupByColumnName = groupByColumnName;
-    }
-
-
-    public void setMainTable(FromTable mainTable) {
-        this.mainTable = mainTable;
-    }
-
-    public void setConditionTree2(ConditionTree2 conditionTree2) {
-        this.conditionTree2 = conditionTree2;
-    }
+    
 }

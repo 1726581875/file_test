@@ -20,7 +20,7 @@ public abstract class StatFunction implements DbFunction {
     public abstract void stat(Column[] columns);
 
 
-    public long getValue() {
+    public Long getValue() {
         return value;
     }
 
