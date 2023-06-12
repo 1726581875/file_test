@@ -52,7 +52,7 @@ public class ConditionComparator {
      * @param conditionTree
      * @return
      */
-    public static boolean isMatchRow(RowEntity row, ConditionTree2 conditionTree) {
+    public static boolean isMatch(RowEntity row, ConditionTree2 conditionTree) {
         if(conditionTree == null) {
             return true;
         }

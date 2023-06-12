@@ -111,7 +111,7 @@ public class DeleteCommand extends AbstractCommand {
             do {
                 RowData rowData = dataRowList.get(k);
                 Column[] columnData = rowData.getColumnData(columns);
-                boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree);
+                boolean compareResult = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
                 // 只移除符合条件的行
                 if (compareResult) {
                     // 删除行

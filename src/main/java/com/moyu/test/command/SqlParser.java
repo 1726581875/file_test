@@ -332,7 +332,7 @@ public class SqlParser implements Parser {
             root.setLeaf(false);
             root.setJoinType(ConditionConstant.AND);
             root.setChildNodes(new ArrayList<>());
-            parseWhereCondition2(root, getColumnMap(columns));
+            parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
         return new UpdateCommand(this.connectSession.getDatabaseId(),
@@ -374,7 +374,7 @@ public class SqlParser implements Parser {
             root.setLeaf(false);
             root.setJoinType(ConditionConstant.AND);
             root.setChildNodes(new ArrayList<>());
-            parseWhereCondition2(root, getColumnMap(columns));
+            parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
         return new DeleteCommand(connectSession.getDatabaseId(), tableName, columns, root);
@@ -393,7 +393,7 @@ public class SqlParser implements Parser {
 
 
 
-    private Query parseQuery(StartEndIndex startEnd) {
+    private Query parseQuery(StartEndIndex subQueryStartEnd) {
 
         Query query = new Query();
 
@@ -408,7 +408,7 @@ public class SqlParser implements Parser {
             if(currIndex >= sqlCharArr.length) {
                 throw new SqlIllegalException("sql语法有误");
             }
-            if(startEnd != null && currIndex > startEnd.getEnd()) {
+            if(subQueryStartEnd != null && currIndex > subQueryStartEnd.getEnd()) {
                 throw new SqlIllegalException("sql语法有误");
             }
 
@@ -427,11 +427,31 @@ public class SqlParser implements Parser {
                         throw new SqlIllegalException("sql语法有误");
                     }
                     subQuery = parseQuery(subStartEnd);
-                    String tbName = getNextOriginalWord();
-                    if("".equals(tbName)) {
-                       // throw new SqlIllegalException("sql语法有误");
+
+                    String next = getNextOriginalWord();
+                    if("AS".equals(next)) {
+                        String subTableName = getNextOriginalWord();
+                        Column[] subColumns = subQuery.getMainTable().getAllColumns();
+                        Column[] newColumns = new Column[subColumns.length];
+                        for (int i = 0; i < subColumns.length; i++) {
+                            newColumns[i] = subColumns[i].createNullValueColumn();
+                            newColumns[i].setTableAlias(subTableName);
+                        }
+                        mainTable = new FromTable(subTableName, newColumns , null);
+                        mainTable.setAlias(subTableName);
+                    } else if("".equals(next)){
+                        throw new SqlIllegalException("sql语法有误，子查询缺少alias, " +  originalSql.substring(0, currIndex));
+                    } else {
+                        Column[] subColumns = subQuery.getMainTable().getAllColumns();
+                        Column[] newColumns = new Column[subColumns.length];
+                        for (int i = 0; i < subColumns.length; i++) {
+                            newColumns[i] = subColumns[i].createNullValueColumn();
+                            newColumns[i].setTableAlias(next);
+                        }
+                        mainTable = new FromTable(next, newColumns, null);
+                        mainTable.setAlias(next);
                     }
-                    mainTable = new FromTable(tbName, subQuery.getMainTable().getAllColumns(), null);
+
                     mainTable.setSubQuery(subQuery);
                     mainTable.setJoinTables(new ArrayList<>());
                 } else {
@@ -477,7 +497,7 @@ public class SqlParser implements Parser {
         String groupByColumnName = null;
 
         skipSpace();
-        String nextKeyWord = getNextKeyWord();
+        String nextKeyWord = getNextKeyWordUnMove();
         /**
          * 表名后支持以下三种基本情况
          * 1、select * from where c = 1;
@@ -487,19 +507,25 @@ public class SqlParser implements Parser {
          *
          */
         if("WHERE".equals(nextKeyWord)) {
-            skipSpace();
-
+            getNextKeyWord();
             Map<String, Column> columnMap = new HashMap<>();
             for (Column c : allColumns) {
                 String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
                 columnMap.put(tableAlias + c.getColumnName(), c);
             }
-            parseWhereCondition2(conditionRoot, columnMap);
+
+            for (Column c : allColumns) {
+                columnMap.put(c.getColumnName(), c);
+            }
+
+            parseWhereCondition2(conditionRoot, columnMap, subQueryStartEnd);
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
-            String nextKeyWord2 = getNextKeyWord();
+            String nextKeyWord2 = getNextKeyWordUnMove();
+
+
             if("LIMIT".equals(nextKeyWord2)) {
-                skipSpace();
+                String nextKeyWord1 = getNextKeyWord();
                 String limitNum = getNextKeyWord().trim();
                 limit = Integer.valueOf(limitNum);
 
@@ -516,7 +542,7 @@ public class SqlParser implements Parser {
             }
             // table后面直接接limit,如:select * from table limit 10
         } else if("LIMIT".equals(nextKeyWord)) {
-            skipSpace();
+            getNextKeyWord();
             String limitNum = getNextKeyWord().trim();
             limit = Integer.valueOf(limitNum);
 
@@ -530,6 +556,7 @@ public class SqlParser implements Parser {
         } else if ("ORDER".equals(nextKeyWord)) {
 
         } else if("GROUP".equals(nextKeyWord)) {
+            getNextKeyWord();
             assertNextKeywordIs("BY");
             skipSpace();
             groupByColumnName = getNextOriginalWord();
@@ -579,8 +606,12 @@ public class SqlParser implements Parser {
 
             String word11 = getNextKeyWordUnMove();
             if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
-                    || currIndex >= sqlCharArr.length
-                    || sqlCharArr[currIndex] == ')') {
+                    || currIndex >= sqlCharArr.length) {
+                break;
+            }
+
+            if (sqlCharArr[currIndex] == ')') {
+                currIndex++;
                 break;
             }
             // 判断连接类型
@@ -647,7 +678,7 @@ public class SqlParser implements Parser {
             Column.setColumnAlias(table.getTableColumns(), table.getAlias());
         } else if(!"GROUP".equals(next)
                 && !"LIMIT".equals(next)
-                && !"WHERE".equals(next) && !")".equals(next)) {
+                && !"WHERE".equals(next)) {
             String alias;
             if(next == null) {
                 alias = tableName;
@@ -655,6 +686,10 @@ public class SqlParser implements Parser {
                 alias = getNextOriginalWord();
                 if(alias.length() > 1 && alias.endsWith(")")) {
                     alias = alias.substring(0, alias.length() - 1);
+                    currIndex--;
+                } else {
+                    alias = tableName;
+                    currIndex--;
                 }
             }
             table.setAlias(alias);
@@ -712,11 +747,13 @@ public class SqlParser implements Parser {
 
         // SELECT column1,column2...
         // SELECT count(*)...
-        Map<String, Column> columnMap = new HashMap<>();
+
+        TableColumnInfo columnInfo = new TableColumnInfo();
         for (Column c : allColumns) {
-            String tableAlias = (c.getTableAlias() == null || "".equals(c.getTableAlias())) ? "" :  c.getTableAlias() + ".";
-            columnMap.put(tableAlias + c.getColumnName(), c);
+            columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
+
+
         String[] selectColumnStrArr = selectColumnsStr.split(",");
         SelectColumn[] selectColumns = new SelectColumn[selectColumnStrArr.length];
         for (int i = 0; i < selectColumnStrArr.length; i++) {
@@ -737,10 +774,10 @@ public class SqlParser implements Parser {
             SelectColumn selectColumn = null;
             //函数
             if (isFunctionColumn(columnStr)){
-                selectColumn = parseFunction(columnMap, columnStr);
+                selectColumn = parseFunction(columnInfo, columnStr);
             } else {
                 // 普通字段
-                Column column = columnMap.get(columnStr);
+                Column column = columnInfo.getColumn(columnStr);
                 if (column == null) {
                     throw new SqlIllegalException("字段" + columnStr + "不存在");
                 }
@@ -767,7 +804,7 @@ public class SqlParser implements Parser {
     }
 
 
-    private SelectColumn parseFunction(Map<String, Column> columnMap, String functionStr) {
+    private SelectColumn parseFunction(TableColumnInfo columnInfo, String functionStr) {
         String selectColumnStr = functionStr.trim();
 
         Column column = null;
@@ -793,7 +830,7 @@ public class SqlParser implements Parser {
             case FunctionConstant.FUNC_SUM:
                 args = new String[1];
                 String columnName = getFunctionArg(functionStr);;
-                column = columnMap.get(columnName);
+                column = columnInfo.getColumn(columnName);
                 if (column == null) {
                     throw new SqlIllegalException("sql不合法，字段" + columnName + "不存在");
                 }
@@ -828,7 +865,7 @@ public class SqlParser implements Parser {
      * @param conditionTree
      * @return
      */
-    private ConditionTree2 parseWhereCondition2(ConditionTree2 conditionTree, Map<String, Column> columnMap) {
+    private ConditionTree2 parseWhereCondition2(ConditionTree2 conditionTree, Map<String, Column> columnMap, StartEndIndex subQueryStartEnd) {
 
         List<ConditionTree2> childNodes = conditionTree.getChildNodes();
         String nextJoinType = ConditionConstant.AND;
@@ -837,12 +874,17 @@ public class SqlParser implements Parser {
             if (currIndex >= sqlCharArr.length) {
                 break;
             }
+
+            if(subQueryStartEnd != null && currIndex > subQueryStartEnd.getEnd()) {
+                break;
+            }
+
             // 读到开始括号，创建一个条件树节点
             if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
                 ConditionTree2 childNode = createChildNode2(nextJoinType);
                 childNodes.add(childNode);
                 currIndex++;
-                parseWhereCondition2(childNode, columnMap);
+                parseWhereCondition2(childNode, columnMap, subQueryStartEnd);
                 currConditionOpen = true;
                 if (currIndex >= sqlCharArr.length) {
                     break;
@@ -872,7 +914,7 @@ public class SqlParser implements Parser {
                 newNode.setChildNodes(new ArrayList<>());
                 childNodes.add(newNode);
                 currIndex++;
-                parseWhereCondition2(newNode, columnMap);
+                parseWhereCondition2(newNode, columnMap, subQueryStartEnd);
                 currConditionOpen = true;
                 if (currIndex >= sqlCharArr.length) {
                     break;
@@ -900,7 +942,7 @@ public class SqlParser implements Parser {
                 if (currIndex >= sqlCharArr.length) {
                     break;
                 }
-                if (sqlCharArr[currIndex] == ')') {
+                if (sqlCharArr[currIndex] == ')' && currConditionOpen) {
                     currIndex++;
                     break;
                     // 同一括号内还有其他条件，继续解析
@@ -933,10 +975,7 @@ public class SqlParser implements Parser {
     }
 
     private Condition2 parseJoinCondition(Map<String, Column> columnMap) {
-
         Condition2 condition = parseCondition2(columnMap);
-
-
         return condition;
     }
 
@@ -987,6 +1026,7 @@ public class SqlParser implements Parser {
                             condition = new ConditionEqOrNq(column, values.get(0), true);
                         } else {
                             // attribute = attribute
+                            getNextOriginalWord();
                             condition = new ConditionLeftRight(column, rightColumn);
                         }
                         break;

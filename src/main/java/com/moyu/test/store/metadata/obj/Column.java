@@ -41,6 +41,15 @@ public class Column {
         return column;
     }
 
+    public Column copy() {
+        Column column = new Column(columnName, columnType, columnIndex, columnLength);
+        column.setIsPrimaryKey(isPrimaryKey);
+        column.setTableAlias(tableAlias);
+        column.setAlias(alias);
+        column.setValue(value);
+        return column;
+    }
+
     public String getColumnName() {
         return columnName;
     }
@@ -143,12 +152,12 @@ public class Column {
         return tableAlias + columnName;
     }
 
-
     @Override
     public String toString() {
         return "Column{" +
                 "columnName='" + columnName + '\'' +
                 ", alias='" + alias + '\'' +
+                ", tableAlias='" + tableAlias + '\'' +
                 ", columnType=" + columnType +
                 ", columnIndex=" + columnIndex +
                 ", columnLength=" + columnLength +

@@ -50,7 +50,7 @@ public class SelectCommand extends AbstractCommand {
                 && query.getMainTable().getSubQuery() == null) {
             queryResult = execQuery();
         } else if(query.getMainTable().getSubQuery() != null) {
-           queryResult = subQuery();
+            queryResult = subQuery();
         } else {
             queryResult = joinQuery();
         }
@@ -69,7 +69,6 @@ public class SelectCommand extends AbstractCommand {
         try {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.query.getMainTable().getTableName());
             dataChunkStore = new DataChunkStore(fileFullPath);
-            int dataChunkNum = dataChunkStore.getDataChunkNum();
             List<Column[]> dataList = null;
             // select统计函数
             if (useFunction()) {
@@ -109,6 +108,7 @@ public class SelectCommand extends AbstractCommand {
         try {
             Stack<Query> queryStack = new Stack<>();
             Query q = query;
+            queryStack.add(q);
             while ((q = q.getMainTable().getSubQuery()) != null) {
                 queryStack.add(q);
             }
@@ -137,15 +137,16 @@ public class SelectCommand extends AbstractCommand {
             if(fromTable.getSubQuery() == null) {
                 mainCursor = getQueryCursor(q);
             }
-            RowEntity mainRow = null;
+
             int currIndex = 0;
+            RowEntity mainRow = null;
+            String tableAlias = q.getMainTable().getAlias();
             List<RowEntity> rowEntityList = new ArrayList<>();
             while ((mainRow = mainCursor.next()) != null) {
-                boolean matchCondition = ConditionComparator.isMatchRow(mainRow, q.getConditionTree());
-                if (matchCondition && isMatchLimit(currIndex)) {
-                    Column[] columnData = mainRow.getColumns();
-                    Column[] resultColumns = filterColumns(columnData);
-                    rowEntityList.add(new RowEntity(resultColumns));
+                RowEntity rowEntity = new RowEntity(mainRow.getColumns(), tableAlias);
+                if (ConditionComparator.isMatch(rowEntity, q.getConditionTree()) && isMatchLimit(currIndex)) {
+                    Column[] columns = filterColumns(mainRow.getColumns(), q.getSelectColumns());
+                    rowEntityList.add(new RowEntity(columns, tableAlias));
                 }
                 if (q.getLimit() != null && rowEntityList.size() >= q.getLimit()) {
                     break;
@@ -153,7 +154,9 @@ public class SelectCommand extends AbstractCommand {
                 currIndex++;
             }
 
-            mainCursor = new MemoryTemTableCursor(rowEntityList, mainCursor.getColumns());
+            Column[] columns = mainCursor.getColumns();
+            Column.setColumnAlias(columns, tableAlias);
+            mainCursor = new MemoryTemTableCursor(rowEntityList, columns);
         }
 
         return mainCursor;
@@ -219,9 +222,9 @@ public class SelectCommand extends AbstractCommand {
         RowEntity mainRow = null;
         try {
             while ((mainRow = cursor.next()) != null) {
-                if (isMatchLimit(currIndex) && ConditionComparator.isMatchRow(mainRow, query.getMainTable().getTableCondition())) {
+                if (isMatchLimit(currIndex) && ConditionComparator.isMatch(mainRow, query.getMainTable().getTableCondition())) {
                     Column[] columnData = mainRow.getColumns();
-                    Column[] resultColumns = filterColumns(columnData);
+                    Column[] resultColumns = filterColumns(columnData, query.getSelectColumns());
                     dataList.add(resultColumns);
                 }
                 if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
@@ -356,10 +359,10 @@ public class SelectCommand extends AbstractCommand {
         int currIndex = 0;
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            boolean matchCondition = ConditionComparator.isMatchRow(row, this.query.getConditionTree());
+            boolean matchCondition = ConditionComparator.isMatch(row, this.query.getConditionTree());
             if (matchCondition && isMatchLimit(currIndex)) {
                 Column[] columnData = row.getColumns();
-                Column[] resultColumns = filterColumns(columnData);
+                Column[] resultColumns = filterColumns(columnData, query.getSelectColumns());
                 dataList.add(resultColumns);
             }
             if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
@@ -398,7 +401,7 @@ public class SelectCommand extends AbstractCommand {
         // 2、遍历数据，执行计算函数
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            if (ConditionComparator.isMatchRow(row, this.query.getConditionTree())) {
+            if (ConditionComparator.isMatch(row, this.query.getConditionTree())) {
                 for (StatFunction statFunction : statFunctions) {
                     statFunction.stat(row.getColumns());
                 }
@@ -442,7 +445,7 @@ public class SelectCommand extends AbstractCommand {
 
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            if (ConditionComparator.isMatchRow(row, this.query.getConditionTree())) {
+            if (ConditionComparator.isMatch(row, this.query.getConditionTree())) {
                 Column column = getColumn(row.getColumns(), this.query.getGroupByColumnName());
                 List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList());
                 // 进入计算函数
@@ -517,11 +520,16 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
+    private RowEntity filterColumns(RowEntity row, SelectColumn[] selectColumns) {
+        Column[] columns = filterColumns(row.getColumns(), selectColumns);
+        return new RowEntity(columns);
+    }
 
-    private Column[] filterColumns(Column[] columnData) {
-        Column[] resultColumns = new Column[query.getSelectColumns().length];
-        for (int i = 0; i < query.getSelectColumns().length; i++) {
-            SelectColumn selectColumn = query.getSelectColumns()[i];
+
+    private Column[] filterColumns(Column[] columnData, SelectColumn[] selectColumns) {
+        Column[] resultColumns = new Column[selectColumns.length];
+        for (int i = 0; i < selectColumns.length; i++) {
+            SelectColumn selectColumn = selectColumns[i];
             for (Column c : columnData) {
                 if(selectColumn.getTableAliasColumnName().equals(c.getTableAliasColumnName())) {
                     resultColumns[i] = c;

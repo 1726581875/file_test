@@ -13,14 +13,15 @@ import java.util.Arrays;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
         testUseIndex();
         testJoinTable();
-        testSubQuery();*/
+        testSubQuery();
         testFunction();
+
     }
 
 
@@ -74,8 +75,12 @@ public class TotalSqlTest {
 
         testExecSQL("select * from (select * from xmz_yan) t");
         testExecSQL("select * from (select * from xmz_yan where id = 1) t");
-        testExecSQL("select * from (select * from xmz_yan ) t where id = 1");
+        testExecSQL("select * from (select * from xmz_yan ) t where t.id = 1");
         testExecSQL("select * from (select * from (select * from xmz_yan where id = 1 ) t0 ) t");
+        testExecSQL("select * from (select * from (select * from xmz_yan where id = 1) t0 where t0.id = 1 ) t");
+
+
+        testExecSQL("select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id ) t where id = 1");
 
 
     }

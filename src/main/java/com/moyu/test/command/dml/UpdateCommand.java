@@ -2,7 +2,6 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
-import com.moyu.test.command.dml.condition.ConditionTree;
 import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
@@ -70,7 +69,7 @@ public class UpdateCommand extends AbstractCommand {
                         chunk.updateRow(j, newRow);
                         updateRowNum++;
                     } else {
-                        boolean compareResult = ConditionComparator.isMatchRow(new RowEntity(columnData), conditionTree);
+                        boolean compareResult = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
                         if (compareResult) {
                             updateColumnData(columnData);
                             RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData));

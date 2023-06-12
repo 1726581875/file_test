@@ -3,6 +3,8 @@ package com.moyu.test.store.data.cursor;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
 
+import java.util.Arrays;
+
 /**
  * @author xiaomingzhang
  * @date 2023/6/6
@@ -13,6 +15,16 @@ public class RowEntity {
 
     public RowEntity(Column[] columns) {
         this.columns = columns;
+    }
+
+    public RowEntity(Column[] columns, String tableAlias) {
+
+        Column[] arr = new Column[columns.length];
+        for (int i = 0; i < columns.length; i++) {
+            arr[i] = columns[i].copy();
+            arr[i].setTableAlias(tableAlias);
+        }
+        this.columns = arr;
     }
 
     public Column[] getColumns() {
@@ -26,7 +38,9 @@ public class RowEntity {
                 return c;
             }
         }
-        throw new SqlIllegalException("字段" + columnName + "不存在");
+
+        String tbAlias = tableAlias == null ? "" : tableAlias + ".";
+        throw new SqlIllegalException("字段" + tbAlias + columnName + "不存在");
     }
 
 
@@ -36,4 +50,10 @@ public class RowEntity {
         return new RowEntity(columns);
     }
 
+    @Override
+    public String toString() {
+        return "RowEntity{" +
+                "columns=" + Arrays.toString(columns) +
+                '}';
+    }
 }
