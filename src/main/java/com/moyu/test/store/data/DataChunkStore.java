@@ -2,6 +2,7 @@ package com.moyu.test.store.data;
 
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.util.DataUtils;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 
@@ -19,14 +20,19 @@ public class DataChunkStore {
 
     private static final String fileName = "data.yan";
 
+    private static final int FIRST_BLOCK_INDEX = 1;
+
     private FileStore fileStore;
 
     private DataChunk lastChunk;
+
 
     /**
      * 块数量
      */
     private int dataChunkNum;
+
+    private long maxRowId;
 
 
     public DataChunkStore(String fileFullPath) throws IOException {
@@ -37,10 +43,16 @@ public class DataChunkStore {
         // 初始化最后一个数据块到内存
         long endPosition = fileStore.getEndPosition();
         this.dataChunkNum = (int) (endPosition / DataChunk.DATA_CHUNK_LEN);
-        if (endPosition >= DataChunk.DATA_CHUNK_LEN) {
+
+        if(fileStore.getEndPosition() >= 8) {
+            this.maxRowId = DataUtils.readLong(fileStore.read(0, 8));
+        }
+
+        if (endPosition > DataChunk.DATA_CHUNK_LEN) {
             ByteBuffer readBuffer = fileStore.read(endPosition - DataChunk.DATA_CHUNK_LEN, DataChunk.DATA_CHUNK_LEN);
             this.lastChunk = new DataChunk(readBuffer);
         }
+
     }
 
 
@@ -51,8 +63,8 @@ public class DataChunkStore {
 
     public DataChunk createChunk() {
         synchronized (this) {
-            long startPos = lastChunk == null ? 0L : lastChunk.getStartPos() + DataChunk.DATA_CHUNK_LEN;
-            int chunkIndex = lastChunk == null ? 0 : lastChunk.getChunkIndex() + 1;
+            long startPos = lastChunk == null ? DataChunk.DATA_CHUNK_LEN : lastChunk.getStartPos() + DataChunk.DATA_CHUNK_LEN;
+            int chunkIndex = lastChunk == null ? FIRST_BLOCK_INDEX : lastChunk.getChunkIndex() + 1;
             DataChunk dataChunk = new DataChunk(chunkIndex, startPos);
             ByteBuffer byteBuffer = dataChunk.getByteBuffer();
             fileStore.write(byteBuffer, startPos);
@@ -75,6 +87,22 @@ public class DataChunkStore {
         }
     }
 
+
+    public long getNextRowId() {
+        synchronized (DataChunkStore.class) {
+            this.maxRowId++;
+            return this.maxRowId;
+        }
+    }
+
+    public void updateMaxRowId() {
+        synchronized (DataChunkStore.class) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+            DataUtils.writeLong(byteBuffer, this.maxRowId);
+            byteBuffer.rewind();
+            fileStore.write(byteBuffer, 0);
+        }
+    }
 
     /**
      *
@@ -114,16 +142,18 @@ public class DataChunkStore {
             DataChunk chunk = createChunk();
             lastChunk = chunk;
         }
-        int chunkIndex = lastChunk == null ? 0 : lastChunk.getChunkIndex();
+        int chunkIndex = lastChunk == null ? FIRST_BLOCK_INDEX : lastChunk.getChunkIndex();
         long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
         DataChunk dataChunk = writeRow(rowBytes, startPos);
         if (dataChunk != null) {
+            updateMaxRowId();
             return dataChunk.getStartPos();
         }
 
         DataChunk newChunk = createChunk();
         DataChunk chunk = writeRow(rowBytes, newChunk.getStartPos());
         if (chunk != null) {
+            updateMaxRowId();
             return chunk.getStartPos();
         } else {
             return null;
@@ -163,7 +193,7 @@ public class DataChunkStore {
     private DataChunk writeRow(byte[] row, long startPos) {
         ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
         DataChunk dataChunk = new DataChunk(readBuffer);
-        RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
+        RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row, getNextRowId());
         // 当前块剩余空间足够，直接存储到该块
         if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
             dataChunk.addRow(dataRow);
@@ -179,13 +209,13 @@ public class DataChunkStore {
         if(lastChunk == null) {
             lastChunk = createChunk();
         }
-        int chunkIndex = lastChunk != null ? lastChunk.getChunkIndex() : 0;
+        int chunkIndex = lastChunk != null ? lastChunk.getChunkIndex() : FIRST_BLOCK_INDEX;
         long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
         ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
         DataChunk dataChunk = new DataChunk(readBuffer);
         for (int i = 0; i < rows.size(); i++) {
             byte[] row = rows.get(i);
-            RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row);
+            RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row, getNextRowId());
             // 当前块剩余空间足够，直接存储到该块
             if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
                 dataChunk.addRow(dataRow);
@@ -208,7 +238,7 @@ public class DataChunkStore {
 
     public DataChunk getChunk(int i) {
         long startPos = i * DataChunk.DATA_CHUNK_LEN;
-        if (i > dataChunkNum - 1) {
+        if (i > dataChunkNum) {
             return null;
         }
         return getChunkByPos(startPos);

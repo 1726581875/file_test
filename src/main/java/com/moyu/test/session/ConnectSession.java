@@ -10,6 +10,8 @@ public class ConnectSession {
 
     private Integer databaseId;
 
+    private int transactionId;
+
 
     public ConnectSession(String userName, Integer databaseId) {
         this.userName = userName;
@@ -30,5 +32,13 @@ public class ConnectSession {
 
     public void setDatabaseId(Integer databaseId) {
         this.databaseId = databaseId;
+    }
+
+    public int getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(int transactionId) {
+        this.transactionId = transactionId;
     }
 }

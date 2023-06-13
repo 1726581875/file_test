@@ -22,6 +22,10 @@ public class RowData {
     private long startPos;
 
     private int rowByteLen;
+    /**
+     * 数据行id
+     */
+    private long rowId;
 
     /**
      * 包含该行所有字段的数据
@@ -42,13 +46,22 @@ public class RowData {
         this.startPos = startPos;
         this.rowByteLen = row.length;
         this.row = row;
-        this.totalByteLen = 20 + row.length;
+        this.totalByteLen = 24 + row.length;
+    }
+
+    public RowData(long startPos, byte[] row, long rowId) {
+        this.startPos = startPos;
+        this.rowByteLen = row.length;
+        this.row = row;
+        this.rowId = rowId;
+        this.totalByteLen = 28 + row.length;
     }
 
     public RowData(ByteBuffer byteBuffer) {
         this.totalByteLen = DataUtils.readLong(byteBuffer);
         this.startPos = DataUtils.readLong(byteBuffer);
         this.rowByteLen = DataUtils.readInt(byteBuffer);
+        this.rowId = DataUtils.readLong(byteBuffer);
         byte[] row = new byte[rowByteLen];
         byteBuffer.get(row);
         this.row = row;
@@ -60,6 +73,7 @@ public class RowData {
         DataUtils.writeLong(byteBuffer, this.totalByteLen);
         DataUtils.writeLong(byteBuffer, this.startPos);
         DataUtils.writeInt(byteBuffer, this.rowByteLen);
+        DataUtils.writeLong(byteBuffer, this.rowId);
         byteBuffer.put(this.row);
         byteBuffer.rewind();
         return byteBuffer;
@@ -139,6 +153,10 @@ public class RowData {
 
     public void setRow(byte[] row) {
         this.row = row;
+    }
+
+    public long getRowId() {
+        return rowId;
     }
 
     @Override

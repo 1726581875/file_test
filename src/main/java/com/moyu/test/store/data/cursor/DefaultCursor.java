@@ -28,7 +28,7 @@ public class DefaultCursor extends AbstractCursor {
     public DefaultCursor(DataChunkStore dataChunkStore, Column[] columns) {
         this.dataChunkStore = dataChunkStore;
         this.columns = columns;
-        this.nextChunkIndex = 0;
+        this.nextChunkIndex = 1;
         this.currChunkNextRowIndex = 0;
     }
 

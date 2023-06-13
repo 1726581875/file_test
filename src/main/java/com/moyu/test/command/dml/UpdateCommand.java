@@ -4,11 +4,15 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.transaction.RowLogRecord;
+import com.moyu.test.store.transaction.Transaction;
+import com.moyu.test.store.transaction.TransactionManager;
 import com.moyu.test.util.PathUtil;
 
 import java.util.List;
@@ -28,6 +32,8 @@ public class UpdateCommand extends AbstractCommand {
     private Column[] columns;
 
     private ConditionTree2 conditionTree;
+
+    private ConnectSession session;
 
 
     public UpdateCommand(Integer databaseId,
@@ -57,25 +63,31 @@ public class UpdateCommand extends AbstractCommand {
                     break;
                 }
                 List<RowData> dataRowList = chunk.getDataRowList();
-                if (dataRowList == null || dataRowList.size() == 0) {
-                    continue;
-                }
+
                 for (int j = 0; j < dataRowList.size(); j++) {
                     RowData rowData = dataRowList.get(j);
                     Column[] columnData = rowData.getColumnData(columns);
-                    if (conditionTree == null) {
+
+                    boolean match = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
+                    if (match) {
+
+                        Transaction transaction = TransactionManager.getTransaction(session.getTransactionId());
+                        // 记录到undo log
+                        if(transaction != null) {
+                            RowLogRecord record = new RowLogRecord();
+                            record.setBlockPos(chunk.getStartPos());
+                            record.setDatabaseId(this.databaseId);
+                            record.setTableName(this.tableName);
+                            record.setRowId(rowData.getRowId());
+                            record.setOldRow(rowData);
+                            record.setTransactionId(transaction.getId());
+                            transaction.addRowLogRecord(record);
+                        }
+
                         updateColumnData(columnData);
-                        RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData));
+                        RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData), rowData.getRowId());
                         chunk.updateRow(j, newRow);
                         updateRowNum++;
-                    } else {
-                        boolean compareResult = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
-                        if (compareResult) {
-                            updateColumnData(columnData);
-                            RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData));
-                            chunk.updateRow(j, newRow);
-                            updateRowNum++;
-                        }
                     }
                 }
                 // 更新块整个数据块到磁盘
@@ -98,4 +110,7 @@ public class UpdateCommand extends AbstractCommand {
     }
 
 
+    public void setSession(ConnectSession session) {
+        this.session = session;
+    }
 }

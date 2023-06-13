@@ -335,11 +335,16 @@ public class SqlParser implements Parser {
             parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
-        return new UpdateCommand(this.connectSession.getDatabaseId(),
+
+        UpdateCommand updateCommand = new UpdateCommand(this.connectSession.getDatabaseId(),
                 tableName,
                 columns,
                 updateColumnList.toArray(new Column[0]),
                 root);
+
+        updateCommand.setSession(this.connectSession);
+
+        return updateCommand;
     }
 
 
