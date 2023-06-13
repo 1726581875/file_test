@@ -43,6 +43,13 @@ public class RowEntity {
         throw new SqlIllegalException("字段" + tbAlias + columnName + "不存在");
     }
 
+    public RowEntity setTableAlias(String tableAlias){
+        for (int i = 0; i < columns.length; i++) {
+            columns[i].setTableAlias(tableAlias);
+        }
+        return this;
+    }
+
 
 
     public static RowEntity mergeRow(RowEntity leftRow, RowEntity rightRow) {

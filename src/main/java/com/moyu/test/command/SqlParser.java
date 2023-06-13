@@ -951,6 +951,7 @@ public class SqlParser implements Parser {
                     // 下一个关键字是AND或者OR，currIndex不进行移动。否则下次循环读下一个关键字(AND/OR)变成了"ND"和"R"。
                     continue;
                 }
+
             }
 
 
@@ -960,6 +961,11 @@ public class SqlParser implements Parser {
                     && sqlCharArr[currIndex - 1] == ' ') {
                 break;
             }
+
+            if (sqlCharArr[currIndex] == ')' && !currConditionOpen) {
+                break;
+            }
+
 
             currIndex++;
         }

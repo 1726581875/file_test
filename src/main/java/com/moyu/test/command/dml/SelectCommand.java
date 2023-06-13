@@ -140,13 +140,24 @@ public class SelectCommand extends AbstractCommand {
 
             int currIndex = 0;
             RowEntity mainRow = null;
-            String tableAlias = q.getMainTable().getAlias();
+            String currTableAlias = q.getMainTable().getAlias();
             List<RowEntity> rowEntityList = new ArrayList<>();
             while ((mainRow = mainCursor.next()) != null) {
-                RowEntity rowEntity = new RowEntity(mainRow.getColumns(), tableAlias);
+
+                RowEntity rowEntity = null;
+                if(isJoinQuery(q)) {
+                    // 符合这种场景 select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id where b.id = 1 ) t where id = 1;
+                    // 当前查询为join查询时候，字段的所属的tableAlias(表别名)要保持为连接前原表的别名，以便后面的条件判断和查询字段筛选
+                    rowEntity = new RowEntity(mainRow.getColumns());
+                } else {
+                    // 符合这种场景select * from (select * from xmz_yan) t where t.id = 1;
+                    // 非连接条件
+                    rowEntity = new RowEntity(mainRow.getColumns(), currTableAlias);
+                }
+
                 if (ConditionComparator.isMatch(rowEntity, q.getConditionTree()) && isMatchLimit(currIndex)) {
-                    Column[] columns = filterColumns(mainRow.getColumns(), q.getSelectColumns());
-                    rowEntityList.add(new RowEntity(columns, tableAlias));
+                    RowEntity row = filterColumns(rowEntity, q.getSelectColumns());
+                    rowEntityList.add(row.setTableAlias(currTableAlias));
                 }
                 if (q.getLimit() != null && rowEntityList.size() >= q.getLimit()) {
                     break;
@@ -155,11 +166,15 @@ public class SelectCommand extends AbstractCommand {
             }
 
             Column[] columns = mainCursor.getColumns();
-            Column.setColumnAlias(columns, tableAlias);
+            Column.setColumnAlias(columns, currTableAlias);
             mainCursor = new MemoryTemTableCursor(rowEntityList, columns);
         }
 
         return mainCursor;
+    }
+
+    private boolean isJoinQuery(Query q){
+        return q.getMainTable().getJoinTables() != null && q.getMainTable().getJoinTables().size() > 0;
     }
 
 
