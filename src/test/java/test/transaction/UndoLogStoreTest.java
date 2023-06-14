@@ -10,10 +10,9 @@ import java.util.Arrays;
 
 /**
  * @author xiaomingzhang
- * @date 2023/6/13
+ * @date 2023/6/14
  */
-public class SimpleTransactionTest {
-
+public class UndoLogStoreTest {
 
     public static void main(String[] args) {
 
@@ -35,7 +34,24 @@ public class SimpleTransactionTest {
         testExecSQL("select * from xmz_yan", connectSession);
 
         testExecSQL("drop table xmz_yan", connectSession);
+
     }
+
+    private static Float getCompletionRate(Long total, Long completed) {
+        Float completionRate = 0f;
+        // 办结率
+        if (total != 0L) {
+            completionRate = Float.valueOf(completed) / total;
+        }
+
+        float rate = (float) Math.floor(completionRate * 100) / 100f;
+/*        if (rate == 1f && total > completed) {
+            rate = 0.99f;
+        }*/
+        return rate;
+    }
+
+
 
     private static void testExecSQL(String sql, ConnectSession session) {
         System.out.println("====================================");
@@ -47,5 +63,6 @@ public class SimpleTransactionTest {
         Arrays.asList(exec).forEach(System.out::println);
         System.out.println("====================================");
     }
+
 
 }

@@ -74,14 +74,13 @@ public class UpdateCommand extends AbstractCommand {
                         Transaction transaction = TransactionManager.getTransaction(session.getTransactionId());
                         // 记录到undo log
                         if(transaction != null) {
-                            RowLogRecord record = new RowLogRecord();
+                            RowLogRecord record = new RowLogRecord(this.tableName, rowData);
                             record.setBlockPos(chunk.getStartPos());
                             record.setDatabaseId(this.databaseId);
-                            record.setTableName(this.tableName);
                             record.setRowId(rowData.getRowId());
-                            record.setOldRow(rowData);
-                            record.setTransactionId(transaction.getId());
+                            record.setTransactionId(transaction.getTransactionId());
                             transaction.addRowLogRecord(record);
+                            TransactionManager.recordTransaction(transaction);
                         }
 
                         updateColumnData(columnData);

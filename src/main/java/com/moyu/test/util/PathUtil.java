@@ -12,6 +12,8 @@ public class PathUtil {
 
     private static final String metaDir = "yanyu.database.metaPath";
 
+    private static final String logDir = "yanyu.database.logPath";
+
 
     public static String getBaseDirPath() {
         return PropertiesReadUtil.get(baseDir);
@@ -19,6 +21,10 @@ public class PathUtil {
 
     public static String getMetaDirPath() {
         return PropertiesReadUtil.get(metaDir);
+    }
+
+    public static String getLogDirPath() {
+        return PropertiesReadUtil.get(logDir);
     }
 
     public static String getDataFilePath(Integer databaseId, String tableName) {
