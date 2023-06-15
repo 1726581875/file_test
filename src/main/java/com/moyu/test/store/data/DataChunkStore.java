@@ -136,7 +136,7 @@ public class DataChunkStore {
         return storeRow(rowBytes, true);
     }
 
-    public Long storeRowAndGetPos(Column[] columns) {
+    public Long storeRowAndGetPos(Column[] columns, Long rowId) {
         byte[] rowBytes = RowData.toRowByteData(columns);
         if(lastChunk == null) {
             DataChunk chunk = createChunk();
@@ -144,14 +144,14 @@ public class DataChunkStore {
         }
         int chunkIndex = lastChunk == null ? FIRST_BLOCK_INDEX : lastChunk.getChunkIndex();
         long startPos = chunkIndex * DataChunk.DATA_CHUNK_LEN;
-        DataChunk dataChunk = writeRow(rowBytes, startPos);
+        DataChunk dataChunk = writeRow(rowBytes, startPos, rowId);
         if (dataChunk != null) {
             updateMaxRowId();
             return dataChunk.getStartPos();
         }
 
         DataChunk newChunk = createChunk();
-        DataChunk chunk = writeRow(rowBytes, newChunk.getStartPos());
+        DataChunk chunk = writeRow(rowBytes, newChunk.getStartPos(), rowId);
         if (chunk != null) {
             updateMaxRowId();
             return chunk.getStartPos();
@@ -190,10 +190,17 @@ public class DataChunkStore {
         return writeRow(row, startPos) != null;
     }
 
+
+
     private DataChunk writeRow(byte[] row, long startPos) {
+        return writeRow(row, startPos, null);
+    }
+
+    private DataChunk writeRow(byte[] row, long startPos, Long rowId) {
         ByteBuffer readBuffer = fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN);
         DataChunk dataChunk = new DataChunk(readBuffer);
-        RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row, getNextRowId());
+        Long rid = rowId == null ? getNextRowId() : rowId;
+        RowData dataRow = new RowData(dataChunk.getNextRowStartPos(), row, rid);
         // 当前块剩余空间足够，直接存储到该块
         if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
             dataChunk.addRow(dataRow);
@@ -245,7 +252,7 @@ public class DataChunkStore {
     }
 
     public DataChunk getChunkByPos(long startPos) {
-        if (fileStore.getEndPosition() >= startPos) {
+        if (fileStore.getEndPosition() > startPos) {
             return new DataChunk(fileStore.read(startPos, DataChunk.DATA_CHUNK_LEN));
         }
         return null;

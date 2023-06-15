@@ -102,7 +102,8 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "xmz_5", null, null);
+        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_5", null, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -149,7 +150,8 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "xmz_3", null, null);
+        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_3", null, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -197,7 +199,8 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        InsertCommand insertCommand = new InsertCommand(0, "table_1", null, null);
+        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        InsertCommand insertCommand = new InsertCommand(connectSession, "table_1", null, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);

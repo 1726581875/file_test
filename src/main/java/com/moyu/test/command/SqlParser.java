@@ -382,7 +382,8 @@ public class SqlParser implements Parser {
             parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
-        return new DeleteCommand(connectSession.getDatabaseId(), tableName, columns, root);
+        DeleteCommand deleteCommand = new DeleteCommand(connectSession, tableName, columns, root);
+        return deleteCommand;
     }
 
 
@@ -1260,7 +1261,7 @@ public class SqlParser implements Parser {
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
 
 
-        return new InsertCommand(connectSession.getDatabaseId(), tableName, columns, indexMetadataList);
+        return new InsertCommand(connectSession, tableName, columns, indexMetadataList);
     }
 
 

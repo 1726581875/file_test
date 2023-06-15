@@ -6,6 +6,7 @@ import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
@@ -13,6 +14,9 @@ import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
+import com.moyu.test.store.transaction.RowLogRecord;
+import com.moyu.test.store.transaction.Transaction;
+import com.moyu.test.store.transaction.TransactionManager;
 import com.moyu.test.util.PathUtil;
 
 import java.util.List;
@@ -23,8 +27,6 @@ import java.util.List;
  */
 public class DeleteCommand extends AbstractCommand {
 
-    private Integer databaseId;
-
     private String tableName;
 
     private Column[] columns;
@@ -33,9 +35,14 @@ public class DeleteCommand extends AbstractCommand {
 
     private List<IndexMetadata> indexList;
 
+    private ConnectSession session;
 
-    public DeleteCommand(Integer databaseId, String tableName, Column[] columns, ConditionTree2 conditionTree) {
-        this.databaseId = databaseId;
+
+    public DeleteCommand(ConnectSession session,
+                         String tableName,
+                         Column[] columns,
+                         ConditionTree2 conditionTree) {
+        this.session = session;
         this.tableName = tableName;
         this.columns = columns;
         this.conditionTree = conditionTree;
@@ -46,14 +53,10 @@ public class DeleteCommand extends AbstractCommand {
         int deleteRowNum = 0;
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             // TODO 应该要支持按索引删除
-            if (conditionTree == null) {
-                deleteRowNum = deleteAllData(dataChunkStore);
-            } else {
-                deleteRowNum = deleteDataByCondition(dataChunkStore);
-            }
+            deleteRowNum = deleteDataByCondition(dataChunkStore);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -84,7 +87,7 @@ public class DeleteCommand extends AbstractCommand {
         if (indexList != null && indexList.size() > 0) {
             for (IndexMetadata index : indexList) {
                 //Column indexColumn = getIndexColumn(index, columns);
-                String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+                String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
                 BpTreeMap<Comparable, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Comparable.class);
                 bpTreeMap.clear();
             }
@@ -101,7 +104,7 @@ public class DeleteCommand extends AbstractCommand {
         int dataChunkNum = dataChunkStore.getDataChunkNum();
         int deleteRowNum = 0;
         // 遍历数据块
-        for (int i = 0; i < dataChunkNum; i++) {
+        for (int i = 1; i <= dataChunkNum; i++) {
             DataChunk chunk = dataChunkStore.getChunk(i);
             if (chunk == null) {
                 break;
@@ -114,6 +117,19 @@ public class DeleteCommand extends AbstractCommand {
                 boolean compareResult = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
                 // 只移除符合条件的行
                 if (compareResult) {
+
+                    // 如果存在事务，记录旧值到到undo log
+                    Transaction transaction = TransactionManager.getTransaction(session.getTransactionId());
+                    if(transaction != null) {
+                        RowLogRecord record = new RowLogRecord(this.tableName, rowData, RowLogRecord.TYPE_DELETE);
+                        record.setBlockPos(chunk.getStartPos());
+                        record.setDatabaseId(session.getDatabaseId());
+                        record.setRowId(rowData.getRowId());
+                        record.setTransactionId(transaction.getTransactionId());
+                        transaction.addRowLogRecord(record);
+                        TransactionManager.recordTransaction(transaction);
+                    }
+
                     // 删除行
                     chunk.removeRow(k);
                     // 删除主键索引
@@ -153,7 +169,7 @@ public class DeleteCommand extends AbstractCommand {
             return;
         }
 
-        String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+        String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
         if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
             BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
             Integer key = (Integer) indexColumn.getValue();

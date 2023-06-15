@@ -66,7 +66,7 @@ public class DefaultCursor extends AbstractCursor {
         // 遍历块，直到拿到数据
         int i = nextChunkIndex;
         while (true) {
-            if(i > dataChunkNum - 1) {
+            if(i > dataChunkNum) {
                 return null;
             }
             currChunk = dataChunkStore.getChunk(i);

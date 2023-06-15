@@ -202,17 +202,36 @@ public class Transaction implements TxOperator, SerializableByte {
                 try {
                     dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(record.getDatabaseId(), record.getTableName()));
                     // 找到行所在数据块
-                    DataChunk chunk = dataChunkStore.getChunkByPos(record.getBlockPos());
+                    DataChunk chunk = record.getBlockPos() > 0 ? dataChunkStore.getChunkByPos(record.getBlockPos())
+                            : getRowDataChunk(dataChunkStore, record.getRowId());
                     // 找到对应行
-                    int index = findRow(chunk.getDataRowList(), record.getRowId());
-                    // 更新对应行记录为旧值
-                    if (index == -1) {
-                        throw new DbException("回滚失败，数据不存在");
+                    int index = findRow(chunk, record.getRowId());
+                    // 回滚insert操作
+                    if(RowLogRecord.TYPE_INSERT == record.getType()) {
+                        if(index != -1) {
+                            chunk.removeRow(index);
+                            dataChunkStore.updateChunk(chunk);
+                        }
+                    } else if /* 回滚update操作 */ (RowLogRecord.TYPE_UPDATE == record.getType()) {
+                        if (index == -1) {
+                            throw new DbException("回滚失败，数据不存在");
+                        }
+                        chunk.updateRow(index, record.getOldRow());
+                        dataChunkStore.updateChunk(chunk);
+                    } else if /* 回滚delete操作 */(RowLogRecord.TYPE_DELETE == record.getType()) {
+                        // 数据存在，替换为旧数据
+                        if (index != -1) {
+                            chunk.updateRow(index, record.getOldRow());
+                        } else {
+                        // 数据不存在，新增
+                            chunk.addRow(record.getOldRow());
+                        }
+                        dataChunkStore.updateChunk(chunk);
+
                     }
-                    chunk.updateRow(index, record.getOldRow());
-                    dataChunkStore.updateChunk(chunk);
                     success = true;
                     this.status = STATUS_ROLLED_BACK;
+                    TransactionManager.recordTransaction(this);
                 } catch (Exception e) {
                     failNum++;
                     e.printStackTrace();
@@ -226,10 +245,40 @@ public class Transaction implements TxOperator, SerializableByte {
     }
 
 
+    /**
+     * 获取数据行所在的数据块
+     * @param dataChunkStore
+     * @param rowId
+     * @return
+     */
+    private static DataChunk getRowDataChunk(DataChunkStore dataChunkStore, long rowId) {
+        int dataChunkNum = dataChunkStore.getDataChunkNum();
+        for (int i = 1; i <=dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            if(chunk == null) {
+                continue;
+            }
+            int rowIndex = findRow(chunk, rowId);
+            if(rowIndex > 0) {
+                return chunk;
+            }
+        }
+        return null;
+    }
 
-    private static int findRow(List<RowData> dataRowList, long rowId) {
-        for (int j = 0; j < dataRowList.size(); j++) {
-            RowData rowData = dataRowList.get(j);
+
+    private static int findRow(DataChunk chunk, long rowId) {
+
+        if(chunk == null)  {
+            return -1;
+        }
+
+        if (rowId < 0) {
+            return -1;
+        }
+
+        for (int j = 0; j < chunk.getDataRowList().size(); j++) {
+            RowData rowData = chunk.getDataRowList().get(j);
             if (rowData.getRowId() == rowId) {
                 return j;
             }

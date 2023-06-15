@@ -58,16 +58,6 @@ public class UndoLogStore {
                 this.transactionNum = 0;
                 this.maxTransactionId = 0;
             }
-
-/*            this.transactionList = new ArrayList<>();
-            this.transactionMap = new HashMap<>();
-            long currPos = Transaction.BLOCK_SIZE;
-            while (endPosition >= currPos + Transaction.BLOCK_SIZE) {
-                ByteBuffer buffer = fileStore.read(currPos, Transaction.BLOCK_SIZE);
-                Transaction transaction = new Transaction(buffer);
-                this.transactionList.add(transaction);
-                this.transactionMap.put(transaction.getTransactionId(), transaction);
-            }*/
         } catch (Exception e) {
             e.printStackTrace();
             fileStore.close();

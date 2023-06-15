@@ -57,7 +57,7 @@ public class UpdateCommand extends AbstractCommand {
             dataChunkStore = new DataChunkStore(fileFullPath);
             int dataChunkNum = dataChunkStore.getDataChunkNum();
             // 遍历数据块
-            for (int i = 0; i < dataChunkNum; i++) {
+            for (int i = 1; i <= dataChunkNum; i++) {
                 DataChunk chunk = dataChunkStore.getChunk(i);
                 if (chunk == null) {
                     break;
@@ -71,10 +71,10 @@ public class UpdateCommand extends AbstractCommand {
                     boolean match = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
                     if (match) {
 
+                        // 如果存在事务，记录旧值到到undo log
                         Transaction transaction = TransactionManager.getTransaction(session.getTransactionId());
-                        // 记录到undo log
                         if(transaction != null) {
-                            RowLogRecord record = new RowLogRecord(this.tableName, rowData);
+                            RowLogRecord record = new RowLogRecord(this.tableName, rowData, RowLogRecord.TYPE_UPDATE);
                             record.setBlockPos(chunk.getStartPos());
                             record.setDatabaseId(this.databaseId);
                             record.setRowId(rowData.getRowId());

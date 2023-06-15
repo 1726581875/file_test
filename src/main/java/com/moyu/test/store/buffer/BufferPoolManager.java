@@ -1,6 +1,12 @@
 package com.moyu.test.store.buffer;
 
+import com.moyu.test.exception.DbException;
+import com.moyu.test.store.data.DataChunk;
+import com.moyu.test.store.data.DataChunkStore;
+import com.moyu.test.util.PathUtil;
+
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -8,47 +14,61 @@ import java.util.HashMap;
  */
 public class BufferPoolManager {
 
-    // 缓冲区池
-    private HashMap<Integer, byte[]> bufferPool;
-    // 缓冲区大小
-    private int bufferSize;
-    // 最大缓冲区数量
-    private int maxBufferCount;
+    /**
+     * key: databaseId.tableName
+     * value: Map<块地址开始位置, 数据块>
+     */
+    private static final Map<String, Map<Long, BufferDataChunk>> bufferPool = new HashMap<>();
 
-    public BufferPoolManager(int bufferSize, int maxBufferCount) {
-        this.bufferSize = bufferSize;
-        this.maxBufferCount = maxBufferCount;
-        bufferPool = new HashMap<>();
-    }
 
-    // 从缓冲区池中获取指定页号的缓冲区
-    public byte[] getBuffer(int pageNum) {
-        if (bufferPool.containsKey(pageNum)) {
-            return bufferPool.get(pageNum);
-        } else {
-            // 如果缓冲区池中没有该页号的缓冲区，则需要创建一个新的缓冲区
-            if (bufferPool.size() >= maxBufferCount) {
-                // 如果缓冲区池已满，则需要淘汰一个缓冲区
-                evictBuffer();
+    /**
+     * TODO 应当限制缓存大小
+     * @param databaseId
+     * @param tableName
+     * @param pos
+     * @return
+     */
+    public static BufferDataChunk getDataChunk(Integer databaseId, String tableName, Long pos) {
+        String key = getKey(databaseId, tableName);
+        if (bufferPool.containsKey(key)) {
+            Map<Long, BufferDataChunk> dataChunkMap = bufferPool.get(key);
+            if (dataChunkMap.containsKey(pos)) {
+                return dataChunkMap.get(pos);
+            } else {
+                BufferDataChunk bufferDataChunk = getDiskDataChunk(databaseId, tableName, pos);
+                dataChunkMap.put(pos, bufferDataChunk);
+                return bufferDataChunk;
             }
-            byte[] buffer = new byte[bufferSize];
-            bufferPool.put(pageNum, buffer);
-            return buffer;
+        } else {
+            Map<Long, BufferDataChunk> dataChunkMap = new HashMap<>();
+            BufferDataChunk bufferDataChunk = getDiskDataChunk(databaseId, tableName, pos);
+            dataChunkMap.put(pos, bufferDataChunk);
+            bufferPool.put(key, dataChunkMap);
+            return bufferDataChunk;
         }
     }
 
-    // 将指定页号的缓冲区从缓冲区池中移除
-    public void removeBuffer(int pageNum) {
-        if (bufferPool.containsKey(pageNum)) {
-            bufferPool.remove(pageNum);
+    private static BufferDataChunk getDiskDataChunk(Integer databaseId, String tableName, Long pos) {
+        DataChunkStore dataChunkStore = null;
+        try {
+            dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(databaseId, tableName));
+            DataChunk chunk = dataChunkStore.getChunkByPos(pos);
+            if (chunk == null) {
+                throw new DbException("获取数据块发生异常,块不存在pos:" + pos);
+            }
+            BufferDataChunk bufferDataChunk = new BufferDataChunk(databaseId, tableName, BufferDataChunk.NOT_MODIFIED, chunk);
+            return bufferDataChunk;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new DbException("获取数据块发生异常");
+        } finally {
+            dataChunkStore.close();
         }
     }
 
-    // 淘汰一个缓冲区
-    private void evictBuffer() {
-        int evictPageNum = bufferPool.keySet().iterator().next();
-        removeBuffer(evictPageNum);
-    }
 
+    private static String getKey(Integer databaseId, String tableName){
+        return databaseId + "." + tableName;
+    }
 
 }

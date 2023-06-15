@@ -3,11 +3,15 @@ package com.moyu.test.command.dml;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
+import com.moyu.test.store.transaction.RowLogRecord;
+import com.moyu.test.store.transaction.Transaction;
+import com.moyu.test.store.transaction.TransactionManager;
 import com.moyu.test.util.PathUtil;
 
 import java.util.ArrayList;
@@ -19,7 +23,7 @@ import java.util.List;
  */
 public class InsertCommand extends AbstractCommand {
 
-    private Integer databaseId;
+    private ConnectSession session;
 
     private String tableName;
 
@@ -27,8 +31,8 @@ public class InsertCommand extends AbstractCommand {
 
     private List<IndexMetadata> indexList;
 
-    public InsertCommand(Integer databaseId, String tableName, Column[] columns, List<IndexMetadata> indexList) {
-        this.databaseId = databaseId;
+    public InsertCommand(ConnectSession session, String tableName, Column[] columns, List<IndexMetadata> indexList) {
+        this.session = session;
         this.tableName = tableName;
         this.columns = columns;
         this.indexList = indexList;
@@ -39,12 +43,35 @@ public class InsertCommand extends AbstractCommand {
         DataChunkStore dataChunkStore = null;
         try {
             // 插入数据
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
-            Long chunkPos = dataChunkStore.storeRowAndGetPos(columns);
+
+
+            long rowId = dataChunkStore.getNextRowId();
+            // 如果存在事务，记录旧值到到undo log
+            Transaction transaction = TransactionManager.getTransaction(session.getTransactionId());
+            if(transaction != null) {
+                RowLogRecord record = new RowLogRecord(this.tableName, null, RowLogRecord.TYPE_INSERT);
+                // TODO 一开始并不知道位置
+                record.setBlockPos(-1L);
+                record.setDatabaseId(session.getDatabaseId());
+                record.setRowId(rowId);
+                record.setTransactionId(transaction.getTransactionId());
+                transaction.addRowLogRecord(record);
+                TransactionManager.recordTransaction(transaction);
+            }
+
+            Long chunkPos = dataChunkStore.storeRowAndGetPos(columns, rowId);
             if(chunkPos == null) {
                 return "插入数据失败";
             }
+
+            // 插入到磁盘后才知道块位置，重新记录事务信息
+            if(transaction != null) {
+                transaction.setStartPos(chunkPos);
+                TransactionManager.recordTransaction(transaction);
+            }
+
             // 插入索引
             if (indexList != null && indexList.size() > 0) {
                 for (IndexMetadata index : indexList) {
@@ -65,7 +92,7 @@ public class InsertCommand extends AbstractCommand {
 
 
     private void insertIndex(IndexMetadata index, Column indexColumn, Long chunkPos) {
-        String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+        String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
         if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
             insertIndexTree(indexPath, indexColumn, chunkPos, Integer.class);
         } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
@@ -100,7 +127,7 @@ public class InsertCommand extends AbstractCommand {
     public String testWriteList(List<Column[]> columnsList) {
         DataChunkStore dataChunkStore = null;
         try {
-            String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+            String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             List<byte[]> list = new ArrayList<>();
 
