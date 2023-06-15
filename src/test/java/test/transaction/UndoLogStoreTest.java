@@ -24,10 +24,11 @@ public class UndoLogStoreTest {
 
 
         int tid = TransactionManager.initTransaction(connectSession);
-        testExecSQL("update xmz_yan set name = '520' where id = 1", connectSession);
-        testExecSQL("update xmz_yan set name = '250' where id = 2", connectSession);
-        testExecSQL("insert into xmz_yan(id,name,time) value (4,'444','2023-05-19 00:00:00')", connectSession);
+        //testExecSQL("update xmz_yan set name = '520' where id = 1", connectSession);
+        //testExecSQL("update xmz_yan set name = '250' where id = 2", connectSession);
+        //testExecSQL("insert into xmz_yan(id,name,time) value (4,'444','2023-05-19 00:00:00')", connectSession);
         testExecSQL("delete from xmz_yan where id = 1", connectSession);
+        testExecSQL("delete from xmz_yan where id = 2", connectSession);
         testExecSQL("select * from xmz_yan", connectSession);
         Transaction transaction = TransactionManager.getTransaction(tid);
         transaction.rollback();

@@ -134,6 +134,14 @@ public class DataChunk {
         this.dataRowList.remove(index);
     }
 
+    public void markRowIsDeleted(int index) {
+        if(index >= dataRowList.size()) {
+            throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
+        }
+        RowData rowData = dataRowList.get(index);
+        rowData.setIsDeleted((byte) 1);
+    }
+
     public void clear() {
         initDataChunk(this.chunkIndex, this.getStartPos());
     }

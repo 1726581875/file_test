@@ -131,7 +131,7 @@ public class DeleteCommand extends AbstractCommand {
                     }
 
                     // 删除行
-                    chunk.removeRow(k);
+                    chunk.markRowIsDeleted(k);
                     // 删除主键索引
                     if (indexList != null && indexList.size() > 0) {
                         for (IndexMetadata index : indexList) {

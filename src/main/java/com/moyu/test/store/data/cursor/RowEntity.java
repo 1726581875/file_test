@@ -11,6 +11,8 @@ import java.util.Arrays;
  */
 public class RowEntity {
 
+    private boolean isDeleted;
+
     private Column[] columns;
 
     public RowEntity(Column[] columns) {
@@ -51,6 +53,13 @@ public class RowEntity {
     }
 
 
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
 
     public static RowEntity mergeRow(RowEntity leftRow, RowEntity rightRow) {
         Column[] columns = Column.mergeColumns(leftRow.getColumns(), rightRow.getColumns());

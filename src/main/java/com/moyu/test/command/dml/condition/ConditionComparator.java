@@ -53,9 +53,15 @@ public class ConditionComparator {
      * @return
      */
     public static boolean isMatch(RowEntity row, ConditionTree2 conditionTree) {
+
+        if(row.isDeleted()) {
+            return false;
+
+        }
         if(conditionTree == null) {
             return true;
         }
+
         return analyzeConditionTree(conditionTree, row);
     }
 

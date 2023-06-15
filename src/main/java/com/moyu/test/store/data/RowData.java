@@ -1,6 +1,7 @@
 package com.moyu.test.store.data;
 
 import com.moyu.test.store.WriteBuffer;
+import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.DataType;
 import com.moyu.test.store.type.ColumnTypeFactory;
@@ -28,6 +29,13 @@ public class RowData {
     private long rowId;
 
     /**
+     * 数据是否已删除
+     * 0 否
+     * 1 是
+     */
+    private byte isDeleted;
+
+    /**
      * 包含该行所有字段的数据
      * 存储格式是按列字段顺序和值，byte数组是[字段a的值描述 + 字段a的值描述 + 字段..的描述]
      *
@@ -46,7 +54,7 @@ public class RowData {
         this.startPos = startPos;
         this.rowByteLen = row.length;
         this.row = row;
-        this.totalByteLen = 24 + row.length;
+        this.totalByteLen = 29 + row.length;
     }
 
     public RowData(long startPos, byte[] row, long rowId) {
@@ -54,7 +62,8 @@ public class RowData {
         this.rowByteLen = row.length;
         this.row = row;
         this.rowId = rowId;
-        this.totalByteLen = 28 + row.length;
+        this.isDeleted = 0;
+        this.totalByteLen = 29 + row.length;
     }
 
     public RowData(ByteBuffer byteBuffer) {
@@ -62,6 +71,7 @@ public class RowData {
         this.startPos = DataUtils.readLong(byteBuffer);
         this.rowByteLen = DataUtils.readInt(byteBuffer);
         this.rowId = DataUtils.readLong(byteBuffer);
+        this.isDeleted = byteBuffer.get();
         byte[] row = new byte[rowByteLen];
         byteBuffer.get(row);
         this.row = row;
@@ -74,6 +84,7 @@ public class RowData {
         DataUtils.writeLong(byteBuffer, this.startPos);
         DataUtils.writeInt(byteBuffer, this.rowByteLen);
         DataUtils.writeLong(byteBuffer, this.rowId);
+        byteBuffer.put(isDeleted);
         byteBuffer.put(this.row);
         byteBuffer.rewind();
         return byteBuffer;
@@ -122,6 +133,13 @@ public class RowData {
         return resultColumns;
     }
 
+    public RowEntity getRowEntity(Column[] columns) {
+        Column[] resultColumns = getColumnData(columns);
+        RowEntity rowEntity = new RowEntity(resultColumns);
+        rowEntity.setDeleted(this.isDeleted == (byte) 1);
+        return rowEntity;
+    }
+
 
     public long getTotalByteLen() {
         return totalByteLen;
@@ -157,6 +175,14 @@ public class RowData {
 
     public long getRowId() {
         return rowId;
+    }
+
+    public void setIsDeleted(byte isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public byte getIsDeleted() {
+        return isDeleted;
     }
 
     @Override

@@ -57,8 +57,7 @@ public class DefaultCursor extends AbstractCursor {
         List<RowData> dataRowList = currChunk.getDataRowList();
         if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
             RowData rowData = dataRowList.get(currChunkNextRowIndex);
-            Column[] columnData = rowData.getColumnData(columns);
-            RowEntity dbRow = new RowEntity(columnData);
+            RowEntity dbRow = rowData.getRowEntity(columns);
             currChunkNextRowIndex++;
             return dbRow;
         }
@@ -76,8 +75,7 @@ public class DefaultCursor extends AbstractCursor {
             }
             if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
                 RowData rowData = dataRowList.get(currChunkNextRowIndex);
-                Column[] columnData = rowData.getColumnData(columns);
-                RowEntity dbRow = new RowEntity(columnData);
+                RowEntity dbRow = rowData.getRowEntity(columns);
                 currChunkNextRowIndex++;
                 nextChunkIndex = i + 1;
                 return dbRow;
