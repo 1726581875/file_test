@@ -1048,8 +1048,7 @@ public class SqlParser implements Parser {
                         condition = new ConditionEqOrNq(column, values.get(0) , false);
                         break;
                     case OperatorConstant.IN:
-                        values = parseConditionValues(start, nextKeyWord);
-                        condition = new ConditionInOrNot(column, values , true);
+                        condition = getInOrNotInCondition(column, true);
                         break;
                     case OperatorConstant.EXISTS:
                     case OperatorConstant.LIKE:
@@ -1060,9 +1059,7 @@ public class SqlParser implements Parser {
                         skipSpace();
                         String word0 = getNextKeyWord();
                         if ("IN".equals(word0)) {
-                            operator = OperatorConstant.NOT_IN;
-                            values = parseConditionValues(start, operator);
-                            condition = new ConditionInOrNot(column, values , false);
+                            condition = getInOrNotInCondition(column, false);
                         } else if ("LIKE".equals(word0)) {
                             operator = OperatorConstant.NOT_LIKE;
                             values = parseConditionValues(start, operator);
@@ -1105,6 +1102,29 @@ public class SqlParser implements Parser {
             throw new SqlIllegalException("sql语法有误");
         }*/
 
+        return condition;
+    }
+
+
+    private ConditionInOrNot getInOrNotInCondition(Column column, boolean isIn) {
+        ConditionInOrNot condition = null;
+        List<String> values = new ArrayList<>();
+        StartEndIndex startEnd = getNextBracketStartEnd();
+        String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
+        if (!(inValueStr.startsWith("SELECT") || inValueStr.startsWith("select"))) {
+            String[] split = inValueStr.split(",");
+            for (String v : split) {
+                String value = v;
+                if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
+                    value = v.substring(1, v.length() - 1);
+                }
+                values.add(value);
+            }
+            currIndex = startEnd.getEnd();
+            condition = new ConditionInOrNot(column, values, isIn);
+        } else {
+
+        }
         return condition;
     }
 

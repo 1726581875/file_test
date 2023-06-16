@@ -61,6 +61,7 @@ public class InsertCommand extends AbstractCommand {
                 TransactionManager.recordTransaction(transaction);
             }
 
+            // 存储数据
             Long chunkPos = dataChunkStore.storeRowAndGetPos(columns, rowId);
             if(chunkPos == null) {
                 return "插入数据失败";
