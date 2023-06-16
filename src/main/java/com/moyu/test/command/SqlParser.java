@@ -136,8 +136,16 @@ public class SqlParser implements Parser {
                         // drop table
                     case TABLE:
                         skipSpace();
-                        String tableName = getNextOriginalWord();
-                        return new DropTableCommand(this.connectSession.getDatabaseId(), tableName);
+                        String keyword99 = getNextKeyWordUnMove();
+                        if("IF".equals(keyword99)) {
+                            assertNextKeywordIs("IF");
+                            assertNextKeywordIs("EXISTS");
+                            String tableName = getNextOriginalWord();
+                            return new DropTableCommand(this.connectSession.getDatabaseId(), tableName, true);
+                        } else {
+                            String tableName = getNextOriginalWord();
+                            return new DropTableCommand(this.connectSession.getDatabaseId(), tableName, false);
+                        }
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
@@ -741,60 +749,66 @@ public class SqlParser implements Parser {
 
 
     private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns) {
-        // SELECT *
-        if("*".equals(selectColumnsStr)) {
-            SelectColumn[] selectColumns = new SelectColumn[allColumns.length];
-            for (int i = 0; i < allColumns.length; i++) {
-                Column column = allColumns[i];
-                SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
-                selectColumn.setTableAlias(column.getTableAlias());
-                selectColumns[i] = selectColumn;
-            }
-            return selectColumns;
-        }
-
-        // SELECT column1,column2...
-        // SELECT count(*)...
 
         TableColumnInfo columnInfo = new TableColumnInfo();
         for (Column c : allColumns) {
             columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
 
-
         String[] selectColumnStrArr = selectColumnsStr.split(",");
-        SelectColumn[] selectColumns = new SelectColumn[selectColumnStrArr.length];
+        List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String str = selectColumnStrArr[i].trim();
-            // columnName AS aliasName
-            String[] split = str.split("\\s+");
-            String columnStr = split[0];
-            String alias = null;
-            if(split.length == 2) {
-                alias = split[1];
-            } else if(split.length == 3) {
-                if(!"AS".equals(split[1].toUpperCase())) {
-                    throw new SqlIllegalException("sql语法有误，在" + str + "附近");
+            // SELECT * 或者 SELECT a.*
+            if("*".equals(str) || str.endsWith(".*")) {
+                String[] split = str.split("\\.");
+                String tableAlias = null;
+                if(split.length == 2) {
+                    tableAlias = split[0];
                 }
-                alias = split[2];
-            }
-
-            SelectColumn selectColumn = null;
-            //函数
-            if (isFunctionColumn(columnStr)){
-                selectColumn = parseFunction(columnInfo, columnStr);
+                for (int j = 0; j < allColumns.length; j++) {
+                    Column column = allColumns[j];
+                    SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
+                    selectColumn.setTableAlias(column.getTableAlias());
+                    if(tableAlias == null) {
+                        selectColumnList.add(selectColumn);
+                    } else {
+                        if (tableAlias.equals(column.getTableAlias())) {
+                            selectColumnList.add(selectColumn);
+                        }
+                    }
+                }
             } else {
-                // 普通字段
-                Column column = columnInfo.getColumn(columnStr);
-                if (column == null) {
-                    throw new SqlIllegalException("字段" + columnStr + "不存在");
+                // 处理字段alias， 可能情况SELECT columnName AS aliasName 、SELECT columnName aliasName、 SELECT columnName
+                String[] split = str.split("\\s+");
+                String columnStr = split[0];
+                String alias = null;
+                if (split.length == 2) {
+                    alias = split[1];
+                } else if (split.length == 3) {
+                    if (!"AS".equals(split[1].toUpperCase())) {
+                        throw new SqlIllegalException("sql语法有误，在" + str + "附近");
+                    }
+                    alias = split[2];
                 }
-                selectColumn = new SelectColumn(column, columnStr, null, null);
+
+                SelectColumn selectColumn = null;
+                //函数
+                if (isFunctionColumn(columnStr)) {
+                    selectColumn = parseFunction(columnInfo, columnStr);
+                } else {
+                    // 普通字段
+                    Column column = columnInfo.getColumn(columnStr);
+                    if (column == null) {
+                        throw new SqlIllegalException("字段" + columnStr + "不存在");
+                    }
+                    selectColumn = new SelectColumn(column, columnStr, null, null);
+                }
+                selectColumn.setAlias(alias);
+                selectColumnList.add(selectColumn);
             }
-            selectColumn.setAlias(alias);
-            selectColumns[i] = selectColumn;
         }
-        return selectColumns;
+        return selectColumnList.toArray(new SelectColumn[0]);
     }
 
 

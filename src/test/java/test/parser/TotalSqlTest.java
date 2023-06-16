@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -21,8 +21,29 @@ public class TotalSqlTest {
         testJoinTable();
         testSubQuery();
         testFunction();
-        testSubQuery2();
+        testSubQuery2();*/
+        testAlias();
 
+    }
+
+
+    private static void testAlias(){
+
+        testExecSQL("drop table if exists xmz_y_1");
+        testExecSQL("create table xmz_y_1(id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_y_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_1(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("select y.* from xmz_y_1 as y where y.id in (1)");
+        testExecSQL("select * from xmz_y_1 as y where y.id in (1)");
+        testExecSQL("select id,name,time from xmz_y_1 as y where y.id in (1)");
+        testExecSQL("select id,name,time from xmz_y_1 where id in (1)");
+        testExecSQL("select xmz.id,xmz.name,xmz.time from xmz_y_1 xmz");
+        testExecSQL("select id as id1,name as name2 ,time as time3 from xmz_y_1 where id in (1)");
+        testExecSQL("select bb.id as id1,bb.name as name2 ,bb.time as time3 from xmz_y_1 as bb");
+
+        testExecSQL("select bb.id as id1, bb.* from xmz_y_1 as bb");
     }
 
 

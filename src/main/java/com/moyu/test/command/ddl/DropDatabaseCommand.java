@@ -24,7 +24,7 @@ public class DropDatabaseCommand extends AbstractCommand {
             ShowTablesCommand showTablesCommand = new ShowTablesCommand(database.getDatabaseId());
             String[] allTable = showTablesCommand.getAllTable();
             for (String tableName : allTable) {
-                DropTableCommand dropTableCommand = new DropTableCommand(database.getDatabaseId(), tableName);
+                DropTableCommand dropTableCommand = new DropTableCommand(database.getDatabaseId(), tableName, true);
                 dropTableCommand.execute();
             }
 
