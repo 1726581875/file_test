@@ -5,11 +5,8 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.function.*;
-import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
-import com.moyu.test.exception.DbException;
-import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.cursor.*;
@@ -49,10 +46,8 @@ public class SelectCommand extends AbstractCommand {
         if((query.getMainTable().getJoinTables() == null || query.getMainTable().getJoinTables().size() == 0)
                 && query.getMainTable().getSubQuery() == null) {
             queryResult = execQuery();
-        } else if(query.getMainTable().getSubQuery() != null) {
-            queryResult = subQuery();
         } else {
-            queryResult = joinQuery();
+            queryResult = subOrJoinQuery();
         }
         long queryEndTime = System.currentTimeMillis();
 
@@ -101,127 +96,13 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
-    public QueryResult subQuery() {
+    public QueryResult subOrJoinQuery() {
         QueryResult result = new QueryResult();
         result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
         try {
-            Stack<Query> queryStack = new Stack<>();
-            Query q = query;
-            queryStack.add(q);
-            while ((q = q.getMainTable().getSubQuery()) != null) {
-                queryStack.add(q);
-            }
-
-            Cursor mainCursor = execSubQuery(queryStack);
-
-            // 连表后的数据结果再按条件进行筛选
+            Cursor mainCursor = this.query.getQueryCursor();
             List<Column[]> dataList = lastFilter(mainCursor);
-            result.addAll(dataList);
-
-            result.addAll(dataList);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        this.queryResult = result;
-        return this.queryResult;
-    }
-
-
-    private Cursor execSubQuery(Stack<Query> queryStack) {
-        Cursor mainCursor = null;
-
-        while (!queryStack.isEmpty()) {
-            Query q = queryStack.pop();
-            FromTable fromTable = q.getMainTable();
-            if(fromTable.getSubQuery() == null) {
-                mainCursor = getQueryCursor(q);
-            }
-
-            int currIndex = 0;
-            RowEntity mainRow = null;
-            String currTableAlias = q.getMainTable().getAlias();
-            List<RowEntity> rowEntityList = new ArrayList<>();
-            while ((mainRow = mainCursor.next()) != null) {
-
-                RowEntity rowEntity = null;
-                if(isJoinQuery(q)) {
-                    // 符合这种场景 select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id where b.id = 1 ) t where id = 1;
-                    // 当前查询为join查询时候，字段的所属的tableAlias(表别名)要保持为连接前原表的别名，以便后面的条件判断和查询字段筛选
-                    rowEntity = new RowEntity(mainRow.getColumns());
-                } else {
-                    // 符合这种场景select * from (select * from xmz_yan) t where t.id = 1;
-                    // 非连接条件
-                    rowEntity = new RowEntity(mainRow.getColumns(), currTableAlias);
-                }
-
-                if (ConditionComparator.isMatch(rowEntity, q.getConditionTree()) && isMatchLimit(currIndex)) {
-                    RowEntity row = filterColumns(rowEntity, q.getSelectColumns());
-                    rowEntityList.add(row.setTableAlias(currTableAlias));
-                }
-                if (q.getLimit() != null && rowEntityList.size() >= q.getLimit()) {
-                    break;
-                }
-                currIndex++;
-            }
-
-            Column[] columns = mainCursor.getColumns();
-            Column.setColumnAlias(columns, currTableAlias);
-            mainCursor = new MemoryTemTableCursor(rowEntityList, columns);
-        }
-
-        return mainCursor;
-    }
-
-    private boolean isJoinQuery(Query q){
-        return q.getMainTable().getJoinTables() != null && q.getMainTable().getJoinTables().size() > 0;
-    }
-
-
-
-    private Cursor getQueryCursor(Query query) {
-
-        DataChunkStore mainTableStore = null;
-        Cursor mainCursor = null;
-        try {
-            FromTable mTable = query.getMainTable();
-            mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, mTable.getTableName()));
-            mainCursor = new DefaultCursor(mainTableStore, mTable.getTableColumns());
-
-            List<FromTable> joinTables = mTable.getJoinTables();
-            // join table
-            if(joinTables != null && joinTables.size() > 0) {
-                for (FromTable joinTable : joinTables) {
-                    DataChunkStore joinTableStore = null;
-                    try {
-                        joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.databaseId, joinTable.getTableName()));
-                        DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getTableColumns());
-                        // 进行连表操作
-                        mainCursor = joinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        joinTableStore.close();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-           // mainTableStore.close();
-        }
-        return mainCursor;
-    }
-
-
-    public QueryResult joinQuery() {
-        QueryResult result = new QueryResult();
-        result.setSelectColumns(query.getSelectColumns());
-        result.setResultRows(new ArrayList<>());
-        try {
-            Cursor mainCursor = getQueryCursor(this.query);
-            List<Column[]> dataList = lastFilter(mainCursor);
-
             result.addAll(dataList);
         } catch (Exception e) {
             e.printStackTrace();
@@ -237,9 +118,9 @@ public class SelectCommand extends AbstractCommand {
         RowEntity mainRow = null;
         try {
             while ((mainRow = cursor.next()) != null) {
-                if (isMatchLimit(currIndex) && ConditionComparator.isMatch(mainRow, query.getMainTable().getTableCondition())) {
+                if (this.query.isMatchLimit(this.query, currIndex) && ConditionComparator.isMatch(mainRow, query.getMainTable().getTableCondition())) {
                     Column[] columnData = mainRow.getColumns();
-                    Column[] resultColumns = filterColumns(columnData, query.getSelectColumns());
+                    Column[] resultColumns = query.filterColumns(columnData, query.getSelectColumns());
                     dataList.add(resultColumns);
                 }
                 if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
@@ -253,83 +134,6 @@ public class SelectCommand extends AbstractCommand {
             cursor.close();
         }
         return dataList;
-    }
-
-
-    private Cursor joinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree2 joinCondition, String joinType) {
-
-        // 字段元数据
-        Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
-
-        List<RowEntity> resultList = new ArrayList<>();
-        // 内连接、左连接
-        if (CommonConstant.JOIN_TYPE_INNER.equals(joinType)
-                || CommonConstant.JOIN_TYPE_LEFT.equals(joinType)) {
-            RowEntity leftRow = null;
-            while ((leftRow = leftCursor.next()) != null) {
-                List<RowEntity> rows = new ArrayList<>();
-                RowEntity rightRow = null;
-                while ((rightRow = rightCursor.next()) != null) {
-                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
-                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
-                        rows.add(rowEntity);
-                    }
-                }
-                // 左连接，如果右表没有匹配行，要加一个空行
-                if (CommonConstant.JOIN_TYPE_LEFT.equals(joinType) && rows.size() == 0) {
-                    RowEntity rightNullRow = new RowEntity(rightCursor.getColumns());
-                    RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightNullRow);
-                    rows.add(rowEntity);
-                }
-
-                rightCursor.reset();
-                resultList.addAll(rows);
-            }
-            return new MemoryTemTableCursor(resultList, columns);
-            // 右连接
-        } else if (CommonConstant.JOIN_TYPE_RIGHT.equals(joinType)) {
-            RowEntity rightRow = null;
-            while ((rightRow = rightCursor.next()) != null) {
-                RowEntity leftRow = null;
-                List<RowEntity> rows = new ArrayList<>();
-                while ((leftRow = leftCursor.next()) != null) {
-                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
-                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
-                        rows.add(rowEntity);
-                    }
-                }
-                // 右连接，左表没有匹配行，加一个空行
-                if (rows.size() == 0) {
-                    RowEntity leftNullRow = new RowEntity(leftCursor.getColumns());
-                    RowEntity rowEntity = RowEntity.mergeRow(leftNullRow, rightRow);
-                    rows.add(rowEntity);
-                }
-                resultList.addAll(rows);
-                leftCursor.reset();
-            }
-            return new MemoryTemTableCursor(resultList, columns);
-        } else {
-            throw new SqlIllegalException("不支持连接类型:" + joinType);
-        }
-    }
-
-
-
-
-    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree2 joinCondition) {
-
-        Condition2 condition = joinCondition.getCondition();
-        if(condition instanceof ConditionLeftRight) {
-            ConditionLeftRight leftRight = (ConditionLeftRight) condition;
-            // 左表字段
-            Column leftColumn = leftRow.getColumn(leftRight.getLeft().getColumnName(), leftRight.getLeft().getTableAlias());
-            // 右边字段
-            Column rightColumn = rightRow.getColumn(leftRight.getRight().getColumnName(), leftRight.getRight().getTableAlias());
-
-            return leftColumn.getValue() != null && leftColumn.getValue().equals(rightColumn.getValue());
-        } else {
-            throw new DbException("不支持连接条件");
-        }
     }
 
 
@@ -375,9 +179,9 @@ public class SelectCommand extends AbstractCommand {
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
             boolean matchCondition = ConditionComparator.isMatch(row, this.query.getConditionTree());
-            if (matchCondition && isMatchLimit(currIndex)) {
+            if (matchCondition && this.query.isMatchLimit(this.query, currIndex)) {
                 Column[] columnData = row.getColumns();
-                Column[] resultColumns = filterColumns(columnData, query.getSelectColumns());
+                Column[] resultColumns = this.query.filterColumns(columnData, query.getSelectColumns());
                 dataList.add(resultColumns);
             }
             if (query.getLimit() != null && dataList.size() >= query.getLimit()) {
@@ -391,21 +195,6 @@ public class SelectCommand extends AbstractCommand {
 
 
 
-    /**
-     * 是否是符合query.getOffset()和query.getLimit()条件的行
-     * @param currIndex
-     * @return
-     */
-    private boolean isMatchLimit(int currIndex) {
-        if (query.getOffset() != null && query.getLimit() != null) {
-            int beginIndex = query.getOffset();
-            int endIndex = query.getOffset() + query.getLimit() - 1;
-            if (currIndex < beginIndex || currIndex > endIndex) {
-                return false;
-            }
-        }
-        return true;
-    }
 
 
     private List<Column[]> getFunctionResultList(Cursor cursor) {
@@ -532,29 +321,6 @@ public class SelectCommand extends AbstractCommand {
             }
         }
         return statFunctions;
-    }
-
-
-    private RowEntity filterColumns(RowEntity row, SelectColumn[] selectColumns) {
-        Column[] columns = filterColumns(row.getColumns(), selectColumns);
-        return new RowEntity(columns);
-    }
-
-
-    private Column[] filterColumns(Column[] columnData, SelectColumn[] selectColumns) {
-        Column[] resultColumns = new Column[selectColumns.length];
-        for (int i = 0; i < selectColumns.length; i++) {
-            SelectColumn selectColumn = selectColumns[i];
-            for (Column c : columnData) {
-                if(selectColumn.getTableAliasColumnName().equals(c.getTableAliasColumnName())) {
-                    resultColumns[i] = c;
-                }
-            }
-            if(resultColumns[i] == null) {
-                throw new SqlExecutionException("字段不存在:" + selectColumn.getTableAliasColumnName());
-            }
-        }
-        return resultColumns;
     }
 
 

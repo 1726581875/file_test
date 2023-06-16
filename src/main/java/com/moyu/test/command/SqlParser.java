@@ -393,6 +393,7 @@ public class SqlParser implements Parser {
      */
     private SelectCommand getSelectCommand() {
         Query query = parseQuery(null);
+        query.setSession(connectSession);
         SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), query);
         return selectCommand;
     }
@@ -402,6 +403,7 @@ public class SqlParser implements Parser {
     private Query parseQuery(StartEndIndex subQueryStartEnd) {
 
         Query query = new Query();
+        query.setSession(connectSession);
 
         skipSpace();
         String tableName = null;
@@ -694,8 +696,8 @@ public class SqlParser implements Parser {
                     alias = alias.substring(0, alias.length() - 1);
                     currIndex--;
                 } else {
-                    alias = tableName;
-                    currIndex--;
+                    //alias = tableName;
+                    //currIndex--;
                 }
             }
             table.setAlias(alias);
@@ -1123,7 +1125,10 @@ public class SqlParser implements Parser {
             currIndex = startEnd.getEnd();
             condition = new ConditionInOrNot(column, values, isIn);
         } else {
-
+            currIndex = startEnd.getStart();
+            String nextKeyWord = getNextKeyWord();
+            Query query = parseQuery(startEnd);
+            condition = new ConditionInOrNot(column, query, isIn);
         }
         return condition;
     }
