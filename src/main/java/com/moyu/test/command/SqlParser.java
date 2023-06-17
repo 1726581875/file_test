@@ -96,18 +96,7 @@ public class SqlParser implements Parser {
                         String indexName = getNextOriginalWord();
                         assertNextKeywordIs("ON");
                         skipSpace();
-                        String tableName = null;
-                        int i = currIndex;
-                        while (true) {
-                            if (currIndex >= sqlCharArr.length) {
-                                throw new SqlIllegalException("sql语法有误");
-                            }
-                            if (sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
-                                tableName = originalSql.substring(i, currIndex);
-                                break;
-                            }
-                            currIndex++;
-                        }
+                        String tableName = parseTableNameOrIndexName();
                         StartEndIndex startEnd = getNextBracketStartEnd();
                         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
                         return getCreateIndexCommand(tableName, columnName, indexName, CommonConstant.GENERAL_INDEX);
@@ -186,6 +175,23 @@ public class SqlParser implements Parser {
         }
     }
 
+    private String parseTableNameOrIndexName() {
+        skipSpace();
+        String tableName = null;
+        int i = currIndex;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                throw new SqlIllegalException("sql语法有误");
+            }
+            if (sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
+                tableName = originalSql.substring(i, currIndex);
+                break;
+            }
+            currIndex++;
+        }
+        return tableName;
+    }
+
 
     private Command getAlterTableCommand() {
         skipSpace();
@@ -220,23 +226,9 @@ public class SqlParser implements Parser {
 
     private CreateIndexCommand parseIndexCommand(String tableName, byte indexType){
         skipSpace();
-
-        String indexName = null;
-        int i = currIndex;
-        while (true) {
-            if(currIndex >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if(sqlCharArr[currIndex] == '(' || sqlCharArr[currIndex] == ' ') {
-                indexName = originalSql.substring(i, currIndex);
-                break;
-            }
-            currIndex++;
-        }
-
+        String indexName = parseTableNameOrIndexName();
         StartEndIndex startEnd = getNextBracketStartEnd();
         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-
         CreateIndexCommand command = getCreateIndexCommand(tableName, columnName, indexName, indexType);
         return command;
     }
@@ -434,45 +426,22 @@ public class SqlParser implements Parser {
             if("FROM".equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
                 String nextWord = getNextKeyWordUnMove();
                 // 存在子查询
+                // 像select * from [*](select * from table_1) as tmp
                 if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
                     StartEndIndex subStartEnd = getNextBracketStartEnd();
-
                     currIndex++;
                     String nextKeyWord = getNextKeyWord();
                     if(!SELECT.equals(nextKeyWord)) {
                         throw new SqlIllegalException("sql语法有误");
                     }
+                    // 解析子查询
                     subQuery = parseQuery(subStartEnd);
-
-                    String next = getNextOriginalWord();
-                    if("AS".equals(next)) {
-                        String subTableName = getNextOriginalWord();
-                        Column[] subColumns = subQuery.getMainTable().getAllColumns();
-                        Column[] newColumns = new Column[subColumns.length];
-                        for (int i = 0; i < subColumns.length; i++) {
-                            newColumns[i] = subColumns[i].createNullValueColumn();
-                            newColumns[i].setTableAlias(subTableName);
-                        }
-                        mainTable = new FromTable(subTableName, newColumns , null);
-                        mainTable.setAlias(subTableName);
-                    } else if("".equals(next)){
-                        throw new SqlIllegalException("sql语法有误，子查询缺少alias, " +  originalSql.substring(0, currIndex));
-                    } else {
-                        Column[] subColumns = subQuery.getMainTable().getAllColumns();
-                        Column[] newColumns = new Column[subColumns.length];
-                        for (int i = 0; i < subColumns.length; i++) {
-                            newColumns[i] = subColumns[i].createNullValueColumn();
-                            newColumns[i].setTableAlias(next);
-                        }
-                        mainTable = new FromTable(next, newColumns, null);
-                        mainTable.setAlias(next);
-                    }
-
+                    mainTable = getSubQueryAliasMainTable(subQuery);
                     mainTable.setSubQuery(subQuery);
                     mainTable.setJoinTables(new ArrayList<>());
                 } else {
                     // 解析表信息
-                    mainTable = getFormTableOperation();
+                    mainTable = parseFormTableOperation();
                 }
                 break;
             }
@@ -497,13 +466,8 @@ public class SqlParser implements Parser {
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns);
 
-
-        List<ConditionTree2> conditionTreeList = new ArrayList<>();
         // 解析条件
-        ConditionTree2 conditionRoot = new ConditionTree2();
-        conditionRoot.setLeaf(false);
-        conditionRoot.setJoinType(ConditionConstant.AND);
-        conditionRoot.setChildNodes(conditionTreeList);
+        ConditionTree2 conditionRoot = new ConditionTree2(ConditionConstant.AND, new ArrayList<>(), false);
 
         // limit 和 offset
         Integer limit = null;
@@ -541,34 +505,13 @@ public class SqlParser implements Parser {
 
 
             if("LIMIT".equals(nextKeyWord2)) {
-                String nextKeyWord1 = getNextKeyWord();
-                String limitNum = getNextKeyWord().trim();
-                limit = Integer.valueOf(limitNum);
-
-                skipSpace();
-                String offsetStr = getNextKeyWord();
-                if("OFFSET".equals(offsetStr)) {
-                    skipSpace();
-                    String offsetNum = getNextKeyWord().trim();
-                    offset = Integer.valueOf(offsetNum);
-                }
-
+                parseOffsetLimit(query);
             } else if ("ORDER".equals(nextKeyWord2)) {
 
             }
             // table后面直接接limit,如:select * from table limit 10
         } else if("LIMIT".equals(nextKeyWord)) {
-            getNextKeyWord();
-            String limitNum = getNextKeyWord().trim();
-            limit = Integer.valueOf(limitNum);
-
-            skipSpace();
-            String offsetStr = getNextKeyWord();
-            if("OFFSET".equals(offsetStr)) {
-                skipSpace();
-                String offsetNum = getNextKeyWord().trim();
-                offset = Integer.valueOf(offsetNum);
-            }
+            parseOffsetLimit(query);
         } else if ("ORDER".equals(nextKeyWord)) {
 
         } else if("GROUP".equals(nextKeyWord)) {
@@ -601,8 +544,55 @@ public class SqlParser implements Parser {
         return query;
     }
 
+    /**
+     * 当前sql解析到了[*]位置，拿子查询别名
+     * select * from (select * from table_1)[*] as tmp
+     * @param subQuery
+     * @return
+     */
+    private FromTable getSubQueryAliasMainTable(Query subQuery) {
+        FromTable mainTable = null;
+        String as = getNextKeyWordUnMove();
+        if ("AS".equals(as)) {
+            // skip as
+            getNextKeyWord();
+        }
+        String tableName = getNextOriginalWord();
+        if ("".equals(tableName)) {
+            throw new SqlIllegalException("sql语法有误，子查询缺少alias, " + originalSql.substring(0, currIndex));
+        }
+        Column[] subColumns = subQuery.getMainTable().getAllColumns();
+        Column[] newColumns = new Column[subColumns.length];
+        for (int i = 0; i < subColumns.length; i++) {
+            newColumns[i] = subColumns[i].createNullValueColumn();
+            newColumns[i].setTableAlias(tableName);
+        }
+        mainTable = new FromTable(tableName, newColumns, null);
+        mainTable.setAlias(tableName);
 
-    private FromTable getFormTableOperation() {
+        return mainTable;
+    }
+
+
+
+    private void parseOffsetLimit(Query query) {
+        getNextKeyWord();
+        String limitNum = getNextKeyWord().trim();
+        query.setLimit(Integer.valueOf(limitNum));
+
+        skipSpace();
+        String offsetStr = getNextKeyWord();
+        Integer offset = null;
+        if("OFFSET".equals(offsetStr)) {
+            skipSpace();
+            String offsetNum = getNextKeyWord().trim();
+            offset = Integer.valueOf(offsetNum);
+        }
+        query.setOffset(offset == null ? 0 : offset);
+    }
+
+
+    private FromTable parseFormTableOperation() {
         Map<String,Column> columnMap = new HashMap<>();
         FromTable mainTable = parseTableInfo();
         mainTable.setJoinTables(new ArrayList<>());
@@ -1201,28 +1191,6 @@ public class SqlParser implements Parser {
 
 
 
-    private boolean isOperator(String str) {
-
-
-        return false;
-    }
-
-
-    private int getNextIndex(char c) {
-        int i = currIndex;
-        while (true) {
-            if (i >= sqlCharArr.length) {
-                return -1;
-            }
-            if (c == sqlCharArr[i]) {
-                return i;
-            }
-            i++;
-        }
-    }
-
-
-
     /**
      * insert into xmz_table(id, name) value (1, 'xmz');
      * @return
@@ -1237,19 +1205,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析tableName
-        String tableName = null;
-        skipSpace();
-        int i = currIndex;
-        while (true) {
-            if (currIndex >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if (sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '(') {
-                tableName = originalSql.substring(i, currIndex);
-                break;
-            }
-            currIndex++;
-        }
+        String tableName = parseTableNameOrIndexName();
 
         // ==== 读取字段 ====
         StartEndIndex columnBracket = getNextBracketStartEnd();
@@ -1259,18 +1215,7 @@ public class SqlParser implements Parser {
 
         // ==== 读字段值 ===
         skipSpace();
-        String valueKeyWord = null;
-        i = currIndex;
-        while (true) {
-            if (currIndex >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if (sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '(') {
-                valueKeyWord = upperCaseSql.substring(i, currIndex);
-                break;
-            }
-            currIndex++;
-        }
+        String valueKeyWord = getNextKeyWord();
         if (!"VALUE".equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
@@ -1305,6 +1250,12 @@ public class SqlParser implements Parser {
 
 
     private void setColumnValue(Column column, String value) {
+
+        // TODO 默认空值，以后判断字段是否非空做校验
+        if(value == null) {
+            value = "null";
+        }
+
         switch (column.getColumnType()) {
             case DbColumnTypeConstant.INT_4:
                 Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
@@ -1432,20 +1383,8 @@ public class SqlParser implements Parser {
      */
     private CreateTableCommand getCreateTableCommand() {
         // 解析tableName
-        String tableName = null;
         skipSpace();
-        int i = currIndex;
-        while (true) {
-            if(i >= sqlCharArr.length) {
-                throw new SqlIllegalException("sql语法有误");
-            }
-            if (sqlCharArr[i] == ' ' || sqlCharArr[i] == '(') {
-                tableName = originalSql.substring(currIndex, i);
-                currIndex = i;
-                break;
-            }
-            i++;
-        }
+        String tableName = parseTableNameOrIndexName();
 
         // 解析建表字段
         skipSpace();
@@ -1581,6 +1520,7 @@ public class SqlParser implements Parser {
 
 
     private StartEndIndex getNextBracketStartEnd() {
+        skipSpace();
         boolean firstIsOpen = false;
         boolean afterIsOpen = false;
         int startPos = -1;

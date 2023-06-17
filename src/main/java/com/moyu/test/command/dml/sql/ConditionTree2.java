@@ -30,6 +30,14 @@ public class ConditionTree2 {
     private boolean isLeaf;
 
 
+    public ConditionTree2(){}
+
+    public ConditionTree2(String joinType, List<ConditionTree2> childNodes, boolean isLeaf) {
+        this.joinType = joinType;
+        this.childNodes = childNodes;
+        this.isLeaf = isLeaf;
+    }
+
     public String getJoinType() {
         return joinType;
     }

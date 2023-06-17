@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -21,7 +21,7 @@ public class TotalSqlTest {
         testJoinTable();
         testSubQuery();
         testFunction();
-        testSubQuery2();*/
+        testSubQuery2();
         testAlias();
 
     }
@@ -49,7 +49,7 @@ public class TotalSqlTest {
 
 
     private static void testSubQuery2(){
-        testExecSQL("drop table xmz_yan");
+        testExecSQL("drop table if exists  xmz_yan");
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
@@ -109,13 +109,13 @@ public class TotalSqlTest {
 
         testExecSQL("truncate table table_1");
 
-        testExecSQL("drop table table_1");
+        testExecSQL("drop table if exists  table_1");
     }
 
 
     public static void testSubQuery() {
 
-        testExecSQL("drop table xmz_yan");
+        testExecSQL("drop table  if exists  xmz_yan");
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
@@ -136,7 +136,7 @@ public class TotalSqlTest {
 
     public static void testJoinTable() {
 
-        testExecSQL("drop table xmz_00");
+        testExecSQL("drop table  if exists  xmz_00");
         testExecSQL("create table xmz_00 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_00(id,name,time) value (1,'111','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_00(id,name,time) value (2,'222','2023-05-19 00:00:00')");
@@ -178,13 +178,14 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table_1 where id = 3");
 
 
-        testExecSQL("drop table xmz_table_1");
+        testExecSQL("drop table if exists xmz_table_1");
     }
 
 
 
     public static void testSimpleSelect() {
 
+        testExecSQL("drop table if exists xmz_table");
         testExecSQL("create table xmz_table (id int, name varchar(10))");
 
         testExecSQL("insert into  xmz_table (id, name) value (1, null);");
@@ -207,7 +208,7 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table where name is null");
         testExecSQL("select * from xmz_table where name is not null");
 
-        testExecSQL("drop table xmz_table");
+
     }
 
 
