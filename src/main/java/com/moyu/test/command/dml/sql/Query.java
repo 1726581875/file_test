@@ -8,14 +8,12 @@ import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.cursor.Cursor;
-import com.moyu.test.store.data.cursor.DefaultCursor;
-import com.moyu.test.store.data.cursor.MemoryTemTableCursor;
-import com.moyu.test.store.data.cursor.RowEntity;
+import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.PathUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -93,11 +91,17 @@ public class Query {
     private Cursor execQuery(Stack<Query> queryStack) {
         Cursor mainCursor = null;
 
+        // TODO 没有子查询，直接返回
+        if(queryStack.size() == 1) {
+            mainCursor = getMainQueryCursor(queryStack.pop());
+            return mainCursor;
+        }
+
         while (!queryStack.isEmpty()) {
             Query q = queryStack.pop();
             FromTable fromTable = q.getMainTable();
             if(fromTable.getSubQuery() == null) {
-                mainCursor = getQueryCursor(q);
+                mainCursor = getMainQueryCursor(q);
             }
 
             int currIndex = 0;
@@ -105,7 +109,6 @@ public class Query {
             String currTableAlias = q.getMainTable().getAlias();
             List<RowEntity> rowEntityList = new ArrayList<>();
             while ((mainRow = mainCursor.next()) != null) {
-
                 RowEntity rowEntity = null;
                 if(isJoinQuery(q)) {
                     // 符合这种场景 select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id where b.id = 1 ) t where id = 1;
@@ -188,39 +191,47 @@ public class Query {
     }
 
 
-
-    private Cursor getQueryCursor(Query query) {
-
-        DataChunkStore mainTableStore = null;
+    private Cursor getMainQueryCursor(Query query) {
         Cursor mainCursor = null;
         try {
+            // 主表
             FromTable mTable = query.getMainTable();
-            mainTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), mTable.getTableName()));
-            mainCursor = new DefaultCursor(mainTableStore, mTable.getTableColumns());
-
+            mainCursor = getQueryCursor(mTable);
             List<FromTable> joinTables = mTable.getJoinTables();
-            // join table
-            if(joinTables != null && joinTables.size() > 0) {
+            // 如果存在连接表则进行join操作
+            if (joinTables != null && joinTables.size() > 0) {
                 for (FromTable joinTable : joinTables) {
-                    DataChunkStore joinTableStore = null;
+                    Cursor joinCursor = null;
                     try {
-                        joinTableStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), joinTable.getTableName()));
-                        DefaultCursor joinCursor = new DefaultCursor(joinTableStore, joinTable.getTableColumns());
-                        // 进行连表操作
+                        // join table
+                        joinCursor = getQueryCursor(joinTable);
                         mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {
-                        joinTableStore.close();
+                        joinCursor.close();
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            // mainTableStore.close();
         }
         return mainCursor;
+    }
+
+
+    private Cursor getQueryCursor(FromTable table) throws IOException {
+        Cursor cursor = null;
+        DataChunkStore dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), table.getTableName()));
+        if (table.getSelectIndex() == null) {
+            System.out.println("不用索引，table:" + table.getTableName());
+            cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
+        } else {
+            System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
+            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
+            cursor = new IndexCursor(dataChunkStore, mainTable.getAllColumns(), table.getSelectIndex().getIndexColumn(), indexPath);
+        }
+        return cursor;
     }
 
 

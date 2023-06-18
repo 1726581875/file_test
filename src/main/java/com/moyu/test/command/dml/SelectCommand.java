@@ -65,24 +65,13 @@ public class SelectCommand extends AbstractCommand {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.query.getMainTable().getTableName());
             dataChunkStore = new DataChunkStore(fileFullPath);
             List<Column[]> dataList = null;
-            // select统计函数
+            Cursor cursor = query.getQueryCursor();
             if (useFunction()) {
-                DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
                 dataList = getFunctionResultList(cursor);
             } else if (useGroupBy()) {
-                DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
                 dataList = getGroupByResultList(cursor);
             } else {
-                if (this.query.getSelectIndex() == null) {
-                    System.out.println("不使用索引");
-                    DefaultCursor cursor = new DefaultCursor(dataChunkStore, this.query.getMainTable().getAllColumns());
-                    dataList = cursorQuery(cursor);
-                } else {
-                    System.out.println("使用索引查询，索引:" + this.query.getSelectIndex().getIndexName());
-                    String indexPath = PathUtil.getIndexFilePath(this.databaseId, this.query.getMainTable().getTableName(), this.query.getSelectIndex().getIndexName());
-                    IndexCursor cursor = new IndexCursor(dataChunkStore, this.query.getMainTable().getAllColumns(), this.query.getSelectIndex().getIndexColumn(), indexPath);
-                    dataList = cursorQuery(cursor);
-                }
+                dataList = cursorQuery(cursor);
             }
             result.addAll(dataList);
         } catch (Exception e) {
@@ -90,7 +79,6 @@ public class SelectCommand extends AbstractCommand {
         } finally {
             dataChunkStore.close();
         }
-
         this.queryResult = result;
         return this.queryResult;
     }

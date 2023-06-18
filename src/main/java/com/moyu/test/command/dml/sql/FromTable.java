@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.sql;
 
+import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.List;
@@ -49,6 +50,11 @@ public class FromTable {
      * 子查询
      */
     private Query subQuery;
+
+    /**
+     * 使用的索引
+     */
+    private SelectIndex selectIndex;
 
 
     public FromTable(String tableName, Column[] tableColumns, ConditionTree2 tableCondition) {
@@ -127,5 +133,13 @@ public class FromTable {
 
     public void setTableColumns(Column[] tableColumns) {
         this.tableColumns = tableColumns;
+    }
+
+    public void setSelectIndex(SelectIndex selectIndex) {
+        this.selectIndex = selectIndex;
+    }
+
+    public SelectIndex getSelectIndex() {
+        return selectIndex;
     }
 }

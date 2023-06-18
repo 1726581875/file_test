@@ -539,6 +539,7 @@ public class SqlParser implements Parser {
             // 设置查询计划（是否使用索引）
             SelectIndex selectIndex = SqlPlan.getSelectPlan(conditionRoot, allColumns, indexMetadataList);
             query.setSelectIndex(selectIndex);
+            mainTable.setSelectIndex(selectIndex);
         }
 
         return query;
