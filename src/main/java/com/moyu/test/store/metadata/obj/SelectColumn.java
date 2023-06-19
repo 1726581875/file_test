@@ -1,5 +1,11 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.command.dml.sql.Query;
+import com.moyu.test.constant.ColumnTypeEnum;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/22
@@ -43,6 +49,29 @@ public class SelectColumn {
 
     public String getTableAliasColumnName() {
        return column.getTableAliasColumnName();
+    }
+
+
+    public static Column[] getColumnBySelectColumn(Query query) {
+        List<Column> columnList = new ArrayList<>();
+        int i = 0;
+        for (SelectColumn selectColumn : query.getSelectColumns()) {
+            String functionName = selectColumn.getFunctionName();
+            if (functionName != null) {
+                String columnName = selectColumn.getAlias();
+                if (columnName == null) {
+                    columnName = selectColumn.getSelectColumnName();
+                }
+                Column column = new Column(columnName, ColumnTypeEnum.INT_4.getColumnType(), i, 4);
+                columnList.add(column);
+            } else {
+                Column column = selectColumn.getColumn();
+                column.setColumnIndex(i);
+                columnList.add(column);
+            }
+            i++;
+        }
+        return columnList.toArray(new Column[0]);
     }
 
     public Column getColumn() {

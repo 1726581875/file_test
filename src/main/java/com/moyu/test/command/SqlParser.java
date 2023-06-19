@@ -464,7 +464,7 @@ public class SqlParser implements Parser {
 
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns);
+        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery);
 
         // 解析条件
         ConditionTree2 conditionRoot = new ConditionTree2(ConditionConstant.AND, new ArrayList<>(), false);
@@ -694,8 +694,8 @@ public class SqlParser implements Parser {
                 if(alias.length() > 1 && alias.endsWith(")")) {
                     alias = alias.substring(0, alias.length() - 1);
                     currIndex--;
-                } else {
-                    //alias = tableName;
+                } else if(")".equals(alias)) {
+                    alias = tableName;
                     //currIndex--;
                 }
             }
@@ -739,12 +739,17 @@ public class SqlParser implements Parser {
 
 
 
-    private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns) {
+    private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns, Query subQuery) {
+
+        if(subQuery != null) {
+            allColumns = SelectColumn.getColumnBySelectColumn(subQuery);
+        }
 
         TableColumnInfo columnInfo = new TableColumnInfo();
         for (Column c : allColumns) {
             columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
+
 
         String[] selectColumnStrArr = selectColumnsStr.split(",");
         List<SelectColumn> selectColumnList = new ArrayList<>();

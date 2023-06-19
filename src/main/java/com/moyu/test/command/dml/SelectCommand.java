@@ -43,16 +43,31 @@ public class SelectCommand extends AbstractCommand {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
         QueryResult queryResult = null;
-        if((query.getMainTable().getJoinTables() == null || query.getMainTable().getJoinTables().size() == 0)
+/*        if((query.getMainTable().getJoinTables() == null || query.getMainTable().getJoinTables().size() == 0)
                 && query.getMainTable().getSubQuery() == null) {
             queryResult = execQuery();
         } else {
             queryResult = subOrJoinQuery();
-        }
+        }*/
+        Cursor queryResultCursor = this.query.getQueryResultCursor();
+
+        queryResult = parseQueryResult(queryResultCursor);
         long queryEndTime = System.currentTimeMillis();
 
         // 解析结果，打印拼接结果字符串
         return getResultPrintStr(queryResult, queryStartTime, queryEndTime);
+    }
+
+
+    private QueryResult parseQueryResult(Cursor cursor) {
+        QueryResult result = new QueryResult();
+        result.setSelectColumns(query.getSelectColumns());
+        result.setResultRows(new ArrayList<>());
+        RowEntity row = null;
+        while ((row = cursor.next()) != null) {
+            result.addRow(row.getColumns());
+        }
+        return result;
     }
 
 

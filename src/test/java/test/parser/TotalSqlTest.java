@@ -23,6 +23,26 @@ public class TotalSqlTest {
         testFunction();
         testSubQuery2();
         testAlias();
+        testSubQueryFunction();
+
+    }
+
+
+    public static void testSubQueryFunction() {
+
+        testExecSQL("drop table  if exists  xmz_yan");
+        testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_yan(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+
+        testExecSQL("select * from (select max(id),min(id),count(*) from xmz_yan) t");
+
+        testExecSQL("select * from (select max(id) as a,min(id) as b,count(*) as c from xmz_yan) t");
+
+        testExecSQL("select * from (select max(id) a,min(id) b,count(*) c from xmz_yan) t");
+
+        // testExecSQL("select t.* from (select max(id) a,min(id) b,count(*) c from xmz_yan) t");
 
     }
 
