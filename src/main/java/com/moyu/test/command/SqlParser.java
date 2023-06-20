@@ -519,6 +519,12 @@ public class SqlParser implements Parser {
             assertNextKeywordIs("BY");
             skipSpace();
             groupByColumnName = getNextOriginalWord();
+            // select * from (select id,count(*) from xmz_yan group by id) t
+            if(groupByColumnName.endsWith(")") && groupByColumnName.length() > 1) {
+                groupByColumnName = groupByColumnName.substring(0, groupByColumnName.length() -1);
+            } else if(groupByColumnName == "" || groupByColumnName.equals(")")) {
+                throw new SqlIllegalException("sql语法有误,在group by附近" + groupByColumnName);
+            }
 
         }
 

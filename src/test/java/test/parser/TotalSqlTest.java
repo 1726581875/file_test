@@ -24,23 +24,26 @@ public class TotalSqlTest {
         testSubQuery2();
         testAlias();
         testSubQueryFunction();
-
-        testExecSQL("drop table  if exists  xmz_yan");
-        testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
-        testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
-        testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')");
-        testExecSQL("insert into xmz_yan(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+        testSubQueryFunction2();
 
 
-        testExecSQL("select * from (select * from xmz_yan where id = 1) t");
-        testExecSQL("select * from (select * from xmz_yan ) t where t.id = 1");
-        testExecSQL("select * from (select * from (select * from xmz_yan where id = 1 ) t0 ) t");
-        testExecSQL("select * from (select * from (select * from xmz_yan where id = 1) t0 where t0.id = 1 ) t");
+    }
 
 
-        testExecSQL("select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id ) t where id = 1");
+    public static void testSubQueryFunction2(){
+        testExecSQL("drop table if exists  xmz_y_2");
+        testExecSQL("create table xmz_y_2 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_y_2(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_2(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_2(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_2(id,name,time) value (1,'444','2023-05-19 00:00:00')");
 
 
+/*        testExecSQL("select * from xmz_y_2");
+        testExecSQL("select count(*) from xmz_y_2");
+        testExecSQL("select id,count(*) from xmz_y_2 group by id");*/
+        testExecSQL("select * from (select id,count(*) from xmz_y_2 group by id) t");
+        testExecSQL("select * from (select id,count(*),max(id) from xmz_y_2 group by id) t");
     }
 
 

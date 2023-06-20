@@ -313,7 +313,7 @@ public class Query {
             for (int i = 0; i < statFunctions.size(); i++) {
                 int index = i + 1;
                 StatFunction statFunction = statFunctions.get(i);
-                resultColumns[index] = functionResultToColumn(statFunction, i, query);
+                resultColumns[index] = functionResultToColumn(statFunction, index, query);
             }
             resultRowList.add(new RowEntity(resultColumns));
         }
@@ -365,7 +365,7 @@ public class Query {
 
         String columnName  = selectColumn.getAlias() != null ? selectColumn.getAlias() : selectColumn.getSelectColumnName();
         // 日期类型
-        if (!selectColumn.getFunctionName().equals(FunctionConstant.FUNC_COUNT)
+        if (!FunctionConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
                 && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
             resultColumn = new Column(columnName, DbColumnTypeConstant.TIMESTAMP, columnIndex, 8);
             resultColumn.setValue(statResult == null ? null : new Date(statResult));
