@@ -65,7 +65,7 @@ public class SelectColumn {
                 Column column = new Column(columnName, ColumnTypeEnum.INT_4.getColumnType(), i, 4);
                 columnList.add(column);
             } else {
-                Column column = selectColumn.getColumn();
+                Column column = selectColumn.getColumn().copy();
                 column.setColumnIndex(i);
                 columnList.add(column);
             }

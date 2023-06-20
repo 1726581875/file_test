@@ -3,7 +3,6 @@ package com.moyu.test.command.dml.sql;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
@@ -149,7 +148,7 @@ public class Query {
 
             Column[] columns = mainCursor.getColumns();
             if(isSubQuery(q)) {
-                Column.setColumnAlias(columns, currTableAlias);
+                Column.setColumnTableAlias(columns, currTableAlias);
             }
             mainCursor = new MemoryTemTableCursor(rowEntityList, columns);
         }
@@ -180,7 +179,7 @@ public class Query {
 
             Column[] columns = mainCursor.getColumns();
             if (isSubQuery(q)) {
-                Column.setColumnAlias(columns, currTableAlias);
+                Column.setColumnTableAlias(columns, currTableAlias);
             }
         }
 

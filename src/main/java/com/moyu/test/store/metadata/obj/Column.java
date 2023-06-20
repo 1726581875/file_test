@@ -140,7 +140,7 @@ public class Column {
         return allColumns;
     }
 
-    public static void setColumnAlias(Column[] columns, String tableAlias) {
+    public static void setColumnTableAlias(Column[] columns, String tableAlias) {
         for (Column c : columns) {
             c.setTableAlias(tableAlias);
         }

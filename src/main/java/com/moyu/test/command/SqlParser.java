@@ -452,19 +452,19 @@ public class SqlParser implements Parser {
 
         // 合并所有表的所有字段
         Column[] allColumns = mainTable.getTableColumns();
-        Column.setColumnAlias(allColumns, mainTable.getAlias());
+        Column.setColumnTableAlias(allColumns, mainTable.getAlias());
         List<FromTable> joinTables = mainTable.getJoinTables();
         if(joinTables != null) {
             for (FromTable joinTable : joinTables) {
                 Column[] joinColumns = getColumns(joinTable.getTableName());
-                Column.setColumnAlias(joinColumns, joinTable.getAlias());
+                Column.setColumnTableAlias(joinColumns, joinTable.getAlias());
                 allColumns = Column.mergeColumns(allColumns, joinColumns);
             }
         }
 
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery);
+        SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
         // 解析条件
         ConditionTree2 conditionRoot = new ConditionTree2(ConditionConstant.AND, new ArrayList<>(), false);
@@ -600,7 +600,7 @@ public class SqlParser implements Parser {
 
 
         Column[] columns = getColumns(mainTable.getTableName());
-        Column.setColumnAlias(columns, mainTable.getAlias());
+        Column.setColumnTableAlias(columns, mainTable.getAlias());
         for (Column c : columns) {
             columnMap.put(c.getTableAliasColumnName(), c);
         }
@@ -636,7 +636,7 @@ public class SqlParser implements Parser {
 
 
                 Column[] columns2 = getColumns(joinTable.getTableName());
-                Column.setColumnAlias(columns2, joinTable.getAlias());
+                Column.setColumnTableAlias(columns2, joinTable.getAlias());
                 for (Column c : columns2) {
                     columnMap.put(c.getTableAliasColumnName(), c);
                 }
@@ -682,7 +682,7 @@ public class SqlParser implements Parser {
             getNextKeyWord();
             String alias = getNextOriginalWord();
             table.setAlias(alias);
-            Column.setColumnAlias(table.getTableColumns(), table.getAlias());
+            Column.setColumnTableAlias(table.getTableColumns(), table.getAlias());
         } else if(!"GROUP".equals(next)
                 && !"LIMIT".equals(next)
                 && !"WHERE".equals(next)) {
@@ -700,7 +700,7 @@ public class SqlParser implements Parser {
                 }
             }
             table.setAlias(alias);
-            Column.setColumnAlias(table.getTableColumns(), table.getAlias());
+            Column.setColumnTableAlias(table.getTableColumns(), table.getAlias());
         }
 
         return table;
@@ -739,10 +739,11 @@ public class SqlParser implements Parser {
 
 
 
-    private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns, Query subQuery) {
+    private SelectColumn[] getSelectColumns(String selectColumnsStr, Column[] allColumns, Query subQuery, String tbAlias) {
 
         if(subQuery != null) {
             allColumns = SelectColumn.getColumnBySelectColumn(subQuery);
+            Column.setColumnTableAlias(allColumns, tbAlias);
         }
 
         TableColumnInfo columnInfo = new TableColumnInfo();
@@ -763,13 +764,17 @@ public class SqlParser implements Parser {
                     tableAlias = split[0];
                 }
                 for (int j = 0; j < allColumns.length; j++) {
-                    Column column = allColumns[j];
+                    Column column = allColumns[j].copy();
                     SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
                     selectColumn.setTableAlias(column.getTableAlias());
                     if(tableAlias == null) {
                         selectColumnList.add(selectColumn);
                     } else {
-                        if (tableAlias.equals(column.getTableAlias())) {
+                        // 适配这种情况 select t.* from (select * from test_table) t
+                        if(subQuery != null) {
+                            selectColumn.setAlias(tableAlias);
+                            selectColumnList.add(selectColumn);
+                        } else if (tableAlias.equals(column.getTableAlias())) {
                             selectColumnList.add(selectColumn);
                         }
                     }
@@ -798,7 +803,21 @@ public class SqlParser implements Parser {
                     if (column == null) {
                         throw new SqlIllegalException("字段" + columnStr + "不存在");
                     }
-                    selectColumn = new SelectColumn(column, columnStr, null, null);
+
+                    column = column.copy();
+
+                    String cTableAlias = null;
+                    String cName = null;
+                    String[] columnSplit = columnStr.split("\\.");
+                    if(columnSplit.length == 2){
+                        cTableAlias = columnSplit[0];
+                        cName = columnSplit[1];
+                    } else {
+                        cName = columnSplit[0];
+                    }
+
+                    selectColumn = new SelectColumn(column, cName, null, null);
+                    selectColumn.setTableAlias(cTableAlias);
                 }
                 selectColumn.setAlias(alias);
                 selectColumnList.add(selectColumn);
@@ -981,6 +1000,9 @@ public class SqlParser implements Parser {
             }
 
             if (sqlCharArr[currIndex] == ')' && !currConditionOpen) {
+                if(subQueryStartEnd != null && subQueryStartEnd.getEnd() == currIndex) {
+                    currIndex++;
+                }
                 break;
             }
 
@@ -1029,6 +1051,7 @@ public class SqlParser implements Parser {
                     throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
                 }
 
+               column = column.copy();
                 flag = 2;
                 skipSpace();
                 start = currIndex;

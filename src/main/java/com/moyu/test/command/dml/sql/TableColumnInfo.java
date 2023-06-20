@@ -42,7 +42,6 @@ public class TableColumnInfo {
             for (String key : allTableColumnMap.keySet()) {
                 Map<String, Column> columnMap = allTableColumnMap.get(key);
                 Column c = columnMap.get(columnName);
-
                 if(c != null) {
                     if(column == null) {
                         tableAlias = key;
