@@ -38,7 +38,7 @@ drop index idx_id on xmz_table;
 
 
 
-支持简单DDL语句：
+支持简单DML语句：
 
 ```mysql
 #插入语句
