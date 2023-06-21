@@ -17,5 +17,10 @@ public interface OperatorConstant {
     String NOT_EXISTS = "NOT EXISTS";
     String IS_NULL = "IS NULL";
     String IS_NOT_NULL = "IS NOT NULL";
+    String LESS_THAN = "<";
+    String LESS_THAN_OR_EQUAL = "<=";
+    String GREATER_THAN = ">";
+    String GREATER_THAN_OR_EQUAL = ">=";
+    String BETWEEN = "BETWEEN";
 
 }

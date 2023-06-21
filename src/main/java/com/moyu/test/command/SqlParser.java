@@ -1124,6 +1124,22 @@ public class SqlParser implements Parser {
                         }
                         condition = new ConditionIsNullOrNot(column, isNull);
                         break;
+                    case OperatorConstant.LESS_THAN:
+                    case OperatorConstant.LESS_THAN_OR_EQUAL:
+                        String value1 = parseSimpleConditionValue(start);
+                        condition = new ConditionRange(column, null , value1 , nextKeyWord);
+                        break;
+                    case OperatorConstant.GREATER_THAN:
+                    case OperatorConstant.GREATER_THAN_OR_EQUAL:
+                        String value2 = parseSimpleConditionValue(start);
+                        condition = new ConditionRange(column, value2, null, nextKeyWord);
+                        break;
+                    case OperatorConstant.BETWEEN:
+                        String lowerLimit = getNextOriginalWord();
+                        assertNextKeywordIs("AND");
+                        String upperLimit = getNextOriginalWord();
+                        condition = new ConditionRange(column, lowerLimit, upperLimit, nextKeyWord);
+                        break;
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
@@ -1215,6 +1231,45 @@ public class SqlParser implements Parser {
         }
 
         return values;
+    }
+
+
+    private String parseSimpleConditionValue(Integer start) {
+        String value = null;
+        // 标记字符串 "'" 符号是否打开状态
+        boolean strOpen = false;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+            // 字符串开始
+            if (sqlCharArr[currIndex] == '\'' && !strOpen) {
+                strOpen = true;
+                if (currIndex + 1 < sqlCharArr.length) {
+                    start = currIndex + 1;
+                } else {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+            } else if (sqlCharArr[currIndex] == '\'' && strOpen) {
+                // 字符串结束
+                value = originalSql.substring(start, currIndex);
+                currIndex++;
+                break;
+                // 数值结束
+            } else if ((isEndChar(sqlCharArr[currIndex]) || currIndex == sqlCharArr.length - 1) && !strOpen) {
+                // 数值就是最后一个
+                if ((currIndex == sqlCharArr.length - 1) && !isEndChar(sqlCharArr[currIndex])) {
+                    value = originalSql.substring(start, sqlCharArr.length);
+                } else {
+                    value = originalSql.substring(start, currIndex);
+                }
+                break;
+            }
+
+            currIndex++;
+        }
+
+        return value;
     }
 
 

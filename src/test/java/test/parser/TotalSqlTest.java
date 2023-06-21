@@ -13,7 +13,7 @@ import java.util.Arrays;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -24,9 +24,29 @@ public class TotalSqlTest {
         testSubQuery2();
         testAlias();
         testSubQueryFunction();
-        testSubQueryFunction2();
+        testSubQueryFunction2();*/
+
+        testRangeQuery();
 
 
+    }
+
+    public static void testRangeQuery(){
+        testExecSQL("drop table if exists  xmz_y_3");
+        testExecSQL("create table xmz_y_3 (id int, name varchar(10), time timestamp)");
+        testExecSQL("insert into xmz_y_3(id,name,time) value (1,'111','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_3(id,name,time) value (2,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_3(id,name,time) value (3,'222','2023-05-19 00:00:00')");
+        testExecSQL("insert into xmz_y_3(id,name,time) value (4,'444','2023-05-19 00:00:00')");
+
+
+        testExecSQL("select * from xmz_y_3 where id < 3");
+        testExecSQL("select count(*) from xmz_y_3 where id < 3");
+        testExecSQL("select  *  from xmz_y_3 where id >= 3");
+        testExecSQL("select  *  from xmz_y_3 where id > 3");
+        testExecSQL("select  *  from xmz_y_3 where id <= 3");
+        testExecSQL("select  *  from xmz_y_3 where id <= 3 and id > 1");
+        testExecSQL("select  *  from xmz_y_3 where id between 1 and 2");
     }
 
 
@@ -39,9 +59,9 @@ public class TotalSqlTest {
         testExecSQL("insert into xmz_y_2(id,name,time) value (1,'444','2023-05-19 00:00:00')");
 
 
-/*        testExecSQL("select * from xmz_y_2");
+        testExecSQL("select * from xmz_y_2");
         testExecSQL("select count(*) from xmz_y_2");
-        testExecSQL("select id,count(*) from xmz_y_2 group by id");*/
+        testExecSQL("select id,count(*) from xmz_y_2 group by id");
         testExecSQL("select * from (select id,count(*) from xmz_y_2 group by id) t");
         testExecSQL("select * from (select id,count(*),max(id) from xmz_y_2 group by id) t");
     }
