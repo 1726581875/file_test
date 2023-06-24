@@ -101,10 +101,10 @@ public class IndexCursor extends AbstractCursor {
                 RowData rowData = dataRowList.get(currChunkNextRowIndex);
                 Column[] columnData = rowData.getColumnData(columns);
                 RowEntity dbRow = new RowEntity(columnData);
+                currChunkNextRowIndex++;
                 if (isIndexRow(dbRow)) {
                     return dbRow;
                 }
-                currChunkNextRowIndex++;
             }
         }
 
@@ -125,11 +125,11 @@ public class IndexCursor extends AbstractCursor {
                     RowData rowData = dataRowList.get(currChunkNextRowIndex);
                     Column[] columnData = rowData.getColumnData(columns);
                     RowEntity dbRow = new RowEntity(columnData);
+                    currChunkNextRowIndex++;
                     if (isIndexRow(dbRow)) {
                         nextPosIndex = i + 1;
                         return dbRow;
                     }
-                    currChunkNextRowIndex++;
                 }
             }
             i++;

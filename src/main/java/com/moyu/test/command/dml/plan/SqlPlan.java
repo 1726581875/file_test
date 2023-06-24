@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml.plan;
 import com.moyu.test.command.dml.sql.Condition2;
 import com.moyu.test.command.dml.sql.ConditionEqOrNq;
+import com.moyu.test.command.dml.sql.ConditionRange;
 import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -59,6 +60,22 @@ public class SqlPlan {
                         selectPlan.setIndexName(indexMetadata.getIndexName());
                         return selectPlan;
                     }
+                }
+            } else if (condition instanceof ConditionRange) {
+                ConditionRange conditionRange = (ConditionRange) condition;
+                Column column = conditionRange.getColumn();
+                IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
+                if (indexMetadata != null) {
+                    SelectIndex selectPlan = new SelectIndex();
+                    selectPlan.setTableName(column.getColumnName());
+                    selectPlan.setUseIndex(true);
+                    selectPlan.setIndexType(indexMetadata.getIndexType());
+                    selectPlan.setIndexColumn(column);
+                    selectPlan.setTableId(indexMetadata.getTableId());
+                    selectPlan.setIndexName(indexMetadata.getIndexName());
+                    selectPlan.setRangeQuery(true);
+                    selectPlan.setCondition(conditionRange);
+                    return selectPlan;
                 }
             }
 

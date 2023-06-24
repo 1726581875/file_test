@@ -77,6 +77,37 @@ public class BpTreeMap<K extends Comparable, V> {
         }
     }
 
+
+    /**
+     * 获取第一个叶子节点页(b+树最左边叶子节点)
+     * @return
+     */
+    public Page<K,V> getFirstLeafPage(){
+        Page<K,V> page = rootNode;
+        while (!page.isLeaf()) {
+            page = page.getMap().getChildPage(page, 0);
+        }
+        return page;
+    }
+
+    /**
+     * 获取可能出现k的叶子节点
+     * @param k
+     * @return
+     */
+    public Page<K, V> getPage(K k) {
+        CursorPos<K, V> cursor = CursorPos.traverseDown(rootNode, k);
+        return cursor.getTreeNode();
+    }
+
+
+    public Page<K, V> getPageByPos(Long pos) {
+        return bpTreeStore.getPage(pos, this);
+    }
+
+
+
+
     public Page<K, V> getChildPage(Page<K, V> page, int index) {
         Page<K, V> childPage = null;
         if (page.getChildNodeList() == null || page.getChildNodeList().size() == 0) {
@@ -233,6 +264,8 @@ public class BpTreeMap<K extends Comparable, V> {
             node.setValue(index, value);
         }
     }
+
+
 
 
     public void remove(K key) {

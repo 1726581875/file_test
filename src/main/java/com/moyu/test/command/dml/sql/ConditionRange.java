@@ -64,4 +64,21 @@ public class ConditionRange extends AbstractCondition2 {
                 throw new SqlIllegalException("sql语法有误");
         }
     }
+
+
+    public Column getColumn() {
+        return column;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public String getLowerLimit() {
+        return lowerLimit;
+    }
+
+    public String getUpperLimit() {
+        return upperLimit;
+    }
 }

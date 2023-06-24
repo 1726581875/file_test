@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.plan;
 
+import com.moyu.test.command.dml.sql.Condition2;
 import com.moyu.test.store.metadata.obj.Column;
 
 /**
@@ -31,6 +32,10 @@ public class SelectIndex {
     private Column indexColumn;
 
     private String indexName;
+
+    private boolean isRangeQuery;
+
+    private Condition2 condition;
 
 
     public String getTableName() {
@@ -80,5 +85,21 @@ public class SelectIndex {
 
     public void setIndexName(String indexName) {
         this.indexName = indexName;
+    }
+
+    public void setRangeQuery(boolean rangeQuery) {
+        isRangeQuery = rangeQuery;
+    }
+
+    public boolean isRangeQuery() {
+        return isRangeQuery;
+    }
+
+    public Condition2 getCondition() {
+        return condition;
+    }
+
+    public void setCondition(Condition2 condition) {
+        this.condition = condition;
     }
 }

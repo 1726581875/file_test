@@ -70,6 +70,11 @@ public class Page<K extends Comparable, V> implements SerializableByte {
      */
     private List<V> valueList;
 
+    /**
+     * 叶子节点指向右边叶子节点的位置
+     */
+    private Long rightPos;
+
 
     public Page(BpTreeMap<K, V> map,
                 List<K> keywordList,
@@ -159,7 +164,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
 
 
     private void resetCrrMaxByteLen() {
-        int basicLen = 4 + 1 + 8 + 4 + 4;
+        int basicLen = 4 + 1 + 8 + 4 + 4 + 8;
         this.currMaxByteLen = basicLen;
         if (keywordList != null) {
             for (K k : keywordList) {
@@ -281,7 +286,11 @@ public class Page<K extends Comparable, V> implements SerializableByte {
             this.valueList = leftValues;
             this.keywordCount = this.keywordList.size();
             resetCrrMaxByteLen();
-            return createLeafNode(rightKeywords, rightValues);
+
+            Page<K, V> leafNode = createLeafNode(rightKeywords, rightValues, this.getRightPos());
+            // 左边节点指向
+            this.rightPos = leafNode.getStartPos();
+            return leafNode;
             // 非叶子节点分裂
         } else {
             // 分裂关键字
@@ -356,8 +365,10 @@ public class Page<K extends Comparable, V> implements SerializableByte {
 
 
 
-    private Page<K, V> createLeafNode(List<K> keywordList, List<V> valueList) {
-        return new Page<>(map, keywordList, valueList, null, true, map.getNextPageIndex());
+    private Page<K, V> createLeafNode(List<K> keywordList, List<V> valueList, Long rightPos) {
+        Page<K, V> leafPage = new Page<>(map, keywordList, valueList, null, true, map.getNextPageIndex());
+        leafPage.setRightPos(rightPos);
+        return leafPage;
     }
 
 
@@ -579,5 +590,13 @@ public class Page<K extends Comparable, V> implements SerializableByte {
 
     public BpTreeMap<K, V> getMap() {
         return map;
+    }
+
+    public void setRightPos(Long rightPos) {
+        this.rightPos = rightPos;
+    }
+
+    public Long getRightPos() {
+        return rightPos;
     }
 }

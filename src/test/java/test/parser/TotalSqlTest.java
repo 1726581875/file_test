@@ -2,9 +2,15 @@ package test.parser;
 
 import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.dml.InsertCommand;
+import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.store.metadata.obj.Column;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -24,11 +30,58 @@ public class TotalSqlTest {
         testSubQuery2();
         testAlias();
         testSubQueryFunction();
-        testSubQueryFunction2();*/
+        testSubQueryFunction2();
+        testRangeQuery();*/
+        test0606();
 
-        testRangeQuery();
+    }
 
 
+    private static void test0606(){
+        testExecSQL("drop table if exists xmz_5");
+
+        testExecSQL("create table xmz_5 (id int, name varchar(10), time timestamp)");
+        long beginTime = System.currentTimeMillis();
+        long time = beginTime;
+
+        List<Column[]> columnList = new ArrayList<>();
+        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_5", null, null);
+        int rowNum = 10000000;
+        for (int i = 1; i <= rowNum; i++) {
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
+            if (i % 10000 == 0) {
+                insertCommand.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+                time = System.currentTimeMillis();
+                columnList.clear();
+            }
+        }
+        testExecSQL("select count(*) from xmz_5");
+        //testExecSQL("select * from xmz_5");
+
+        testExecSQL("ALTER TABLE xmz_3 ADD index indexName(id);");
+
+        testExecSQL("select * from xmz_3 where id = 1000");
+
+        testExecSQL("desc xmz_5");
+    }
+
+    private static Column[] getColumns(Integer id, String name) {
+        Column[] columns = new Column[3];
+        // 字段11
+        columns[0] = new Column("id", ColumnTypeEnum.INT.getColumnType(), 0, 4);
+        columns[0].setIsPrimaryKey((byte) 1);
+        columns[0].setValue(id);
+
+        // 字段2
+        columns[1] = new Column("name", ColumnTypeEnum.VARCHAR.getColumnType(), 1, 100);
+        columns[1].setValue(name);
+        // 字段3
+        columns[2] = new Column("time", ColumnTypeEnum.TIMESTAMP.getColumnType(), 2, 8);
+        columns[2].setValue(new Date());
+        return columns;
     }
 
     public static void testRangeQuery(){

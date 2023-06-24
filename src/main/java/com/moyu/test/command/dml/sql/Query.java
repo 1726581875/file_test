@@ -477,6 +477,10 @@ public class Query {
         if (table.getSelectIndex() == null) {
             System.out.println("不用索引，table:" + table.getTableName());
             cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
+        } else if(table.getSelectIndex() != null && table.getSelectIndex().isRangeQuery()){
+            System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
+            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
+            cursor = new RangeIndexCursor(dataChunkStore, mainTable.getAllColumns(),(ConditionRange) table.getSelectIndex().getCondition() , indexPath);
         } else {
             System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());

@@ -19,7 +19,7 @@ public class SqlParserTest {
 
 
     public static void main(String[] args) {
-        joinTest2();
+        test0606();
     }
 
 
@@ -102,9 +102,9 @@ public class SqlParserTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        ConnectSession connectSession = new ConnectSession("xmz", 0);
+        ConnectSession connectSession = new ConnectSession("xmz", 1);
         InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_5", null, null);
-        int rowNum = 10000;
+        int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
