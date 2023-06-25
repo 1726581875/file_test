@@ -109,7 +109,7 @@ public class SqlParserTest {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.testWriteList(columnList);
+                insertCommand.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
@@ -157,7 +157,7 @@ public class SqlParserTest {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.testWriteList(columnList);
+                insertCommand.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
@@ -206,7 +206,7 @@ public class SqlParserTest {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.testWriteList(columnList);
+                insertCommand.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();

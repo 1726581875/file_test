@@ -22,7 +22,6 @@ public class SelectCommand extends AbstractCommand {
     private QueryResult queryResult;
 
 
-
     public SelectCommand(Query query) {
         this.query = query;
 

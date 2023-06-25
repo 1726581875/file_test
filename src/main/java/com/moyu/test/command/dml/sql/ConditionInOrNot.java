@@ -23,7 +23,7 @@ public class ConditionInOrNot extends AbstractCondition2 {
 
     private Query subQuery;
 
-    private Cursor cursor;
+    private Cursor subCursor;
 
     public ConditionInOrNot(Column column, List<String> values, boolean isIn) {
         this.column = column;
@@ -80,9 +80,14 @@ public class ConditionInOrNot extends AbstractCondition2 {
         }
 
         Object v = null;
-        Cursor queryCursor = subQuery.getQueryResultCursor();
+        if(subCursor == null) {
+            subCursor = subQuery.getQueryResultCursor();
+        } else {
+            subCursor.reset();
+        }
+
         RowEntity rightRow = null;
-        while ((rightRow = queryCursor.next()) != null) {
+        while ((rightRow = subCursor.next()) != null) {
             Column rightColumn = getColumnData(column, rightRow);
             if(left.equals(rightColumn.getValue())) {
                 v = rightColumn.getValue();

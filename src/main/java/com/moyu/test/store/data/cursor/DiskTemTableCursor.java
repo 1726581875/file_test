@@ -6,15 +6,19 @@ import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
  * @author xiaomingzhang
- * @date 2023/6/6
+ * @date 2023/6/25
+ * 磁盘临时表
  */
-public class DefaultCursor extends AbstractCursor {
+public class DiskTemTableCursor extends AbstractCursor {
 
     private Column[] columns;
+
+    private String fullFilePath;
 
     private DataChunkStore dataChunkStore;
 
@@ -25,8 +29,9 @@ public class DefaultCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public DefaultCursor(DataChunkStore dataChunkStore, Column[] columns) {
-        this.dataChunkStore = dataChunkStore;
+    public DiskTemTableCursor(String fullFilePath, Column[] columns) throws IOException {
+        this.fullFilePath = fullFilePath;
+        this.dataChunkStore = new DataChunkStore(this.fullFilePath);
         this.columns = columns;
         this.nextChunkIndex = DataChunkStore.FIRST_BLOCK_INDEX;
         this.currChunkNextRowIndex = 0;
@@ -47,6 +52,13 @@ public class DefaultCursor extends AbstractCursor {
         if(currChunk == null) {
             currChunk = dataChunkStore.getChunk(nextChunkIndex);
             nextChunkIndex++;
+            currChunkNextRowIndex = 0;
+        }
+
+        if(nextChunkIndex == 85) {
+            if(currChunkNextRowIndex == currChunk.getDataRowList().size() -1) {
+                System.out.println();
+            }
         }
 
         if(currChunk == null) {
@@ -102,6 +114,6 @@ public class DefaultCursor extends AbstractCursor {
     @Override
     void closeCursor() {
         dataChunkStore.close();
-    }
 
+    }
 }

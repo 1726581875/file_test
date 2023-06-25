@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.sql;
 
+import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.condition.ConditionComparator;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
@@ -155,6 +156,11 @@ public class Query {
 
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
+
+        // 判断数据是否应该物化(在磁盘生成临时表)
+        boolean toDisk = false;
+        String diskTemTableName = null;
+
         List<RowEntity> resultRowList = new ArrayList<>();
         int currIndex = 0;
         RowEntity row = null;
@@ -172,18 +178,57 @@ public class Query {
             }
             boolean matchCondition = ConditionComparator.isMatch(rowEntity, query.getConditionTree());
             if (matchCondition && query.isMatchLimit(query, currIndex)) {
-                Column[] columnData = row.getColumns();
-                Column[] resultColumns = query.filterColumns(columnData, query.getSelectColumns());
+                Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
                 resultRowList.add(new RowEntity(resultColumns));
             }
             if (query.getLimit() != null && resultRowList.size() >= query.getLimit()) {
                 break;
             }
             currIndex++;
+
+            // 数据量大于10000万，对数据进行物化
+            if(currIndex >= 10000) {
+                toDisk = true;
+                if(resultRowList.size() == 10000) {
+                    // 临时表名
+                    if (diskTemTableName == null) {
+                        // TODO 临时表名，需要保证唯一
+                        diskTemTableName = "tmp_" + System.currentTimeMillis();
+                    }
+                    // 保存数据到磁盘
+                    dataToDisk(resultRowList, diskTemTableName);
+                    resultRowList.clear();
+                }
+            }
+
         }
+
+        Cursor resultCursor = null;
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+        if(toDisk) {
+            if(resultRowList.size() > 0) {
+                if (diskTemTableName == null) {
+                    diskTemTableName = "tmp_" + System.currentTimeMillis();
+                }
+                dataToDisk(resultRowList, diskTemTableName);
+                resultRowList.clear();
+            }
+            String tmpTablePath = PathUtil.getDataFilePath(session.getDatabaseId(), diskTemTableName);
+            try {
+                resultCursor = new DiskTemTableCursor(tmpTablePath, columns);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+        }
         return resultCursor;
+    }
+
+
+    private void dataToDisk(List<RowEntity> resultRowList, String tmpTableName) {
+        InsertCommand insertCommand = new InsertCommand(session, tmpTableName, null, null);
+        insertCommand.batchWriteRows(resultRowList);
     }
 
 

@@ -20,7 +20,7 @@ public class DataChunkStore {
 
     private static final String fileName = "data.yan";
 
-    private static final int FIRST_BLOCK_INDEX = 1;
+    public static final int FIRST_BLOCK_INDEX = 1;
 
     private FileStore fileStore;
 
@@ -230,6 +230,7 @@ public class DataChunkStore {
                 fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
 
                 dataChunk = createChunk();
+                lastChunk = dataChunk;
                 if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {
                     dataChunk.addRow(dataRow);
                 } else {

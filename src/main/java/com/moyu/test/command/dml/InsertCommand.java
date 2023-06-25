@@ -6,6 +6,7 @@ import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
+import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -125,7 +126,15 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-    public String testWriteList(List<Column[]> columnsList) {
+    public String batchWriteRows(List<RowEntity> columnsList) {
+        List<Column[]> columnList = new ArrayList<>(columnsList.size());
+        for (RowEntity row : columnsList) {
+            columnList.add(row.getColumns());
+        }
+        return batchWriteList(columnList);
+    }
+
+    public String batchWriteList(List<Column[]> columnsList) {
         DataChunkStore dataChunkStore = null;
         try {
             String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), this.tableName);

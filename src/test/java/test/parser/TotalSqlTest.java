@@ -33,6 +33,14 @@ public class TotalSqlTest {
         testSubQueryFunction2();
         testRangeQuery();
         testRangeIndexQuery();
+        testSubQueryTempTableToDisk();
+
+    }
+
+    private static void testSubQueryTempTableToDisk() {
+        fastInsertData("xmz_s_1", 10000);
+        testExecSQL("select count(*) from xmz_s_1 where id in (select id from xmz_s_1)");
+        testExecSQL("select * from xmz_s_1 where id not in (select id from xmz_s_1)");
     }
 
 
@@ -75,12 +83,18 @@ public class TotalSqlTest {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.testWriteList(columnList);
+                insertCommand.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
             }
         }
+
+        insertCommand.batchWriteList(columnList);
+        System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+        time = System.currentTimeMillis();
+        columnList.clear();
+
         testExecSQL("select count(*) from " + tableName);
 
         testExecSQL("desc xmz_5");
