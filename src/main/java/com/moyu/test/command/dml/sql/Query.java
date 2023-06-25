@@ -76,88 +76,20 @@ public class Query {
         this.conditionTree = conditionTree;
     }
 
-    public Cursor getQueryCursor() {
-        if (queryCursor == null) {
-            Stack<Query> queryStack = new Stack<>();
-            Query q = this;
-            queryStack.add(q);
-            while ((q = q.getMainTable().getSubQuery()) != null) {
-                queryStack.add(q);
-            }
-            queryCursor = execQuery(queryStack);
-        }
-        return queryCursor;
-    }
 
     public Cursor getQueryResultCursor() {
-        Cursor resultCursor = null;
         Stack<Query> queryStack = new Stack<>();
         Query q = this;
         queryStack.add(q);
         while ((q = q.getMainTable().getSubQuery()) != null) {
             queryStack.add(q);
         }
-        return execQuery2(queryStack);
+        return execQuery(queryStack);
     }
+
 
 
     private Cursor execQuery(Stack<Query> queryStack) {
-        Cursor mainCursor = null;
-
-        // TODO 没有子查询，直接返回
-        if(queryStack.size() == 1) {
-            mainCursor = getMainQueryCursor(queryStack.pop());
-            return mainCursor;
-        }
-
-        while (!queryStack.isEmpty()) {
-            Query q = queryStack.pop();
-            FromTable fromTable = q.getMainTable();
-            if(fromTable.getSubQuery() == null) {
-                mainCursor = getMainQueryCursor(q);
-            }
-
-            int currIndex = 0;
-            RowEntity mainRow = null;
-            String currTableAlias = q.getMainTable().getAlias();
-            List<RowEntity> rowEntityList = new ArrayList<>();
-            while ((mainRow = mainCursor.next()) != null) {
-                RowEntity rowEntity = null;
-                if(isJoinQuery(q)) {
-                    // 符合这种场景 select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id where b.id = 1 ) t where id = 1;
-                    // 当前查询为join查询时候，字段的所属的tableAlias(表别名)要保持为连接前原表的别名，以便后面的条件判断和查询字段筛选
-                    rowEntity = new RowEntity(mainRow.getColumns());
-                } else {
-                    // 符合这种场景select * from (select * from xmz_yan) t where t.id = 1;
-                    // 非连接条件
-                    rowEntity = new RowEntity(mainRow.getColumns(), currTableAlias);
-                }
-
-                if (ConditionComparator.isMatch(rowEntity, q.getConditionTree()) && isMatchLimit(q, currIndex)) {
-                    RowEntity row = filterColumns(rowEntity, q.getSelectColumns());
-                    if(isSubQuery(q)) {
-                        row = row.setTableAlias(currTableAlias);
-                    }
-                    rowEntityList.add(row);
-                }
-                if (q.getLimit() != null && rowEntityList.size() >= q.getLimit()) {
-                    break;
-                }
-                currIndex++;
-            }
-
-            Column[] columns = mainCursor.getColumns();
-            if(isSubQuery(q)) {
-                Column.setColumnTableAlias(columns, currTableAlias);
-            }
-            mainCursor = new MemoryTemTableCursor(rowEntityList, columns);
-        }
-
-        return mainCursor;
-    }
-
-
-    private Cursor execQuery2(Stack<Query> queryStack) {
         Cursor mainCursor = null;
 
         while (!queryStack.isEmpty()) {

@@ -394,7 +394,7 @@ public class SqlParser implements Parser {
     private SelectCommand getSelectCommand() {
         Query query = parseQuery(null);
         query.setSession(connectSession);
-        SelectCommand selectCommand = new SelectCommand(connectSession.getDatabaseId(), query);
+        SelectCommand selectCommand = new SelectCommand(query);
         return selectCommand;
     }
 
@@ -468,11 +468,6 @@ public class SqlParser implements Parser {
 
         // 解析条件
         ConditionTree2 conditionRoot = new ConditionTree2(ConditionConstant.AND, new ArrayList<>(), false);
-
-        // limit 和 offset
-        Integer limit = null;
-        Integer offset = null;
-
         // GROUP BY
         String groupByColumnName = null;
 

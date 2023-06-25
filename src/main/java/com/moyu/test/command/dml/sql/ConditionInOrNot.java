@@ -80,7 +80,7 @@ public class ConditionInOrNot extends AbstractCondition2 {
         }
 
         Object v = null;
-        Cursor queryCursor = subQuery.getQueryCursor();
+        Cursor queryCursor = subQuery.getQueryResultCursor();
         RowEntity rightRow = null;
         while ((rightRow = queryCursor.next()) != null) {
             Column rightColumn = getColumnData(column, rightRow);

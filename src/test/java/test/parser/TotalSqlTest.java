@@ -19,7 +19,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -31,10 +31,8 @@ public class TotalSqlTest {
         testAlias();
         testSubQueryFunction();
         testSubQueryFunction2();
-        testRangeQuery();*/
+        testRangeQuery();
         testRangeIndexQuery();
-
-
     }
 
 
@@ -88,36 +86,6 @@ public class TotalSqlTest {
         testExecSQL("desc xmz_5");
     }
 
-    private static void test0606(){
-        testExecSQL("drop table if exists xmz_5");
-
-        testExecSQL("create table xmz_5 (id int, name varchar(10), time timestamp)");
-        long beginTime = System.currentTimeMillis();
-        long time = beginTime;
-
-        List<Column[]> columnList = new ArrayList<>();
-        ConnectSession connectSession = new ConnectSession("xmz", 1);
-        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_5", null, null);
-        int rowNum = 10000000;
-        for (int i = 1; i <= rowNum; i++) {
-            Column[] columns = getColumns(i, "name_" + i);
-            columnList.add(columns);
-            if (i % 10000 == 0) {
-                insertCommand.testWriteList(columnList);
-                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
-                time = System.currentTimeMillis();
-                columnList.clear();
-            }
-        }
-        testExecSQL("select count(*) from xmz_5");
-        //testExecSQL("select * from xmz_5");
-
-        testExecSQL("ALTER TABLE xmz_3 ADD index indexName(id);");
-
-        testExecSQL("select * from xmz_3 where id = 1000");
-
-        testExecSQL("desc xmz_5");
-    }
 
     private static Column[] getColumns(Integer id, String name) {
         Column[] columns = new Column[3];
