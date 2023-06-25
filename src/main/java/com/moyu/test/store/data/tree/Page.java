@@ -132,9 +132,15 @@ public class Page<K extends Comparable, V> implements SerializableByte {
         this.pageIndex = byteBuffer.getInt();
         this.keywordCount = byteBuffer.getInt();
         this.pageType = byteBuffer.get();
+        // 指向右边指针，叶子节点才有
+        long rPos = byteBuffer.getLong();
+        if(rPos < 0) {
+            this.rightPos = null;
+        } else {
+            this.rightPos = rPos;
+        }
 
         this.map = treeMap;
-
         // 关键字
         this.keywordList = new ArrayList<>(this.keywordCount);
         for (int i = 0; i < this.keywordCount; i++) {
@@ -159,6 +165,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
             }
         }
         this.isLeaf = this.pageType == 1;
+
         resetCrrMaxByteLen();
     }
 
@@ -197,7 +204,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
         writeBuffer.putInt(this.pageIndex);
         writeBuffer.putInt(this.keywordCount);
         writeBuffer.put(this.pageType);
-
+        writeBuffer.putLong(this.rightPos == null ? -1L : this.rightPos);
         // 关键字
         for (int i = 0; i < this.keywordCount; i++) {
             map.getKeyType().write(writeBuffer, this.keywordList.get(i));
@@ -220,6 +227,9 @@ public class Page<K extends Comparable, V> implements SerializableByte {
                 map.getValueType().write(writeBuffer, this.valueList.get(i));
             }
         }
+
+
+
         // 复写占用字节长度
         int position = writeBuffer.position();
         writeBuffer.putInt(0, position);

@@ -80,7 +80,8 @@ public class IndexCursor extends AbstractCursor {
             return null;
         }
 
-        if(nextPosIndex > posArr.length - 1) {
+        if(nextPosIndex > posArr.length - 1 &&
+                (currChunk == null  || currChunk.getDataRowList().size() <= currChunkNextRowIndex)) {
             return null;
         }
 
@@ -120,6 +121,7 @@ public class IndexCursor extends AbstractCursor {
             if(currChunk == null) {
                 return null;
             }
+            dataRowList = currChunk.getDataRowList();
             if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
                 while (currChunkNextRowIndex < dataRowList.size()) {
                     RowData rowData = dataRowList.get(currChunkNextRowIndex);

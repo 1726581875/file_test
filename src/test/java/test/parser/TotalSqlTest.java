@@ -32,10 +32,61 @@ public class TotalSqlTest {
         testSubQueryFunction();
         testSubQueryFunction2();
         testRangeQuery();*/
-        test0606();
+        testRangeIndexQuery();
+
 
     }
 
+
+    private static void testRangeIndexQuery() {
+        fastInsertData("xmz_o_1", 10000);
+
+        testExecSQL("create index idx_o_id on xmz_o_1(id);");
+
+        testExecSQL("select * from xmz_o_1 where id <= 10");
+        testExecSQL("select * from xmz_o_1 where id < 10");
+        testExecSQL("select * from xmz_o_1 where id >= 10 and id <= 100");
+        testExecSQL("select * from xmz_o_1 where id >= 9998");
+
+        testExecSQL("select count(*) from xmz_o_1 where id < 500");
+        testExecSQL("select count(*) from xmz_o_1 where id >= 500");
+        testExecSQL("select count(*) from xmz_o_1 where id < 0");
+        testExecSQL("select count(*) from xmz_o_1 where id < -1");
+        testExecSQL("select count(*) from xmz_o_1 where id < 666 and id > 555");
+
+        testExecSQL("select count(*) from xmz_o_1 where id >= 9998");
+        testExecSQL("select * from xmz_o_1 where id = 9998");
+        testExecSQL("select count(*) from xmz_o_1 where id <= 10000");
+        testExecSQL("select count(*) from xmz_o_1 where id >= 0");
+
+    }
+
+
+
+    private static void fastInsertData(String tableName, int rowNum) {
+        testExecSQL("drop table if exists " + tableName);
+
+        testExecSQL("create table "+ tableName +" (id int, name varchar(10), time timestamp)");
+        long beginTime = System.currentTimeMillis();
+        long time = beginTime;
+
+        List<Column[]> columnList = new ArrayList<>();
+        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        InsertCommand insertCommand = new InsertCommand(connectSession, tableName, null, null);
+        for (int i = 1; i <= rowNum; i++) {
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
+            if (i % 10000 == 0) {
+                insertCommand.testWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+                time = System.currentTimeMillis();
+                columnList.clear();
+            }
+        }
+        testExecSQL("select count(*) from " + tableName);
+
+        testExecSQL("desc xmz_5");
+    }
 
     private static void test0606(){
         testExecSQL("drop table if exists xmz_5");
