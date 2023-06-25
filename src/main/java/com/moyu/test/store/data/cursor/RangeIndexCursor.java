@@ -192,6 +192,7 @@ public class RangeIndexCursor extends AbstractCursor {
                 if (currChunk == null) {
                     break;
                 }
+                dataRowList = currChunk.getDataRowList();
                 if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > nextChunkNextRowIndex) {
                     while (nextChunkNextRowIndex < dataRowList.size()) {
                         RowData rowData = dataRowList.get(nextChunkNextRowIndex);
@@ -256,13 +257,7 @@ public class RangeIndexCursor extends AbstractCursor {
     }
 
 
-    private boolean isIndexRow(RowEntity dbRow) {
-        for (Column c : dbRow.getColumns()) {
-            if(c.getColumnName().equals(indexColumn.getColumnName())
-                    && c.getValue().equals(indexColumn.getValue())) {
-                return true;
-            }
-        }
-        return false;
+    public DataChunk getCurrChunk() {
+        return currChunk;
     }
 }

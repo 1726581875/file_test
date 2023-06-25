@@ -534,8 +534,6 @@ public class SqlParser implements Parser {
         query.setMainTable(mainTable);
         query.setSelectColumns(selectColumns);
         query.setConditionTree(conditionRoot);
-        query.setLimit(limit);
-        query.setOffset(offset == null ? 0 : offset);
         query.setGroupByColumnName(groupByColumnName);
 
 
