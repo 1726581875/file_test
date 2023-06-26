@@ -326,6 +326,9 @@ public class Query {
                 case FunctionConstant.FUNC_MAX:
                     statFunctions.add(new MaxFunction(columnName));
                     break;
+                case FunctionConstant.FUNC_AVG:
+                    statFunctions.add(new AvgFunction(columnName));
+                    break;
                 default:
                     throw new SqlIllegalException("sql语法错误，不支持该函数：" + functionName);
             }
@@ -335,22 +338,42 @@ public class Query {
 
 
     private Column functionResultToColumn(StatFunction statFunction, int columnIndex, Query query) {
-        Long statResult = statFunction.getValue();
+
         Column resultColumn = null;
         SelectColumn selectColumn = query.getSelectColumns()[columnIndex];
         Column c = selectColumn.getColumn();
-
         String columnName  = selectColumn.getAlias() != null ? selectColumn.getAlias() : selectColumn.getSelectColumnName();
-        // 日期类型
-        if (!FunctionConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
-                && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
-            resultColumn = new Column(columnName, DbColumnTypeConstant.TIMESTAMP, columnIndex, 8);
-            resultColumn.setValue(statResult == null ? null : new Date(statResult));
-        } else {
-            // 数字类型
+
+        Class<? extends StatFunction> fClass = statFunction.getClass();
+        if (CountFunction.class.equals(fClass)
+                || SumFunction.class.equals(fClass)
+                || MinFunction.class.equals(fClass)
+                || MaxFunction.class.equals(fClass)) {
+            Long statResult = statFunction.getValue();
+
+            // 日期类型
+            if (!FunctionConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
+                    && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
+                resultColumn = new Column(columnName, DbColumnTypeConstant.TIMESTAMP, columnIndex, 8);
+                resultColumn.setValue(statResult == null ? null : new Date(statResult));
+            } else {
+                // 数字类型
+                resultColumn = new Column(columnName, DbColumnTypeConstant.INT_8, columnIndex, 8);
+                resultColumn.setValue(statResult);
+            }
+        } else if (AvgFunction.class.equals(fClass)) {
+            AvgFunction avgFunction = (AvgFunction) statFunction;
+            Double avgValue = avgFunction.getAvgValue();
+            // TODO 应当为Double类型
             resultColumn = new Column(columnName, DbColumnTypeConstant.INT_8, columnIndex, 8);
-            resultColumn.setValue(statResult);
+            resultColumn.setValue(avgValue);
+        } else {
+            throw new SqlIllegalException("sql语法错误，不支持该函数" + statFunction);
         }
+
+
+
+
         return resultColumn;
     }
 

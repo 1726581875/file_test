@@ -25,7 +25,7 @@ public class ConditionRange extends AbstractCondition2 {
     private String operator;
 
 
-    public ConditionRange(Column column,String lowerLimit, String upperLimit, String operator) {
+    public ConditionRange(Column column, String lowerLimit, String upperLimit, String operator) {
         this.column = column;
         this.upperLimit = upperLimit;
         this.lowerLimit = lowerLimit;

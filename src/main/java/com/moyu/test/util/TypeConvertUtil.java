@@ -3,6 +3,10 @@ package com.moyu.test.util;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.exception.DbException;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * @author xiaomingzhang
  * @date 2023/6/10
@@ -20,6 +24,15 @@ public class TypeConvertUtil {
         }
         if (String.class.equals(typeClass)) {
             return value;
+        }
+        if (Date.class.equals(typeClass)) {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            try {
+                return dateFormat.parse(value);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new DbException("日常格式转换发生异常");
+            }
         } else {
             throw new DbException("类型不支持");
         }

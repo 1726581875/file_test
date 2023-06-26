@@ -2,6 +2,8 @@ package com.moyu.test.constant;
 
 import com.moyu.test.exception.DbException;
 
+import java.util.Date;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/16
@@ -64,7 +66,7 @@ public enum ColumnTypeEnum {
                 return String.class;
             case BIGINT:
             case TIMESTAMP:
-                return Long.class;
+                return Date.class;
             default:
                 throw new DbException("类型不合法,type=" + typeEnum);
         }

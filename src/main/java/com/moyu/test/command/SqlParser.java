@@ -831,7 +831,8 @@ public class SqlParser implements Parser {
         if (upperCase.startsWith(FunctionConstant.FUNC_COUNT + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_MAX + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_MIN + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_SUM + "(")) {
+                || upperCase.startsWith(FunctionConstant.FUNC_SUM + "(")
+                || upperCase.startsWith(FunctionConstant.FUNC_AVG + "(")) {
             if (upperCase.endsWith(")")) {
                 return true;
             }
@@ -864,6 +865,7 @@ public class SqlParser implements Parser {
             case FunctionConstant.FUNC_MAX:
             case FunctionConstant.FUNC_MIN:
             case FunctionConstant.FUNC_SUM:
+            case FunctionConstant.FUNC_AVG:
                 args = new String[1];
                 String columnName = getFunctionArg(functionStr);;
                 column = columnInfo.getColumn(columnName);
@@ -1128,9 +1130,10 @@ public class SqlParser implements Parser {
                         condition = new ConditionRange(column, value2, null, nextKeyWord);
                         break;
                     case OperatorConstant.BETWEEN:
-                        String lowerLimit = getNextOriginalWord();
+                        String lowerLimit = parseSimpleConditionValue(start);
                         assertNextKeywordIs("AND");
-                        String upperLimit = getNextOriginalWord();
+                        skipSpace();
+                        String upperLimit = parseSimpleConditionValue(currIndex);
                         condition = new ConditionRange(column, lowerLimit, upperLimit, nextKeyWord);
                         break;
                     default:
@@ -1164,7 +1167,7 @@ public class SqlParser implements Parser {
         if (!(inValueStr.startsWith("SELECT") || inValueStr.startsWith("select"))) {
             String[] split = inValueStr.split(",");
             for (String v : split) {
-                String value = v;
+                String value = v.trim();
                 if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
                     value = v.substring(1, v.length() - 1);
                 }
@@ -1299,7 +1302,7 @@ public class SqlParser implements Parser {
         // ==== 读字段值 ===
         skipSpace();
         String valueKeyWord = getNextKeyWord();
-        if (!"VALUE".equals(valueKeyWord)) {
+        if (!"VALUE".equals(valueKeyWord) && !"VALUES".equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
         // value

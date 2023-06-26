@@ -35,7 +35,59 @@ public class TotalSqlTest {
         testRangeIndexQuery();
         testSubQueryTempTableToDisk();
 
+        gptRandom20Test();
+
     }
+
+
+    private static void gptRandom20Test(){
+        testExecSQL("drop table if exists  xmz_o_1");
+        testExecSQL("create table xmz_o_1 (id int, name varchar(10), time timestamp)");
+
+
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (1, 'John', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (2, 'Alice', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (3, 'Bob', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (4, 'Charlie', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (5, 'Emily', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (6, 'David', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (7, 'Emma', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (8, 'Oliver', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (9, 'Sophia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (10, 'James', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (11, 'Isabella', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (12, 'Liam', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (13, 'Mia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (14, 'Benjamin', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (15, 'Charlotte', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (16, 'Henry', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (17, 'Ava', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (18, 'Ethan', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (19, 'Amelia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (20, 'Noah', '2023-06-26 01:24:38')");
+
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE id <= 10");
+        testExecSQL("SELECT name FROM xmz_o_1 WHERE id >= 100");
+        testExecSQL("SELECT id, time FROM xmz_o_1 WHERE name = 'John'");
+        testExecSQL("SELECT COUNT(*) FROM xmz_o_1 WHERE time >= '2023-01-01 00:00:00' AND time <= '2023-06-30 23:59:59'");
+        //testExecSQL("SELECT DISTINCT name FROM xmz_o_1 ORDER BY time DESC");
+        testExecSQL("SELECT * FROM xmz_o_1 LIMIT 5");
+        testExecSQL("SELECT name FROM xmz_o_1 WHERE id IN (1, 3, 5, 7, 9)");
+        testExecSQL("SELECT AVG(id) FROM xmz_o_1 WHERE time >= '2023-01-01 00:00:00' AND time <= '2023-06-30 23:59:59'");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE name LIKE '%apple%'");
+        testExecSQL("SELECT MAX(id) FROM xmz_o_1");
+        testExecSQL("SELECT id FROM xmz_o_1 WHERE name IS NOT NULL");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE time BETWEEN '2023-01-01 00:00:00' AND '2023-06-30 23:59:59'");
+        testExecSQL("SELECT MIN(time) FROM xmz_o_1");
+        //testExecSQL("SELECT * FROM xmz_o_1 WHERE id > (SELECT AVG(id) FROM xmz_o_1)");
+        //testExecSQL("SELECT name, COUNT(*) FROM xmz_o_1 GROUP BY name HAVING COUNT() > 1");
+        //testExecSQL("SELECT * FROM xmz_o_1 WHERE id = (SELECT MAX(id) FROM xmz_o_1)");
+        //testExecSQL("SELECT YEAR(time), COUNT(*) FROM xmz_o_1 GROUP BY YEAR(time)");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE name IN ('Alice', 'Bob', 'Charlie')");
+        //testExecSQL("SELECT DATEDIFF(NOW(), time) AS diff FROM xmz_o_1");
+        //testExecSQL("SELECT id, CASE WHEN name IS NULL THEN 'Unknown' ELSE name END AS name FROM xmz_o_1");
+    }
+
 
     private static void testSubQueryTempTableToDisk() {
         fastInsertData("xmz_s_1", 10000);

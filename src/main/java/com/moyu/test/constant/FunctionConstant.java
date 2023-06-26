@@ -10,6 +10,7 @@ public interface FunctionConstant {
     String FUNC_MAX = "MAX";
     String FUNC_MIN = "MIN";
     String FUNC_SUM = "SUM";
+    String FUNC_AVG = "AVG";
 
 
 }
