@@ -430,10 +430,7 @@ public class SqlParser implements Parser {
                 if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
                     StartEndIndex subStartEnd = getNextBracketStartEnd();
                     currIndex++;
-                    String nextKeyWord = getNextKeyWord();
-                    if(!SELECT.equals(nextKeyWord)) {
-                        throw new SqlIllegalException("sql语法有误");
-                    }
+                    assertNextKeywordIs(SELECT);
                     // 解析子查询
                     subQuery = parseQuery(subStartEnd);
                     mainTable = getSubQueryAliasMainTable(subQuery);
@@ -1066,22 +1063,32 @@ public class SqlParser implements Parser {
                 start = currIndex;
                 switch (nextKeyWord) {
                     case OperatorConstant.EQUAL:
-                        String nextValue = getNextOriginalWordUnMove();
-                        Column rightColumn = columnMap.get(nextValue);
-                        if(rightColumn == null) {
-                            // attribute = value
-                            values = parseConditionValues(start, OperatorConstant.EQUAL);
-                            condition = new ConditionEqOrNq(column, values.get(0), true);
-                        } else {
-                            // attribute = attribute
-                            getNextOriginalWord();
-                            condition = new ConditionLeftRight(column, rightColumn);
-                        }
-                        break;
                     case OperatorConstant.NOT_EQUAL_1:
                     case OperatorConstant.NOT_EQUAL_2:
-                        values = parseConditionValues(start, nextKeyWord);
-                        condition = new ConditionEqOrNq(column, values.get(0) , false);
+                        boolean isEq = OperatorConstant.EQUAL.equals(nextKeyWord) ? true : false;
+                        String nextValue = getNextOriginalWordUnMove();
+                        if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
+                            StartEndIndex subStartEnd = getNextBracketStartEnd();
+                            currIndex++;
+                            assertNextKeywordIs(SELECT);
+                            // 解析子查询
+                            Query subQuery = parseQuery(subStartEnd);
+                            ConditionEqOrNq eqSubQuery = new ConditionEqOrNq(column, null, isEq);
+                            eqSubQuery.setEqSubQuery(true);
+                            eqSubQuery.setSubQuery(subQuery);
+                            condition = eqSubQuery;
+                        } else {
+                            Column rightColumn = columnMap.get(nextValue);
+                            if (rightColumn == null) {
+                                // attribute = value
+                                values = parseConditionValues(start, OperatorConstant.EQUAL);
+                                condition = new ConditionEqOrNq(column, values.get(0), isEq);
+                            } else {
+                                // attribute = attribute
+                                getNextOriginalWord();
+                                condition = new ConditionLeftRight(column, rightColumn);
+                            }
+                        }
                         break;
                     case OperatorConstant.IN:
                         condition = getInOrNotInCondition(column, true);
@@ -1089,7 +1096,7 @@ public class SqlParser implements Parser {
                     case OperatorConstant.EXISTS:
                     case OperatorConstant.LIKE:
                         values = parseConditionValues(start, OperatorConstant.LIKE);
-                        condition = new ConditionLikeOrNot(column, values.get(0) , true);
+                        condition = new ConditionLikeOrNot(column, values.get(0), true);
                         break;
                     case "NOT":
                         skipSpace();
@@ -1097,9 +1104,10 @@ public class SqlParser implements Parser {
                         if ("IN".equals(word0)) {
                             condition = getInOrNotInCondition(column, false);
                         } else if ("LIKE".equals(word0)) {
-                            operator = OperatorConstant.NOT_LIKE;
-                            values = parseConditionValues(start, operator);
-                            condition = new ConditionLikeOrNot(column, values.get(0) , false);
+                            start = currIndex;
+                            skipSpace();
+                            String v = parseSimpleConditionValue(start);
+                            condition = new ConditionLikeOrNot(column, v, false);
                         } else if ("EXISTS".equals(word0)) {
                             operator = OperatorConstant.NOT_EXISTS;
                         }
@@ -1121,13 +1129,40 @@ public class SqlParser implements Parser {
                         break;
                     case OperatorConstant.LESS_THAN:
                     case OperatorConstant.LESS_THAN_OR_EQUAL:
-                        String value1 = parseSimpleConditionValue(start);
-                        condition = new ConditionRange(column, null , value1 , nextKeyWord);
+                        String nextValue1 = getNextOriginalWordUnMove();
+                        if ("(".equals(nextValue1) || "(SELECT".equals(nextValue1)) {
+                            StartEndIndex subStartEnd = getNextBracketStartEnd();
+                            currIndex++;
+                            assertNextKeywordIs(SELECT);
+                            // 解析子查询
+                            Query subQuery = parseQuery(subStartEnd);
+                            ConditionRange conditionRange = new ConditionRange(column, null, null, nextKeyWord);
+                            conditionRange.setHasSubQuery(true);
+                            conditionRange.setUpperSubQuery(subQuery);
+                            condition = conditionRange;
+                        } else {
+                            String value1 = parseSimpleConditionValue(start);
+                            ConditionRange conditionRange = new ConditionRange(column, null, value1, nextKeyWord);
+                            condition = conditionRange;
+                        }
                         break;
                     case OperatorConstant.GREATER_THAN:
                     case OperatorConstant.GREATER_THAN_OR_EQUAL:
-                        String value2 = parseSimpleConditionValue(start);
-                        condition = new ConditionRange(column, value2, null, nextKeyWord);
+                        String nextValue2 = getNextOriginalWordUnMove();
+                        if ("(".equals(nextValue2) || "(SELECT".equals(nextValue2)) {
+                            StartEndIndex subStartEnd = getNextBracketStartEnd();
+                            currIndex++;
+                            assertNextKeywordIs(SELECT);
+                            // 解析子查询
+                            Query subQuery = parseQuery(subStartEnd);
+                            ConditionRange conditionRange = new ConditionRange(column, null, null, nextKeyWord);
+                            conditionRange.setHasSubQuery(true);
+                            conditionRange.setLowerSubQuery(subQuery);
+                            condition = conditionRange;
+                        } else {
+                            String value2 = parseSimpleConditionValue(start);
+                            condition = new ConditionRange(column, value2, null, nextKeyWord);
+                        }
                         break;
                     case OperatorConstant.BETWEEN:
                         String lowerLimit = parseSimpleConditionValue(start);

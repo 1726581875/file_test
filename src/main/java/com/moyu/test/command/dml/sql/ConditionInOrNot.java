@@ -104,6 +104,11 @@ public class ConditionInOrNot extends AbstractCondition2 {
 
     @Override
     public void close() {
+
+        if (subQuery != null) {
+            subQuery.closeQuery();
+        }
+
         if(subCursor != null) {
             subCursor.close();
             subCursor = null;

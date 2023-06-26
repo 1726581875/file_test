@@ -19,7 +19,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -34,14 +34,91 @@ public class TotalSqlTest {
         testRangeQuery();
         testRangeIndexQuery();
         testSubQueryTempTableToDisk();
-        gptRandom20Test();*/
+        testLikeString();
+        gptRandom20Test();
 
-        testSubQueryTempTableToDisk();
+        gptRandom20Test2();
+
 
     }
 
 
-    private static void gptRandom20Test(){
+
+
+    private static void gptRandom20Test2(){
+        testExecSQL("drop table if exists  xmz_o_1");
+        testExecSQL("create table xmz_o_1 (id int, name varchar(10), time timestamp)");
+
+
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (1, 'John', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (2, 'Alice', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (3, 'Bob', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (4, 'Charlie', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (5, 'Emily', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (6, 'David', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (7, 'Emma', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (8, 'Oliver', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (9, 'Sophia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (10, 'James', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (11, 'Isabella', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (12, 'Liam', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (13, 'Mia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (14, 'Benjamin', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (15, 'Charlotte', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (16, 'Henry', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (17, 'Ava', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (18, 'Ethan', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (19, 'Amelia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (20, 'Noah', '2023-06-26 01:24:38')");
+
+
+        //testExecSQL("SELECT DISTINCT name FROM xmz_o_1 ORDER BY time DESC");
+
+        testExecSQL("SELECT AVG(id) FROM xmz_o_1");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE id > (SELECT MIN(id) FROM xmz_o_1)");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE id <= (SELECT MIN(id) FROM xmz_o_1)");
+        //testExecSQL("SELECT name, COUNT(*) FROM xmz_o_1 GROUP BY name HAVING COUNT(*) > 1");
+        //testExecSQL("SELECT * FROM xmz_o_1 WHERE id = (SELECT MAX(id) FROM xmz_o_1)");
+        //testExecSQL("SELECT YEAR(time), COUNT(*) FROM xmz_o_1 GROUP BY YEAR(time)");
+
+
+        //testExecSQL("SELECT DATEDIFF(NOW(), time) AS diff FROM xmz_o_1");
+        //testExecSQL("SELECT id, CASE WHEN name IS NULL THEN 'Unknown' ELSE name END AS name FROM xmz_o_1");
+
+//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Isabella'");
+//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Is%'");
+//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Is1%'");
+//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name not like 'Is%'");
+//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Isab%lla'");
+    }
+
+
+    private static void testLikeString() {
+        testExecSQL("drop table if exists  xmz_o_2");
+        testExecSQL("create table xmz_o_2 (id int, name varchar(10), time timestamp)");
+
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (1, 'John', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (2, 'Alice', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (3, 'Bob', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (4, 'Charlie', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (5, 'Emily', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (6, 'David', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (7, 'Emma', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (8, 'Oliver', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (9, 'Sophia', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (10, 'James', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Isabella', '2023-06-26 01:24:38')");
+
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name like 'Isabella'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name like '%abella'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name like 'Is%'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name like 'Is1%'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name not like 'Is%'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name like 'Isab%lla'");
+    }
+
+
+    private static void gptRandom20Test() {
         testExecSQL("drop table if exists  xmz_o_1");
         testExecSQL("create table xmz_o_1 (id int, name varchar(10), time timestamp)");
 

@@ -2,7 +2,9 @@ package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.util.TypeConvertUtil;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author xiaomingzhang
@@ -31,12 +33,20 @@ public class ConditionLikeOrNot extends AbstractCondition2 {
         if(left == null) {
             return false;
         }
-        Object right = TypeConvertUtil.convertValueType(value, column.getColumnType());
-        // TODO like操作不能简单contains
-        if(isLike) {
-            return ((String) left).contains((String) right);
+
+        String leftValue = (String) left;
+        String sqlPattern = value;
+        if (isLike) {
+            return likeMatch(leftValue, sqlPattern);
         } else {
-            return !((String) left).contains((String) right);
+            return !likeMatch(leftValue, sqlPattern);
         }
     }
+
+    private boolean likeMatch(String input, String sqlPattern){
+        Pattern regex = Pattern.compile(sqlPattern.replace("%", ".*"));
+        Matcher matcher = regex.matcher(input);
+        return matcher.matches();
+    }
+
 }

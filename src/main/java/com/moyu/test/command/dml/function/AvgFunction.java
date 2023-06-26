@@ -43,7 +43,7 @@ public class AvgFunction extends StatFunction {
     }
 
     public Double getAvgValue() {
-        if(value == null) {
+        if(totalValue == null) {
             return null;
         }
         if(recordNum == 0) {

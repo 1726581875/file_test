@@ -36,6 +36,7 @@ public class FromTable {
      * 连接类型
      * LEFT 左连接
      * INNER 内连接
+     * RIGHT 右连接
      */
     private String joinInType;
     /**

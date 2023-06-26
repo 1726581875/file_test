@@ -1,6 +1,5 @@
-package com.moyu.test.command.dml.sql.condition;
+package com.moyu.test.command.dml.sql;
 
-import com.moyu.test.command.dml.sql.ConditionTree2;
 import com.moyu.test.constant.ConditionConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.cursor.RowEntity;

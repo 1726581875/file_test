@@ -1,7 +1,6 @@
 package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
-import com.moyu.test.command.dml.sql.condition.ConditionComparator;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;

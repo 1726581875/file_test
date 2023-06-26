@@ -1,8 +1,8 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
-import com.moyu.test.command.dml.sql.condition.ConditionComparator;
 import com.moyu.test.command.dml.sql.ConditionTree2;
+import com.moyu.test.command.dml.sql.ConditionComparator;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
