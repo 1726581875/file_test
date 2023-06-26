@@ -10,4 +10,6 @@ public interface Condition2 {
 
     boolean getResult(RowEntity row);
 
+    void close();
+
 }

@@ -102,5 +102,11 @@ public class ConditionInOrNot extends AbstractCondition2 {
         }
     }
 
-
+    @Override
+    public void close() {
+        if(subCursor != null) {
+            subCursor.close();
+            subCursor = null;
+        }
+    }
 }

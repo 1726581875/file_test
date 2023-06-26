@@ -3,6 +3,7 @@ package com.moyu.test.command.dml;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.dml.sql.*;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 
@@ -44,9 +45,17 @@ public class SelectCommand extends AbstractCommand {
         QueryResult result = new QueryResult();
         result.setSelectColumns(query.getSelectColumns());
         result.setResultRows(new ArrayList<>());
-        RowEntity row = null;
-        while ((row = cursor.next()) != null) {
-            result.addRow(row.getColumns());
+        try {
+            RowEntity row = null;
+            while ((row = cursor.next()) != null) {
+                result.addRow(row.getColumns());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new DbException("查询发生异常");
+        } finally {
+            cursor.close();
+            this.query.closeQuery();
         }
         return result;
     }

@@ -5,6 +5,7 @@ import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.util.FileUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -53,12 +54,6 @@ public class DiskTemTableCursor extends AbstractCursor {
             currChunk = dataChunkStore.getChunk(nextChunkIndex);
             nextChunkIndex++;
             currChunkNextRowIndex = 0;
-        }
-
-        if(nextChunkIndex == 85) {
-            if(currChunkNextRowIndex == currChunk.getDataRowList().size() -1) {
-                System.out.println();
-            }
         }
 
         if(currChunk == null) {
@@ -114,6 +109,6 @@ public class DiskTemTableCursor extends AbstractCursor {
     @Override
     void closeCursor() {
         dataChunkStore.close();
-
+        FileUtil.deleteOnExists(fullFilePath);
     }
 }

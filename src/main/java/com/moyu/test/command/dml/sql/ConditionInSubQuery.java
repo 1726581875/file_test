@@ -11,4 +11,9 @@ public class ConditionInSubQuery implements Condition2 {
     public boolean getResult(RowEntity row) {
         return false;
     }
+
+    @Override
+    public void close() {
+
+    }
 }

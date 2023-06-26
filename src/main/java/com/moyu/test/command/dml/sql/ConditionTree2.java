@@ -38,6 +38,22 @@ public class ConditionTree2 {
         this.isLeaf = isLeaf;
     }
 
+    public void closeConditionTree() {
+        closeCondition(this);
+    }
+
+    private void closeCondition(ConditionTree2 node) {
+        if (node.isLeaf()) {
+          node.getCondition().close();
+        } else {
+            List<ConditionTree2> childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.size(); i++) {
+               closeCondition(childNodes.get(i));
+            }
+        }
+    }
+
+
     public String getJoinType() {
         return joinType;
     }

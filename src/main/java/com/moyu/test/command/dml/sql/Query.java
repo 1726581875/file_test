@@ -1,9 +1,10 @@
 package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
-import com.moyu.test.command.dml.condition.ConditionComparator;
+import com.moyu.test.command.dml.sql.condition.ConditionComparator;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
+import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
@@ -51,6 +52,11 @@ public class Query {
     private Integer limit;
 
     private Integer offset = 0;
+
+    /**
+     * 收集所有游标，以便查询结束后统一关闭
+     */
+    private List<Cursor> cursorList = new ArrayList<>();
 
 
     public SelectColumn[] getSelectColumns() {
@@ -185,11 +191,10 @@ public class Query {
                 break;
             }
             currIndex++;
-
             // 数据量大于10000万，对数据进行物化
-            if(currIndex >= 10000) {
+            if(currIndex >= CommonConfig.MATERIALIZATION_THRESHOLD) {
                 toDisk = true;
-                if(resultRowList.size() == 10000) {
+                if(resultRowList.size() == CommonConfig.MATERIALIZATION_THRESHOLD) {
                     // 临时表名
                     if (diskTemTableName == null) {
                         // TODO 临时表名，需要保证唯一
@@ -486,6 +491,7 @@ public class Query {
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
             cursor = new IndexCursor(dataChunkStore, mainTable.getAllColumns(), table.getSelectIndex().getIndexColumn(), indexPath);
         }
+        cursorList.add(cursor);
         return cursor;
     }
 
@@ -549,7 +555,6 @@ public class Query {
 
 
 
-
     private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree2 joinCondition) {
 
         Condition2 condition = joinCondition.getCondition();
@@ -563,6 +568,17 @@ public class Query {
             return leftColumn.getValue() != null && leftColumn.getValue().equals(rightColumn.getValue());
         } else {
             throw new DbException("不支持连接条件");
+        }
+    }
+
+    public void closeQuery() {
+        if (conditionTree != null) {
+            conditionTree.closeConditionTree();
+        }
+        if (cursorList != null && cursorList.size() > 0) {
+            for (Cursor cursor : cursorList) {
+                cursor.close();
+            }
         }
     }
 

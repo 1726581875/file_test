@@ -228,7 +228,6 @@ public class DataChunkStore {
                 dataChunk.addRow(dataRow);
             } else {
                 fileStore.write(dataChunk.getByteBuffer(), dataChunk.getStartPos());
-
                 dataChunk = createChunk();
                 lastChunk = dataChunk;
                 if (dataChunk.remaining() >= dataRow.getTotalByteLen()) {

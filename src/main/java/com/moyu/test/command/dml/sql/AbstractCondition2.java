@@ -10,8 +10,10 @@ import com.moyu.test.store.metadata.obj.Column;
 public abstract class AbstractCondition2 implements Condition2 {
 
 
+    @Override
+    public void close() {
 
-
+    }
 
     protected Column getColumnData(Column column, RowEntity row) {
         return row.getColumn(column.getColumnName(), column.getTableAlias());

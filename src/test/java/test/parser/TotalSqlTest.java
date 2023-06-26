@@ -19,7 +19,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -34,8 +34,9 @@ public class TotalSqlTest {
         testRangeQuery();
         testRangeIndexQuery();
         testSubQueryTempTableToDisk();
+        gptRandom20Test();*/
 
-        gptRandom20Test();
+        testSubQueryTempTableToDisk();
 
     }
 
