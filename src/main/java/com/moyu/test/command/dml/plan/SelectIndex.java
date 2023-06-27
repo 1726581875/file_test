@@ -32,9 +32,13 @@ public class SelectIndex {
     private Column indexColumn;
 
     private String indexName;
-
+    /**
+     * 是否是范围查询
+     */
     private boolean isRangeQuery;
-
+    /**
+     * 查询条件
+     */
     private Condition2 condition;
 
 

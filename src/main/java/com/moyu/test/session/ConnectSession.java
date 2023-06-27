@@ -1,10 +1,14 @@
 package com.moyu.test.session;
 
+import java.util.UUID;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/15
  */
 public class ConnectSession {
+
+    private String sessionId;
 
     private String userName;
 
@@ -16,6 +20,7 @@ public class ConnectSession {
     public ConnectSession(String userName, Integer databaseId) {
         this.userName = userName;
         this.databaseId = databaseId;
+        this.sessionId = UUID.randomUUID().toString().replace("-", "");
     }
 
     public String getUserName() {
@@ -40,5 +45,9 @@ public class ConnectSession {
 
     public void setTransactionId(int transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
     }
 }

@@ -41,61 +41,49 @@ public class Query {
      * where [conditionTree]
      */
     private ConditionTree2 conditionTree;
-
+    /**
+     * 使用的索引
+     */
     private SelectIndex selectIndex;
-
+    /**
+     * 当前查询最终的结果游标
+     */
     private Cursor queryCursor;
-
+    /**
+     * GROUP BY [groupByColumnName]
+     */
     private String groupByColumnName;
 
+    /**
+     * limit [limitValue]
+     */
     private Integer limit;
-
+    /**
+     * offset [offsetValue]
+     */
     private Integer offset = 0;
 
     /**
-     * 收集所有游标，以便查询结束后统一关闭
+     * 收集用到的所有查询游标，以便查询结束后统一关闭
      */
     private List<Cursor> cursorList = new ArrayList<>();
 
 
-    public SelectColumn[] getSelectColumns() {
-        return selectColumns;
-    }
-
-    public void setSelectColumns(SelectColumn[] selectColumns) {
-        this.selectColumns = selectColumns;
-    }
-
-    public FromTable getMainTable() {
-        return mainTable;
-    }
-
-    public void setMainTable(FromTable mainTable) {
-        this.mainTable = mainTable;
-    }
-
-    public ConditionTree2 getConditionTree() {
-        return conditionTree;
-    }
-
-    public void setConditionTree(ConditionTree2 conditionTree) {
-        this.conditionTree = conditionTree;
-    }
-
-
     public Cursor getQueryResultCursor() {
-        Stack<Query> queryStack = new Stack<>();
-        Query q = this;
-        queryStack.add(q);
-        while ((q = q.getMainTable().getSubQuery()) != null) {
+        if(queryCursor == null) {
+            Stack<Query> queryStack = new Stack<>();
+            Query q = this;
             queryStack.add(q);
+            while ((q = q.getMainTable().getSubQuery()) != null) {
+                queryStack.add(q);
+            }
+            queryCursor = getResultQueryCursor(queryStack);
         }
-        return execQuery(queryStack);
+        return queryCursor;
     }
 
 
-
-    private Cursor execQuery(Stack<Query> queryStack) {
+    private Cursor getResultQueryCursor(Stack<Query> queryStack) {
         Cursor mainCursor = null;
 
         while (!queryStack.isEmpty()) {
@@ -130,7 +118,7 @@ public class Query {
      * @return
      */
     private boolean useFunction(Query query) {
-        // 如果第一个是函数，后面必须都是函数
+        // 如果第一个是统计函数（count、max这类函数），后面必须都是函数
         if (query.getSelectColumns()[0].getFunctionName() != null) {
             for (SelectColumn c : query.getSelectColumns()) {
                 if (c.getFunctionName() == null) {
@@ -139,7 +127,6 @@ public class Query {
             }
             return true;
         }
-        // 否则就是查询
         return false;
     }
 
@@ -189,36 +176,28 @@ public class Query {
             if (query.getLimit() != null && resultRowList.size() >= query.getLimit()) {
                 break;
             }
-            currIndex++;
             // 数据量大于10000万，对数据进行物化
             if(currIndex >= CommonConfig.MATERIALIZATION_THRESHOLD) {
                 toDisk = true;
+                // 保存数据到磁盘
                 if(resultRowList.size() == CommonConfig.MATERIALIZATION_THRESHOLD) {
-                    // 临时表名
-                    if (diskTemTableName == null) {
-                        // TODO 临时表名，需要保证唯一
-                        diskTemTableName = "tmp_" + System.currentTimeMillis();
-                    }
-                    // 保存数据到磁盘
-                    dataToDisk(resultRowList, diskTemTableName);
+                    diskTemTableName = dataToDisk(resultRowList, diskTemTableName);
                     resultRowList.clear();
                 }
             }
-
+            currIndex++;
         }
 
         Cursor resultCursor = null;
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        if(toDisk) {
-            if(resultRowList.size() > 0) {
-                if (diskTemTableName == null) {
-                    diskTemTableName = "tmp_" + System.currentTimeMillis();
-                }
-                dataToDisk(resultRowList, diskTemTableName);
+        // 判断是否已物化
+        if (toDisk) {
+            if (resultRowList.size() > 0) {
+                diskTemTableName = dataToDisk(resultRowList, diskTemTableName);
                 resultRowList.clear();
             }
-            String tmpTablePath = PathUtil.getDataFilePath(session.getDatabaseId(), diskTemTableName);
             try {
+                String tmpTablePath = PathUtil.getDataFilePath(session.getDatabaseId(), diskTemTableName);
                 resultCursor = new DiskTemTableCursor(tmpTablePath, columns);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -230,9 +209,17 @@ public class Query {
     }
 
 
-    private void dataToDisk(List<RowEntity> resultRowList, String tmpTableName) {
+    private String dataToDisk(List<RowEntity> resultRowList, String tmpTableName) {
+        // 临时表名
+        if (tmpTableName == null) {
+            tmpTableName =  "tmp_" + session.getSessionId() + "_"
+                    + UUID.randomUUID().toString().replace("-", "")
+                    + "_" +System.currentTimeMillis();
+        }
+        // 保存到磁盘
         InsertCommand insertCommand = new InsertCommand(session, tmpTableName, null, null);
         insertCommand.batchWriteRows(resultRowList);
+        return tmpTableName;
     }
 
 
@@ -463,6 +450,7 @@ public class Query {
                         mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
                     } catch (Exception e) {
                         e.printStackTrace();
+                        throw new SqlExecutionException("连接查询异常");
                     } finally {
                         joinCursor.close();
                     }
@@ -470,6 +458,7 @@ public class Query {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new SqlExecutionException("查询异常");
         }
         return mainCursor;
     }
@@ -579,6 +568,34 @@ public class Query {
                 cursor.close();
             }
         }
+        if(queryCursor != null) {
+            queryCursor.close();
+        }
+    }
+
+
+    public SelectColumn[] getSelectColumns() {
+        return selectColumns;
+    }
+
+    public void setSelectColumns(SelectColumn[] selectColumns) {
+        this.selectColumns = selectColumns;
+    }
+
+    public FromTable getMainTable() {
+        return mainTable;
+    }
+
+    public void setMainTable(FromTable mainTable) {
+        this.mainTable = mainTable;
+    }
+
+    public ConditionTree2 getConditionTree() {
+        return conditionTree;
+    }
+
+    public void setConditionTree(ConditionTree2 conditionTree) {
+        this.conditionTree = conditionTree;
     }
 
 
