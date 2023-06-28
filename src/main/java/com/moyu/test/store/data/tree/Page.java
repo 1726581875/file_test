@@ -446,26 +446,33 @@ public class Page<K extends Comparable, V> implements SerializableByte {
 
     /**
      * 返回-1，表示比所有关键词都要小
-     * 返回负数，表示找不到关键字，返回值为关键字插入位置
-     * 返回正数，表示找到一样的关键字，其下标为返回值
+     * 返回其他负数，表示找不到关键字，返回值为key应当插入的位置
+     * 返回正数或者0，表示找到一样的关键字，其下标为返回值
      *
      * @param key
      * @return
      */
     public int binarySearch(K key) {
-        if (this.keywordList.size() == 0 || key.compareTo(this.keywordList.get(0)) < 0) {
-            return -1;
-        }
-        for (int i = 0; i < this.keywordList.size(); i++) {
-            K currKey = this.keywordList.get(i);
+        int left = 0;
+        int right = this.keywordList.size() - 1;
+
+        int mid = 0;
+        while (left <= right) {
+            // 求中间值
+            mid = (left + right) >>> 1;
+            K currKey = this.keywordList.get(mid);
+            // 当前关键字等于key，返回位置
             if (currKey.compareTo(key) == 0) {
-                return i;
-                // this.keywordList是从小到大，当找到第一个比key大的值，当前的i就是插入位置
-            } else if (currKey.compareTo(key) > 0) {
-                return -(i + 1);
+                return mid;
+            } else if /* 当前关键字小于key,说明再右侧，缩小范围继续查找 */ (currKey.compareTo(key) < 0) {
+                left = mid + 1;
+            } else /* 当前关键字大于key,说明再左侧，缩小范围继续查找 */{
+                right = mid - 1;
             }
         }
-        return -(this.keywordList.size() + 1);
+
+        // 如果找不到目标元素
+        return -(mid + 1);
     }
 
     public List<K> getKeywordList() {
