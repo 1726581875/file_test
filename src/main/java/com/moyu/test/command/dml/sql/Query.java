@@ -55,6 +55,12 @@ public class Query {
     private String groupByColumnName;
 
     /**
+     * 带distinct关键字
+     * 例如 SELECT DISTINCT name from table
+     */
+    private boolean isDistinct;
+
+    /**
      * limit [limitValue]
      */
     private Integer limit;
@@ -99,6 +105,8 @@ public class Query {
                 mainCursor = getFunctionStatResult(mainCursor, q);
             } else if (useGroupBy(q)) {
                 mainCursor = getGroupByResult(mainCursor, q);
+            } else if(isDistinct){
+                mainCursor = getDistinctResult(mainCursor, q);
             } else {
                 mainCursor = getSimpleQueryResult(mainCursor, q);
             }
@@ -168,6 +176,8 @@ public class Query {
                 String currTableAlias = query.getMainTable().getAlias();
                 rowEntity = new RowEntity(row.getColumns(), currTableAlias);
             }
+            rowEntity.setDeleted(row.isDeleted());
+
             boolean matchCondition = ConditionComparator.isMatch(rowEntity, query.getConditionTree());
             if (matchCondition && query.isMatchLimit(query, currIndex)) {
                 Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
@@ -291,6 +301,37 @@ public class Query {
     }
 
 
+    private Cursor getDistinctResult(Cursor cursor, Query query) {
+
+        // 去重
+        Set<RowEntity> distinctSet = new HashSet<>();
+        RowEntity row = null;
+        while ((row = cursor.next()) != null) {
+            if (ConditionComparator.isMatch(row, query.getConditionTree())) {
+                RowEntity rowEntity = filterColumns(row, query.getSelectColumns());
+                if(!distinctSet.contains(rowEntity)) {
+                    distinctSet.add(rowEntity);
+                }
+            }
+        }
+
+        // 最终结果
+        int currIndex = 0;
+        List<RowEntity> resultRowList = new ArrayList<>();
+        for (RowEntity rowEntity : distinctSet) {
+            if(query.isMatchLimit(query, currIndex)) {
+                resultRowList.add(rowEntity);
+                currIndex++;
+            }
+            if (query.getLimit() != null && resultRowList.size() >= query.getLimit()) {
+                break;
+            }
+        }
+        Column[] columns = SelectColumn.getColumnBySelectColumn(query);
+        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        return resultCursor;
+    }
+
     private List<StatFunction> getFunctionList(Query query) {
         List<StatFunction> statFunctions = new ArrayList<>(query.getSelectColumns().length);
         for (SelectColumn selectColumn : query.getSelectColumns()) {
@@ -306,7 +347,12 @@ public class Query {
             }
             switch (functionName) {
                 case FunctionConstant.FUNC_COUNT:
-                    statFunctions.add(new CountFunction(columnName));
+                    String[] split = columnName.split("\\s+");
+                    if(split.length > 1) {
+                        statFunctions.add(new CountFunction(split[1], true));
+                    } else {
+                        statFunctions.add(new CountFunction(split[0]));
+                    }
                     break;
                 case FunctionConstant.FUNC_SUM:
                     statFunctions.add(new SumFunction(columnName));
@@ -637,5 +683,10 @@ public class Query {
 
     public void setSelectIndex(SelectIndex selectIndex) {
         this.selectIndex = selectIndex;
+    }
+
+
+    public void setDistinct(boolean distinct) {
+        isDistinct = distinct;
     }
 }

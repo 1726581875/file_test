@@ -1,5 +1,6 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.command.dml.function.StatFunction;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.ColumnTypeEnum;
 
@@ -37,6 +38,8 @@ public class SelectColumn {
      * 函数参数
      */
     private String[] args;
+
+    private StatFunction statFunction;
 
 
     public SelectColumn(Column column, String selectColumnName, String functionName, String[] args) {

@@ -4,6 +4,7 @@ import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * @author xiaomingzhang
@@ -64,6 +65,26 @@ public class RowEntity {
     public static RowEntity mergeRow(RowEntity leftRow, RowEntity rightRow) {
         Column[] columns = Column.mergeColumns(leftRow.getColumns(), rightRow.getColumns());
         return new RowEntity(columns);
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RowEntity rowEntity = (RowEntity) o;
+        return isDeleted == rowEntity.isDeleted && Arrays.equals(columns, rowEntity.columns);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(isDeleted);
+        result = 31 * result + Arrays.hashCode(columns);
+        return result;
     }
 
     @Override

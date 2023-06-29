@@ -61,6 +61,8 @@ public class SqlParser implements Parser {
     private static final String TABLE = "TABLE";
     private static final String INDEX = "INDEX";
 
+    private static final String DISTINCT = "DISTINCT";
+
 
     public SqlParser(ConnectSession connectSession) {
         this.connectSession = connectSession;
@@ -461,6 +463,10 @@ public class SqlParser implements Parser {
 
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
+        if(selectColumnsStr.startsWith("DISTINCT")  || selectColumnsStr.startsWith("distinct")) {
+            query.setDistinct(true);
+            selectColumnsStr = selectColumnsStr.substring("DISTINCT".length()).trim();
+        }
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
         // 解析条件
@@ -591,9 +597,10 @@ public class SqlParser implements Parser {
 
     private FromTable parseFormTableOperation() {
         Map<String,Column> columnMap = new HashMap<>();
+        // 解析查询的表信息
         FromTable mainTable = parseTableInfo();
-        mainTable.setJoinTables(new ArrayList<>());
 
+        mainTable.setJoinTables(new ArrayList<>());
 
         Column[] columns = getColumns(mainTable.getTableName());
         Column.setColumnTableAlias(columns, mainTable.getAlias());
@@ -621,34 +628,32 @@ public class SqlParser implements Parser {
             if (CommonConstant.JOIN_TYPE_INNER.equals(word11)
                     || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
                     || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
-                String joinType = getNextKeyWord();
-                String join = getNextKeyWord();
-                if (!"JOIN".equals(join)) {
-                    throw new SqlIllegalException("sql语法有误");
-                }
+                // skip keyword INNER/LEFT/RIGHT
+                getNextKeyWord();
+                // skip keyword JOIN
+                assertNextKeywordIs("JOIN");
 
+                // 解析连接表信息
                 FromTable joinTable = parseTableInfo();
-                mainTable.getJoinTables().add(joinTable);
-
-
                 Column[] columns2 = getColumns(joinTable.getTableName());
                 Column.setColumnTableAlias(columns2, joinTable.getAlias());
                 for (Column c : columns2) {
                     columnMap.put(c.getTableAliasColumnName(), c);
                 }
+                // skip keyword ON
+                assertNextKeywordIs("ON");
 
-                String word12 = getNextKeyWord();
-                if (!"ON".equals(word12)) {
-                    throw new SqlIllegalException("sql语法有误");
-                }
-                Condition2 condition = parseJoinCondition(columnMap);
                 // todo 目前只支持单条件连接
+                // 解析连接条件
+                Condition2 condition = parseJoinCondition(columnMap);
                 ConditionTree2 joinCondiTree = new ConditionTree2();
                 joinCondiTree.setLeaf(true);
                 joinCondiTree.setJoinType(ConditionConstant.AND);
                 joinCondiTree.setCondition(condition);
                 joinTable.setJoinCondition(joinCondiTree);
                 joinTable.setJoinInType(word11);
+
+                mainTable.getJoinTables().add(joinTable);
             } else {
                 break;
             }
@@ -776,18 +781,39 @@ public class SqlParser implements Parser {
                     }
                 }
             } else {
-                // 处理字段alias， 可能情况SELECT columnName AS aliasName 、SELECT columnName aliasName、 SELECT columnName
-                String[] split = str.split("\\s+");
-                String columnStr = split[0];
+
                 String alias = null;
-                if (split.length == 2) {
-                    alias = split[1];
-                } else if (split.length == 3) {
-                    if (!"AS".equals(split[1].toUpperCase())) {
-                        throw new SqlIllegalException("sql语法有误，在" + str + "附近");
+
+                // 解析字段名
+                String columnStr = null;
+                if(isStartWithFunc(str)) {
+                    int columnEnd = str.indexOf(")");
+                    if (columnEnd == -1) {
+                        throw new SqlIllegalException("语法有误，" + str);
                     }
-                    alias = split[2];
+                    columnStr = str.substring(0, columnEnd + 1);
+                } else {
+                    String[] split = str.split("\\s+");
+                    columnStr = split[0];
                 }
+                /*
+                  处理字段alias
+                  可能情况 columnName AS aliasName 、columnName aliasName
+                          COUNT(name) AS aliasName、COUNT(DISTINCT name) AS aliasName
+                 */
+                if(str.length() > columnStr.length()) {
+                    String aliasStr = str.substring(columnStr.length()).trim();
+                    String[] split = aliasStr.split("\\s+");
+                    if (split.length == 1) {
+                        alias = split[0];
+                    } else if (split.length == 2) {
+                        if (!"AS".equals(split[0].toUpperCase())) {
+                            throw new SqlIllegalException("sql语法有误，在" + str + "附近");
+                        }
+                        alias = split[1];
+                    }
+                }
+
 
                 SelectColumn selectColumn = null;
                 //函数
@@ -825,14 +851,22 @@ public class SqlParser implements Parser {
 
     private boolean isFunctionColumn(String functionStr) {
         String upperCase = functionStr.toUpperCase();
+        if (isStartWithFunc(functionStr)) {
+            if (upperCase.endsWith(")")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isStartWithFunc(String columnStr) {
+        String upperCase = columnStr.toUpperCase();
         if (upperCase.startsWith(FunctionConstant.FUNC_COUNT + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_MAX + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_MIN + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_SUM + "(")
                 || upperCase.startsWith(FunctionConstant.FUNC_AVG + "(")) {
-            if (upperCase.endsWith(")")) {
-                return true;
-            }
+            return true;
         }
         return false;
     }
@@ -859,12 +893,22 @@ public class SqlParser implements Parser {
                     args[0] = "*";
                     break;
                 }
+                args = new String[1];
+                String columnName0 = getFunctionArg(functionStr);
+                String[] argColumns = columnName0.split("\\s+");
+                String cName = argColumns.length > 1 ? argColumns[1] : argColumns[0];
+                column = columnInfo.getColumn(cName);
+                if (column == null) {
+                    throw new SqlIllegalException("sql不合法，字段" + cName + "不存在");
+                }
+                args[0] = columnName0;
+                break;
             case FunctionConstant.FUNC_MAX:
             case FunctionConstant.FUNC_MIN:
             case FunctionConstant.FUNC_SUM:
             case FunctionConstant.FUNC_AVG:
                 args = new String[1];
-                String columnName = getFunctionArg(functionStr);;
+                String columnName = getFunctionArg(functionStr);
                 column = columnInfo.getColumn(columnName);
                 if (column == null) {
                     throw new SqlIllegalException("sql不合法，字段" + columnName + "不存在");

@@ -17,6 +17,9 @@ public class UndoLogStoreTest {
     public static void main(String[] args) {
 
         ConnectSession connectSession = new ConnectSession("xmz", 1);
+
+        testExecSQL("drop table if exists xmz_yan", connectSession);
+
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)", connectSession);
         testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')", connectSession);
         testExecSQL("insert into xmz_yan(id,name,time) value (2,'222','2023-05-19 00:00:00')", connectSession);
@@ -24,11 +27,11 @@ public class UndoLogStoreTest {
 
 
         int tid = TransactionManager.initTransaction(connectSession);
-        //testExecSQL("update xmz_yan set name = '520' where id = 1", connectSession);
-        //testExecSQL("update xmz_yan set name = '250' where id = 2", connectSession);
+        testExecSQL("update xmz_yan set name = '520' where id = 1", connectSession);
+        testExecSQL("update xmz_yan set name = '250' where id = 2", connectSession);
         //testExecSQL("insert into xmz_yan(id,name,time) value (4,'444','2023-05-19 00:00:00')", connectSession);
-        testExecSQL("delete from xmz_yan where id = 1", connectSession);
-        testExecSQL("delete from xmz_yan where id = 2", connectSession);
+//        testExecSQL("delete from xmz_yan where id = 1", connectSession);
+//        testExecSQL("delete from xmz_yan where id = 2", connectSession);
         testExecSQL("select * from xmz_yan", connectSession);
         Transaction transaction = TransactionManager.getTransaction(tid);
         transaction.rollback();
@@ -36,7 +39,7 @@ public class UndoLogStoreTest {
 
         testExecSQL("select * from xmz_yan", connectSession);
 
-        testExecSQL("drop table xmz_yan", connectSession);
+
 
     }
 

@@ -43,53 +43,60 @@ public class TotalSqlTest {
     }
 
 
+    private static void unsupportedSQL(){
+        // 字段带函数
+        //testExecSQL("SELECT * FROM xmz_o_2 WHERE DATE(time) = '2023-06-29'");
+
+    }
+
+
 
 
     private static void gptRandom20Test2(){
-        testExecSQL("drop table if exists  xmz_o_1");
-        testExecSQL("create table xmz_o_1 (id int, name varchar(10), time timestamp)");
+        testExecSQL("drop table if exists  xmz_o_2");
+        testExecSQL("create table xmz_o_2 (id int, name varchar(10), time timestamp)");
 
 
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (1, 'John', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (2, 'Alice', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (3, 'Bob', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (4, 'Charlie', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (5, 'Emily', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (6, 'David', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (7, 'Emma', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (8, 'Oliver', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (9, 'Sophia', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (10, 'James', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (11, 'Isabella', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (12, 'Liam', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (13, 'Mia', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (14, 'Benjamin', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (15, 'Charlotte', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (16, 'Henry', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (17, 'Ava', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (18, 'Ethan', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (19, 'Amelia', '2023-06-26 01:24:38')");
-        testExecSQL("INSERT INTO xmz_o_1 (id, name, time) VALUES (20, 'Noah', '2023-06-26 01:24:38')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (3, 'Mike', '2023-06-29 11:15:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (4, 'Emily', '2023-06-29 12:00:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (5, 'Tom', '2023-06-29 13:20:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (7, 'Daniel', '2023-06-29 15:45:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (8, 'Olivia', '2023-06-29 16:30:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (9, 'David', '2023-06-29 17:15:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (10, 'Emma', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Emma', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Emma', '2023-06-29 18:00:00')");
 
+/*        testExecSQL("SELECT COUNT(DISTINCT name) FROM xmz_o_2");
+        testExecSQL("SELECT COUNT(name) FROM xmz_o_2");*/
 
-        //testExecSQL("SELECT DISTINCT name FROM xmz_o_1 ORDER BY time DESC");
+        testExecSQL("SELECT DISTINCT name FROM xmz_o_2");
+        testExecSQL("SELECT DISTINCT name,id FROM xmz_o_2");
 
-        testExecSQL("SELECT AVG(id) FROM xmz_o_1");
-        testExecSQL("SELECT * FROM xmz_o_1 WHERE id > (SELECT MIN(id) FROM xmz_o_1)");
-        testExecSQL("SELECT * FROM xmz_o_1 WHERE id <= (SELECT MIN(id) FROM xmz_o_1)");
-        //testExecSQL("SELECT name, COUNT(*) FROM xmz_o_1 GROUP BY name HAVING COUNT(*) > 1");
-        //testExecSQL("SELECT * FROM xmz_o_1 WHERE id = (SELECT MAX(id) FROM xmz_o_1)");
-        //testExecSQL("SELECT YEAR(time), COUNT(*) FROM xmz_o_1 GROUP BY YEAR(time)");
+/*        testExecSQL("SELECT * FROM xmz_o_2 WHERE id = 5");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name = 'John'");
+        testExecSQL("SELECT id, name FROM xmz_o_2 WHERE id > 3 AND id < 8");
+        testExecSQL("SELECT COUNT(*) FROM xmz_o_2");
+        testExecSQL("SELECT MAX(time) FROM xmz_o_2");
+        testExecSQL("SELECT name FROM xmz_o_2 ORDER BY id DESC LIMIT 3");
+        //testExecSQL("SELECT * FROM xmz_o_2 WHERE DATE(time) = '2023-06-29'");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE id IN (2, 4, 6)");
+        testExecSQL("SELECT AVG(id) FROM xmz_o_2");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name LIKE '%a%'");
 
-
-        //testExecSQL("SELECT DATEDIFF(NOW(), time) AS diff FROM xmz_o_1");
-        //testExecSQL("SELECT id, CASE WHEN name IS NULL THEN 'Unknown' ELSE name END AS name FROM xmz_o_1");
-
-//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Isabella'");
-//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Is%'");
-//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Is1%'");
-//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name not like 'Is%'");
-//        testExecSQL("SELECT * FROM xmz_o_1 WHERE name like 'Isab%lla'");
+        testExecSQL("SELECT id, name FROM xmz_o_2 WHERE id BETWEEN 3 AND 7");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name = 'Tom' AND time >= '2023-06-29 13:00:00'");
+        //testExecSQL("SELECT DISTINCT name FROM xmz_o_2");
+        testExecSQL("SELECT * FROM xmz_o_2 ORDER BY time ASC");
+        testExecSQL("SELECT AVG(id) FROM xmz_o_2 WHERE time < '2023-06-29 15:00:00'");
+        //testExecSQL("SELECT COUNT(DISTINCT name) FROM xmz_o_2");
+        //testExecSQL("SELECT * FROM xmz_o_2 WHERE YEAR(time) = 2023");
+        testExecSQL("SELECT id, name FROM xmz_o_2 WHERE id > (SELECT MAX(id) FROM xmz_o_2)");
+        testExecSQL("SELECT * FROM xmz_o_2 WHERE name LIKE 'D%'");
+        testExecSQL("SELECT MIN(time) FROM xmz_o_2");*/
     }
 
 
@@ -157,7 +164,7 @@ public class TotalSqlTest {
         testExecSQL("SELECT id FROM xmz_o_1 WHERE name IS NOT NULL");
         testExecSQL("SELECT * FROM xmz_o_1 WHERE time BETWEEN '2023-01-01 00:00:00' AND '2023-06-30 23:59:59'");
         testExecSQL("SELECT MIN(time) FROM xmz_o_1");
-        //testExecSQL("SELECT * FROM xmz_o_1 WHERE id > (SELECT AVG(id) FROM xmz_o_1)");
+        testExecSQL("SELECT * FROM xmz_o_1 WHERE id > (SELECT MAX(id) FROM xmz_o_1)");
         //testExecSQL("SELECT name, COUNT(*) FROM xmz_o_1 GROUP BY name HAVING COUNT() > 1");
         //testExecSQL("SELECT * FROM xmz_o_1 WHERE id = (SELECT MAX(id) FROM xmz_o_1)");
         //testExecSQL("SELECT YEAR(time), COUNT(*) FROM xmz_o_1 GROUP BY YEAR(time)");
