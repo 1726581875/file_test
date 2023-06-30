@@ -19,7 +19,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -35,9 +35,17 @@ public class TotalSqlTest {
         testRangeIndexQuery();
         testSubQueryTempTableToDisk();
         testLikeString();
-        gptRandom20Test();
+        gptRandom20Test();*/
 
-        gptRandom20Test2();
+        //gptRandom20Test2();
+
+
+
+        fastInsertData("y_y_1", 100000);
+        fastInsertData("y_y_2", 1000);
+
+        testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
+        testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
 
 
     }
@@ -69,12 +77,14 @@ public class TotalSqlTest {
         testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (10, 'Emma', '2023-06-29 18:00:00')");
         testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Emma', '2023-06-29 18:00:00')");
         testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Emma', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_o_2 (id, name, time) VALUES (11, 'Emma', '2022-06-29 18:00:00')");
 
 /*        testExecSQL("SELECT COUNT(DISTINCT name) FROM xmz_o_2");
         testExecSQL("SELECT COUNT(name) FROM xmz_o_2");*/
 
         testExecSQL("SELECT DISTINCT name FROM xmz_o_2");
         testExecSQL("SELECT DISTINCT name,id FROM xmz_o_2");
+        testExecSQL("SELECT DISTINCT name,id,time FROM xmz_o_2");
 
 /*        testExecSQL("SELECT * FROM xmz_o_2 WHERE id = 5");
         testExecSQL("SELECT * FROM xmz_o_2 WHERE name = 'John'");

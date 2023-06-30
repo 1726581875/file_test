@@ -11,6 +11,7 @@ import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.Column;
@@ -516,6 +517,11 @@ public class Query {
         if (table.getSelectIndex() == null) {
             System.out.println("不用索引，table:" + table.getTableName());
             cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
+            // 如果是小表，直接读取整个表的数据到内存
+            if(dataChunkStore.getDataChunkNum() * DataChunk.DATA_CHUNK_LEN <= CommonConfig.TABLE_IN_MEMORY_MAX_SIZE) {
+                cursor =  convertToInMemoryCursor(cursor);
+            }
+
         } else if(table.getSelectIndex() != null && table.getSelectIndex().isRangeQuery()){
             System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
@@ -530,18 +536,30 @@ public class Query {
     }
 
 
+    private Cursor convertToInMemoryCursor(Cursor diskCursor) {
+        List<RowEntity> rows = new LinkedList();
+        RowEntity row;
+        while ((row = diskCursor.next()) != null) {
+            if (!row.isDeleted()) {
+                rows.add(row);
+            }
+        }
+        return new MemoryTemTableCursor(new ArrayList<>(rows), diskCursor.getColumns());
+    }
+
+
     private Cursor doJoinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree2 joinCondition, String joinType) {
 
         // 字段元数据
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
 
-        List<RowEntity> resultList = new ArrayList<>();
+        List<RowEntity> resultList = new LinkedList<>();
         // 内连接、左连接
         if (CommonConstant.JOIN_TYPE_INNER.equals(joinType)
                 || CommonConstant.JOIN_TYPE_LEFT.equals(joinType)) {
             RowEntity leftRow = null;
             while ((leftRow = leftCursor.next()) != null) {
-                List<RowEntity> rows = new ArrayList<>();
+                List<RowEntity> rows = new LinkedList<>();
                 RowEntity rightRow = null;
                 while ((rightRow = rightCursor.next()) != null) {
                     if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {

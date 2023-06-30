@@ -33,6 +33,7 @@ public class SelectCommand extends AbstractCommand {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
         Cursor queryResultCursor = this.query.getQueryResultCursor();
+
         queryResult = parseQueryResult(queryResultCursor);
         long queryEndTime = System.currentTimeMillis();
 
