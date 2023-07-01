@@ -1,7 +1,7 @@
 package test.tree;
 
-import com.moyu.test.store.data.tree.BpTreeMap;
-import com.moyu.test.store.data.tree.BpTreeStore;
+import com.moyu.test.store.data2.BTreeMap;
+import com.moyu.test.store.data2.BTreeStore;
 import com.moyu.test.store.type.IntColumnType;
 import com.moyu.test.store.type.StringColumnType;
 import com.moyu.test.util.FileUtil;
@@ -14,9 +14,9 @@ import java.io.IOException;
  * @author xiaomingzhang
  * @date 2023/5/25
  */
-public class BpTreeTest2 {
+public class BpTreeTest3 {
 
-    private static final String testPath = PathUtil.getBaseDirPath() + File.separator + "b2.data";
+    private static final String testPath = PathUtil.getBaseDirPath() + File.separator + "b3.data";
     /**
      * 写入磁盘测试
      * @param args
@@ -25,10 +25,11 @@ public class BpTreeTest2 {
     public static void main(String[] args) throws IOException {
 
         FileUtil.deleteOnExists(testPath);
-        BpTreeStore bpTreeStore = new BpTreeStore(testPath);
+
+        BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {
-            BpTreeMap<Integer, String> bTreeMap = null;
-            bTreeMap = new BpTreeMap<>(1024,
+            BTreeMap<Integer, String> bTreeMap = null;
+            bTreeMap = new BTreeMap<>(1024,
                     new IntColumnType(),
                     new StringColumnType(),
                     bpTreeStore, false);

@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public abstract class AbstractColumnType<T extends Comparable> implements DataType<T> {
+public abstract class AbstractColumnType<T> implements DataType<T> {
 
 
     @Override
@@ -46,7 +46,11 @@ public abstract class AbstractColumnType<T extends Comparable> implements DataTy
 
     @Override
     public int compare(T a, T b) {
-       return a.compareTo(b);
+        if(a instanceof Comparable && b instanceof Comparable) {
+            return ((Comparable)a).compareTo(((Comparable)b));
+        } else {
+            throw new UnsupportedOperationException("不支持compare方法");
+        }
     }
 
     /**

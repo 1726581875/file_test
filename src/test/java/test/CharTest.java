@@ -26,8 +26,35 @@ public class CharTest {
         System.out.println("byte len:" + str.getBytes().length);;*/
 
 
-        System.out.println(likeTest("hello","HELLO1"));
-        System.out.println(likeTest("he%", "hello"));
+/*        System.out.println(likeTest("hello","HELLO1"));
+        System.out.println(likeTest("he%", "hello"));*/
+
+
+        long b1 = System.currentTimeMillis();
+        int a = 0;
+        for (int i = 0; i < 1000; i++) {
+            for (int j = 0; j < 100000; j++) {
+                a = i + j + a;
+                a = i + j + a;
+                a = i + j + a;
+            }
+        }
+        System.out.println(System.currentTimeMillis() - b1);
+        //System.out.println(a);
+
+
+        long b2 = System.currentTimeMillis();
+        a = 0;
+        for (int i = 0; i < 100000; i++) {
+            for (int j = 0; j < 1000; j++) {
+                a = i + j + a;
+                a = i + j + a;
+                a = i + j + a;
+            }
+        }
+        System.out.println(System.currentTimeMillis() - b2);
+        //System.out.println(a);
+
 
     }
 

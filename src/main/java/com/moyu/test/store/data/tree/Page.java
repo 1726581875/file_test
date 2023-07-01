@@ -472,7 +472,7 @@ public class Page<K extends Comparable, V> implements SerializableByte {
         }
 
         // 如果找不到目标元素
-        return -(mid + 1);
+        return -(left + 1);
     }
 
     public List<K> getKeywordList() {

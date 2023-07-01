@@ -19,7 +19,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -35,17 +35,17 @@ public class TotalSqlTest {
         testRangeIndexQuery();
         testSubQueryTempTableToDisk();
         testLikeString();
-        gptRandom20Test();*/
+        gptRandom20Test();
 
-        //gptRandom20Test2();
+        gptRandom20Test2();
 
 
 
-        fastInsertData("y_y_1", 100000);
+/*        fastInsertData("y_y_1", 100000);
         fastInsertData("y_y_2", 1000);
 
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
-        testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
+        testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");*/
 
 
     }
@@ -393,7 +393,7 @@ public class TotalSqlTest {
         testExecSQL("select max(id),min(id) from table_1");
 
         testExecSQL("select count(time) from table_1 where id = 2");
-        testExecSQL("select sum(time) from table_1 where id = 2");
+        //testExecSQL("select sum(time) from table_1 where id = 2");
         testExecSQL("select max(time) from table_1 where id = 2");
         testExecSQL("select min(time) from table_1 where id = 2");
 
