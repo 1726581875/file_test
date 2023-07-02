@@ -6,6 +6,7 @@ import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.operation.OperateTableInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -225,7 +226,8 @@ public class TotalSqlTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 1);
-        InsertCommand insertCommand = new InsertCommand(connectSession, tableName, null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, null, null);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);

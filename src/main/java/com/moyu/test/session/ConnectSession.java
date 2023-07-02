@@ -1,5 +1,7 @@
 package com.moyu.test.session;
 
+import com.moyu.test.constant.CommonConstant;
+
 import java.util.UUID;
 
 /**
@@ -15,6 +17,12 @@ public class ConnectSession {
     private Integer databaseId;
 
     private int transactionId;
+
+    /**
+     * yyStore b+树叶子节点存储行
+     * anStore 按顺序存储的
+     */
+    private String storeType = CommonConstant.STORE_TYPE_YU;
 
 
     public ConnectSession(String userName, Integer databaseId) {
@@ -49,5 +57,9 @@ public class ConnectSession {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getStoreType() {
+        return storeType;
     }
 }

@@ -13,6 +13,7 @@ import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
+import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.AssertUtil;
 
 import java.text.ParseException;
@@ -338,13 +339,8 @@ public class SqlParser implements Parser {
         }
 
 
-        UpdateCommand updateCommand = new UpdateCommand(this.connectSession.getDatabaseId(),
-                tableName,
-                columns,
-                updateColumnList.toArray(new Column[0]),
-                root);
-
-        updateCommand.setSession(this.connectSession);
+        OperateTableInfo operateTableInfo = new OperateTableInfo(this.connectSession, tableName, columns, root);
+        UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
 
         return updateCommand;
     }
@@ -384,7 +380,10 @@ public class SqlParser implements Parser {
             parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
-        DeleteCommand deleteCommand = new DeleteCommand(connectSession, tableName, columns, root);
+        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
+        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, root);
+        tableInfo.setIndexList(indexMetadataList);
+        DeleteCommand deleteCommand = new DeleteCommand(tableInfo);
         return deleteCommand;
     }
 
@@ -1400,17 +1399,22 @@ public class SqlParser implements Parser {
 
         // 插入字段赋值
         Column[] columns = getColumns(tableName);
-        for (Column column : columns) {
+        Column[] dataColumns = new Column[columns.length];
+
+        for (int i = 0; i < columns.length; i++) {
+            Column column = columns[i].copy();
             String value = columnValueMap.get(column.getColumnName());
             setColumnValue(column, value);
+            dataColumns[i] = column;
         }
-
 
         // 当前索引列表
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
 
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, columns, null);
+        tableInfo.setIndexList(indexMetadataList);
 
-        return new InsertCommand(connectSession, tableName, columns, indexMetadataList);
+        return new InsertCommand(tableInfo, dataColumns);
     }
 
 

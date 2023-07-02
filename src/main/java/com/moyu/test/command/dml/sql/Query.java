@@ -16,6 +16,7 @@ import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
+import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.PathUtil;
 
 import java.io.IOException;
@@ -228,7 +229,8 @@ public class Query {
                     + "_" +System.currentTimeMillis();
         }
         // 保存到磁盘
-        InsertCommand insertCommand = new InsertCommand(session, tmpTableName, null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(session, tmpTableName, null, null);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         insertCommand.batchWriteRows(resultRowList);
         return tmpTableName;
     }

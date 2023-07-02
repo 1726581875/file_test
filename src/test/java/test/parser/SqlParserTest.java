@@ -6,6 +6,8 @@ import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.operation.OperateTableInfo;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -103,7 +105,8 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 1);
-        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_5", null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "xmz_5", null, null);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -151,7 +154,8 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 0);
-        InsertCommand insertCommand = new InsertCommand(connectSession, "xmz_3", null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "xmz_3", null, null);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
@@ -200,7 +204,8 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 0);
-        InsertCommand insertCommand = new InsertCommand(connectSession, "table_1", null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "table_1", null, null);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);

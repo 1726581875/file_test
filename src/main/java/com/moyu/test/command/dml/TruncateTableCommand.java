@@ -9,7 +9,6 @@ import com.moyu.test.util.PathUtil;
  */
 public class TruncateTableCommand extends AbstractCommand {
 
-
     private Integer databaseId;
 
     private String tableName;
