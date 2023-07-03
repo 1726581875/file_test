@@ -11,7 +11,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public class ConditionInOrNot extends AbstractCondition2 {
+public class ConditionInOrNot extends AbstractCondition {
 
     private Column column;
 

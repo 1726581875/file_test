@@ -1,6 +1,6 @@
 package com.moyu.test.store.operation;
 
-import com.moyu.test.command.dml.sql.ConditionTree2;
+import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
@@ -22,10 +22,10 @@ public abstract class BasicOperation {
 
     protected Column[] tableColumns;
 
-    protected ConditionTree2 conditionTree;
+    protected ConditionTree conditionTree;
 
 
-    public BasicOperation(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree2 conditionTree) {
+    public BasicOperation(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree conditionTree) {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;

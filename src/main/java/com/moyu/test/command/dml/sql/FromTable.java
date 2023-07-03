@@ -31,7 +31,7 @@ public class FromTable {
     /**
      * 查询条件
      */
-    private ConditionTree2 tableCondition;
+    private ConditionTree tableCondition;
     /**
      * 连接类型
      * LEFT 左连接
@@ -42,7 +42,7 @@ public class FromTable {
     /**
      * 连接条件
      */
-    private ConditionTree2 joinCondition;
+    private ConditionTree joinCondition;
     /**
      * 连接的表
      */
@@ -62,7 +62,7 @@ public class FromTable {
     private String engineType;
 
 
-    public FromTable(String tableName, Column[] tableColumns, ConditionTree2 tableCondition) {
+    public FromTable(String tableName, Column[] tableColumns, ConditionTree tableCondition) {
         this.tableName = tableName;
         this.tableColumns = tableColumns;
         this.tableCondition = tableCondition;
@@ -92,11 +92,11 @@ public class FromTable {
         return engineType;
     }
 
-    public ConditionTree2 getTableCondition() {
+    public ConditionTree getTableCondition() {
         return tableCondition;
     }
 
-    public void setTableCondition(ConditionTree2 tableCondition) {
+    public void setTableCondition(ConditionTree tableCondition) {
         this.tableCondition = tableCondition;
     }
 
@@ -116,11 +116,11 @@ public class FromTable {
         this.joinTables = joinTables;
     }
 
-    public ConditionTree2 getJoinCondition() {
+    public ConditionTree getJoinCondition() {
         return joinCondition;
     }
 
-    public void setJoinCondition(ConditionTree2 joinCondition) {
+    public void setJoinCondition(ConditionTree joinCondition) {
         this.joinCondition = joinCondition;
     }
 

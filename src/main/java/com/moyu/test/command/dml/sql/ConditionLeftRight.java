@@ -7,7 +7,7 @@ import com.moyu.test.store.metadata.obj.Column;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public class ConditionLeftRight extends AbstractCondition2{
+public class ConditionLeftRight extends AbstractCondition {
 
     private Column left;
 

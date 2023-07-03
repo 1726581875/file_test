@@ -2,6 +2,7 @@ package com.moyu.test.command;
 
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
+import com.moyu.test.command.dml.plan.Optimizer;
 import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.command.dml.plan.SqlPlan;
@@ -327,16 +328,11 @@ public class SqlParser implements Parser {
 
 
         // 解析where条件
-        ConditionTree2 root = null;
+        ConditionTree root = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if("WHERE".equals(nextKeyWord)) {
-            skipSpace();
-            root = new ConditionTree2();
-            root.setLeaf(false);
-            root.setJoinType(ConditionConstant.AND);
-            root.setChildNodes(new ArrayList<>());
-            parseWhereCondition2(root, getColumnMap(columns), null);
+            root = parseCondition(columns);
         }
 
 
@@ -344,6 +340,16 @@ public class SqlParser implements Parser {
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
 
         return updateCommand;
+    }
+
+    private ConditionTree parseCondition(Column[] columns) {
+        skipSpace();
+        ConditionTree conditionTree = new ConditionTree();
+        conditionTree.setLeaf(false);
+        conditionTree.setJoinType(ConditionConstant.AND);
+        conditionTree.setChildNodes(new ArrayList<>());
+        parseWhereCondition(conditionTree, getColumnMap(columns), null, null);
+        return conditionTree;
     }
 
 
@@ -369,16 +375,10 @@ public class SqlParser implements Parser {
 
         Column[] columns = getColumns(tableName);
 
-        ConditionTree2 root = null;
-        skipSpace();
+        ConditionTree root = null;
         String nextKeyWord = getNextKeyWord();
-        if("WHERE".equals(nextKeyWord)) {
-            skipSpace();
-            root = new ConditionTree2();
-            root.setLeaf(false);
-            root.setJoinType(ConditionConstant.AND);
-            root.setChildNodes(new ArrayList<>());
-            parseWhereCondition2(root, getColumnMap(columns), null);
+        if ("WHERE".equals(nextKeyWord)) {
+            root = parseCondition(columns);
         }
 
         OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, root);
@@ -387,7 +387,7 @@ public class SqlParser implements Parser {
     }
 
 
-    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, ConditionTree2 conditionTree) {
+    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, ConditionTree conditionTree) {
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
         TableMetadata tableMeta = getTableMeta(tableName);
         OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, conditionTree);
@@ -397,13 +397,14 @@ public class SqlParser implements Parser {
     }
 
 
-    /**
-     * TODO 待优化
-     * @return
-     */
+
     private SelectCommand getSelectCommand() {
+        // 解析查询sql
         Query query = parseQuery(null);
         query.setSession(connectSession);
+        // 对查询进行优化
+        Optimizer optimizer = new Optimizer(query);
+        query = optimizer.optimizeQuery();
         SelectCommand selectCommand = new SelectCommand(query);
         return selectCommand;
     }
@@ -478,7 +479,7 @@ public class SqlParser implements Parser {
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
         // 解析条件
-        ConditionTree2 conditionRoot = new ConditionTree2(ConditionConstant.AND, new ArrayList<>(), false);
+        ConditionTree conditionRoot = new ConditionTree(ConditionConstant.AND, new ArrayList<>(), false);
         // GROUP BY
         String groupByColumnName = null;
 
@@ -504,12 +505,10 @@ public class SqlParser implements Parser {
                 columnMap.put(c.getColumnName(), c);
             }
 
-            parseWhereCondition2(conditionRoot, columnMap, subQueryStartEnd);
+            parseWhereCondition(conditionRoot, columnMap, null, subQueryStartEnd);
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
             String nextKeyWord2 = getNextKeyWordUnMove();
-
-
             if("LIMIT".equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
             } else if ("ORDER".equals(nextKeyWord2)) {
@@ -654,8 +653,8 @@ public class SqlParser implements Parser {
 
                 // todo 目前只支持单条件连接
                 // 解析连接条件
-                Condition2 condition = parseJoinCondition(columnMap);
-                ConditionTree2 joinCondiTree = new ConditionTree2();
+                Condition condition = parseJoinCondition(columnMap);
+                ConditionTree joinCondiTree = new ConditionTree();
                 joinCondiTree.setLeaf(true);
                 joinCondiTree.setJoinType(ConditionConstant.AND);
                 joinCondiTree.setCondition(condition);
@@ -945,119 +944,103 @@ public class SqlParser implements Parser {
     }
 
 
-
-
-
-
-
     /**
      * a = '1' and b=1
      * @param conditionTree
      * @return
      */
-    private ConditionTree2 parseWhereCondition2(ConditionTree2 conditionTree, Map<String, Column> columnMap, StartEndIndex subQueryStartEnd) {
+    private ConditionTree parseWhereCondition(ConditionTree conditionTree,
+                                              Map<String, Column> columnMap,
+                                              StartEndIndex bracketStartEnd,
+                                              StartEndIndex subQueryStartEnd) {
 
-        List<ConditionTree2> childNodes = conditionTree.getChildNodes();
+
+        List<ConditionTree> childNodes = conditionTree.getChildNodes();
         String nextJoinType = ConditionConstant.AND;
-        boolean currConditionOpen = false;
         while (true) {
             if (currIndex >= sqlCharArr.length) {
                 break;
             }
 
-            if(subQueryStartEnd != null && currIndex > subQueryStartEnd.getEnd()) {
+            if(bracketStartEnd != null && bracketStartEnd.getStart() == currIndex) {
+                currIndex++;
+            }
+
+            if(bracketStartEnd != null && bracketStartEnd.getEnd() == currIndex) {
+                currIndex++;
+                break;
+            }
+
+            if(bracketStartEnd != null && currIndex > bracketStartEnd.getEnd()) {
                 break;
             }
 
             // 读到开始括号，创建一个条件树节点
-            if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
-                ConditionTree2 childNode = createChildNode2(nextJoinType);
+            if (sqlCharArr[currIndex] == '(') {
+                StartEndIndex startEnd = getNextBracketStartEnd();
+                ConditionTree childNode = createChildNode2(nextJoinType);
                 childNodes.add(childNode);
-                currIndex++;
-                parseWhereCondition2(childNode, columnMap, subQueryStartEnd);
-                currConditionOpen = true;
-                if (currIndex >= sqlCharArr.length) {
-                    break;
-                }
+                parseWhereCondition(childNode, columnMap, startEnd, subQueryStartEnd);
             }
 
 
-            // 预先读关键字，判断是AND还是OR,
-            skipSpace();
+            // 预先读关键字，判断是AND还是OR
             String nextKeyWord = getNextKeyWordUnMove();
-            if (ConditionConstant.AND.equals(nextKeyWord)) {
-                nextJoinType = ConditionConstant.AND;
+            if (ConditionConstant.AND.equals(nextKeyWord) || ConditionConstant.OR.equals(nextKeyWord)) {
+                nextJoinType = nextKeyWord;
                 // skip keyword
                 getNextKeyWord();
                 skipSpace();
-            } else if (ConditionConstant.OR.equals(nextKeyWord)) {
-                nextJoinType = ConditionConstant.OR;
-                // skip keyword
-                getNextKeyWord();
-                skipSpace();
-            }
 
-            // 读到开始括号，创建一个条件树节点
-            if (sqlCharArr[currIndex] == '(' && !currConditionOpen) {
-                ConditionTree2 newNode = new ConditionTree2();
-                newNode.setJoinType(nextJoinType);
-                newNode.setChildNodes(new ArrayList<>());
-                childNodes.add(newNode);
-                currIndex++;
-                parseWhereCondition2(newNode, columnMap, subQueryStartEnd);
-                currConditionOpen = true;
-                if (currIndex >= sqlCharArr.length) {
-                    break;
+                // 读到开始括号，创建一个条件树节点
+                if (sqlCharArr[currIndex] == '(') {
+                    StartEndIndex startEnd = getNextBracketStartEnd();
+                    ConditionTree newNode = new ConditionTree();
+                    newNode.setJoinType(nextJoinType);
+                    newNode.setChildNodes(new ArrayList<>());
+                    childNodes.add(newNode);
+                    parseWhereCondition(newNode, columnMap, startEnd, subQueryStartEnd);
+                    if (currIndex >= sqlCharArr.length) {
+                        break;
+                    }
                 }
             }
 
 
 
-            if (sqlCharArr[currIndex] == ')') {
+            if (bracketStartEnd != null && currIndex == bracketStartEnd.getEnd()) {
                 break;
             }
+
             // 条件开始
-            if (sqlCharArr[currIndex] != ' ' && sqlCharArr[currIndex] != '(') {
+            if (sqlCharArr[currIndex] != ' ' && sqlCharArr[currIndex] != '(' && sqlCharArr[currIndex] != ')') {
                 // 解析条件
-                Condition2 condition = parseCondition2(columnMap);
+                Condition condition = parseCondition(columnMap);
                 // 构造条件树的叶子节点
-                ConditionTree2 node = new ConditionTree2();
+                ConditionTree node = new ConditionTree();
                 node.setLeaf(true);
                 node.setJoinType(nextJoinType);
                 node.setCondition(condition);
                 childNodes.add(node);
-
-                // 遇到结束括号，直接结束当前循环
-                skipSpace();
-                if (currIndex >= sqlCharArr.length) {
-                    break;
-                }
-                if (sqlCharArr[currIndex] == ')' && currConditionOpen) {
-                    currIndex++;
-                    break;
-                    // 同一括号内还有其他条件，继续解析
-                } else if(ConditionConstant.AND.equals(getNextKeyWordUnMove())
-                        || ConditionConstant.OR.equals(getNextKeyWordUnMove())) {
-                    // 下一个关键字是AND或者OR，currIndex不进行移动。否则下次循环读下一个关键字(AND/OR)变成了"ND"和"R"。
-                    continue;
-                }
-
             }
 
+            if(readIf("AND") ||  readIf("OR")) {
+                // 下一个关键字是AND或者OR，currIndex不进行移动。否则下次循环读下一个关键字(AND/OR)变成了"ND"和"R"。
+                continue;
+            }
 
-            // 遇到limit直接结束
-            String next = getNextKeyWordUnMove();
-            if (("LIMIT".equals(next) || "GROUP".equals(next))
-                    && sqlCharArr[currIndex - 1] == ' ') {
+            // 遇到limit、GROUP关键字结束
+            if (readIf("LIMIT") ||  readIf("GROUP")) {
                 break;
             }
 
-            if (sqlCharArr[currIndex] == ')' && !currConditionOpen) {
+            if (bracketStartEnd == null || currIndex != bracketStartEnd.getEnd()) {
                 if(subQueryStartEnd != null && subQueryStartEnd.getEnd() == currIndex) {
                     currIndex++;
                 }
                 break;
             }
+
 
 
             currIndex++;
@@ -1066,23 +1049,33 @@ public class SqlParser implements Parser {
     }
 
 
-    private ConditionTree2 createChildNode2(String joinType) {
-        ConditionTree2 newNode = new ConditionTree2();
+    private boolean readIf(String str) {
+        String next = getNextKeyWordUnMove();
+        if (str.equals(next)) {
+            getNextKeyWord();
+            return true;
+        }
+        return false;
+    }
+
+
+    private ConditionTree createChildNode2(String joinType) {
+        ConditionTree newNode = new ConditionTree();
         newNode.setJoinType(joinType);
         newNode.setChildNodes(new ArrayList<>());
         return newNode;
     }
 
-    private Condition2 parseJoinCondition(Map<String, Column> columnMap) {
-        Condition2 condition = parseCondition2(columnMap);
+    private Condition parseJoinCondition(Map<String, Column> columnMap) {
+        Condition condition = parseCondition(columnMap);
         return condition;
     }
 
 
-    private Condition2 parseCondition2(Map<String,Column> columnMap) {
+    private Condition parseCondition(Map<String,Column> columnMap) {
         skipSpace();
         int start = currIndex;
-        Condition2 condition = null;
+        Condition condition = null;
         Column column = null;
         String operator = null;
         List<String> values = new ArrayList<>();
@@ -1099,12 +1092,19 @@ public class SqlParser implements Parser {
                             || sqlCharArr[currIndex] == '!'
                             || sqlCharArr[currIndex] == '<')) {
                 String columnName = originalSql.substring(start, currIndex);
-                column = columnMap.get(columnName);
-                if(column == null) {
-                    throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
+                if(columnName.startsWith("'") && columnName.endsWith("'")) {
+                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
+                    column.setValue(columnName.substring(1, columnName.length() - 1));
+                } else if(isNumericString(columnName)) {
+                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
+                    column.setValue(columnName);
+                }else {
+                    column = columnMap.get(columnName);
+                    if (column == null) {
+                        throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
+                    }
                 }
-
-               column = column.copy();
+                column = column.copy();
                 flag = 2;
                 skipSpace();
                 start = currIndex;
@@ -1116,6 +1116,26 @@ public class SqlParser implements Parser {
                 String nextKeyWord = getNextKeyWord();
                 skipSpace();
                 start = currIndex;
+
+                // 没有字段名情况，场景条件: 1 = 1
+                if(column.getColumnName() == null) {
+                    switch (nextKeyWord) {
+                        case OperatorConstant.EQUAL:
+                        case OperatorConstant.NOT_EQUAL_1:
+                        case OperatorConstant.NOT_EQUAL_2:
+                            boolean isEq = OperatorConstant.EQUAL.equals(nextKeyWord) ? true : false;
+                            String left = (String) column.getValue();
+                            String right = parseSimpleConditionValue(start);
+                            condition = new ConditionEqOrNq2(left, right, isEq);
+                            break;
+                        default:
+                            throw new SqlIllegalException("sql语法有误");
+                    }
+
+                    break;
+                }
+
+                // 有字段名情况，例如a = '1'
                 switch (nextKeyWord) {
                     case OperatorConstant.EQUAL:
                     case OperatorConstant.NOT_EQUAL_1:
@@ -1246,6 +1266,15 @@ public class SqlParser implements Parser {
         }*/
 
         return condition;
+    }
+
+    public boolean isNumericString(String input) {
+        try {
+            Double.parseDouble(input); // 使用Double类的parseDouble方法尝试将字符串转换为数字
+            return true; // 转换成功，说明是数字字符串
+        } catch (NumberFormatException e) {
+            return false; // 转换出错，说明不是数字字符串
+        }
     }
 
 
@@ -1774,6 +1803,11 @@ public class SqlParser implements Parser {
             }
             i++;
         }
+
+        if(currIndex >= sqlCharArr.length) {
+            return "";
+        }
+
         return new String(sqlCharArr, currIndex, i - currIndex);
     }
 

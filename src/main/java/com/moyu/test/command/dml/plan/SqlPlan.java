@@ -1,8 +1,8 @@
 package com.moyu.test.command.dml.plan;
-import com.moyu.test.command.dml.sql.Condition2;
+import com.moyu.test.command.dml.sql.Condition;
 import com.moyu.test.command.dml.sql.ConditionEqOrNq;
 import com.moyu.test.command.dml.sql.ConditionRange;
-import com.moyu.test.command.dml.sql.ConditionTree2;
+import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
 
@@ -17,7 +17,7 @@ import java.util.Map;
 public class SqlPlan {
 
 
-    public static SelectIndex getSelectPlan(ConditionTree2 conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
+    public static SelectIndex getSelectPlan(ConditionTree conditionTree, Column[] columns, List<IndexMetadata> indexMetadataList) {
 
         Map<String, Column> columnMap = new HashMap<>();
         for (Column c : columns) {
@@ -37,12 +37,12 @@ public class SqlPlan {
     }
 
 
-    private static SelectIndex analyzeTree(ConditionTree2 conditionTree,
+    private static SelectIndex analyzeTree(ConditionTree conditionTree,
                                            Map<String,Column> columnMap,
                                            Map<String, IndexMetadata> indexMap) {
         if(conditionTree.isLeaf()) {
             // TODO 目前只处理最简单的情况，按单个索引查询
-            Condition2 condition = conditionTree.getCondition();
+            Condition condition = conditionTree.getCondition();
 
             if(condition instanceof ConditionEqOrNq) {
                 ConditionEqOrNq eqCondition = (ConditionEqOrNq) condition;
@@ -81,7 +81,7 @@ public class SqlPlan {
 
 
         } else {
-            List<ConditionTree2> childNodes = conditionTree.getChildNodes();
+            List<ConditionTree> childNodes = conditionTree.getChildNodes();
             if (childNodes != null) {
                 for (int i = 0; i < childNodes.size(); i++) {
                     SelectIndex selectPlan = analyzeTree(childNodes.get(i), columnMap, indexMap);

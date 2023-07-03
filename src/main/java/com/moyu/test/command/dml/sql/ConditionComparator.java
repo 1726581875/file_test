@@ -44,7 +44,7 @@ public class ConditionComparator {
      * @param conditionTree
      * @return
      */
-    public static boolean isMatch(RowEntity row, ConditionTree2 conditionTree) {
+    public static boolean isMatch(RowEntity row, ConditionTree conditionTree) {
 
         if(row.isDeleted()) {
             return false;
@@ -63,17 +63,17 @@ public class ConditionComparator {
      * @param row
      * @return
      */
-    public static boolean analyzeConditionTree(ConditionTree2 node, RowEntity row) {
+    public static boolean analyzeConditionTree(ConditionTree node, RowEntity row) {
         boolean result;
         if (node.isLeaf()) {
             result = node.getCondition().getResult(row);
         } else {
             result = true;
-            List<ConditionTree2> childNodes = node.getChildNodes();
+            List<ConditionTree> childNodes = node.getChildNodes();
 
             for (int i = 0; i < childNodes.size(); i++) {
 
-                ConditionTree2 conditionNode = childNodes.get(i);
+                ConditionTree conditionNode = childNodes.get(i);
 
                 String joinType = conditionNode.getJoinType();
                 boolean childResult = analyzeConditionTree(conditionNode, row);

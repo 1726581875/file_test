@@ -1,6 +1,6 @@
 package com.moyu.test.command.dml.plan;
 
-import com.moyu.test.command.dml.sql.Condition2;
+import com.moyu.test.command.dml.sql.Condition;
 import com.moyu.test.store.metadata.obj.Column;
 
 /**
@@ -39,7 +39,7 @@ public class SelectIndex {
     /**
      * 查询条件
      */
-    private Condition2 condition;
+    private Condition condition;
 
 
     public String getTableName() {
@@ -99,11 +99,11 @@ public class SelectIndex {
         return isRangeQuery;
     }
 
-    public Condition2 getCondition() {
+    public Condition getCondition() {
         return condition;
     }
 
-    public void setCondition(Condition2 condition) {
+    public void setCondition(Condition condition) {
         this.condition = condition;
     }
 }

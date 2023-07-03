@@ -7,7 +7,7 @@ import com.moyu.test.store.metadata.obj.Column;
  * @author xiaomingzhang
  * @date 2023/6/11
  */
-public class ConditionIsNullOrNot extends AbstractCondition2 {
+public class ConditionIsNullOrNot extends AbstractCondition {
 
     private Column column;
 

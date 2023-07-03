@@ -12,7 +12,7 @@ import com.moyu.test.util.TypeConvertUtil;
  * 表示条件等于或者不等于
  * 如: a = 1 、a != 1
  */
-public class ConditionEqOrNq extends AbstractCondition2 {
+public class ConditionEqOrNq extends AbstractCondition {
 
     private Column column;
 

@@ -1,6 +1,6 @@
 package com.moyu.test.store.operation;
 
-import com.moyu.test.command.dml.sql.ConditionTree2;
+import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
@@ -20,7 +20,7 @@ public class OperateTableInfo {
 
     private Column[] tableColumns;
 
-    private ConditionTree2 conditionTree;
+    private ConditionTree conditionTree;
 
     private List<IndexMetadata> indexList;
 
@@ -28,7 +28,7 @@ public class OperateTableInfo {
     
     
 
-    public OperateTableInfo(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree2 conditionTree) {
+    public OperateTableInfo(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree conditionTree) {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;
@@ -48,7 +48,7 @@ public class OperateTableInfo {
         return tableColumns;
     }
 
-    public ConditionTree2 getConditionTree() {
+    public ConditionTree getConditionTree() {
         return conditionTree;
     }
     

@@ -6,21 +6,32 @@ import com.moyu.test.store.data.cursor.RowEntity;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public class ConditionEq2 extends AbstractCondition2 {
+public class ConditionEqOrNq2 extends AbstractCondition {
 
     private String left;
 
     private String right;
 
-    public ConditionEq2(String left, String right) {
+    /**
+     * true等于
+     * false 不等于
+     */
+    private boolean isEq;
+
+    public ConditionEqOrNq2(String left, String right, boolean isEq) {
         this.left = left;
         this.right = right;
+        this.isEq = isEq;
     }
 
 
     @Override
     public boolean getResult(RowEntity row) {
-        return false;
+        if (isEq) {
+            return left.equals(right);
+        } else {
+            return !left.equals(right);
+        }
     }
 
     public String getLeft() {

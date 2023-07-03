@@ -6,7 +6,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public class ConditionTree2 {
+public class ConditionTree {
 
     /**
      * 非叶子节点不为空，AND/OR
@@ -19,20 +19,20 @@ public class ConditionTree2 {
     /**
      * 子节点
      */
-    private List<ConditionTree2> childNodes;
+    private List<ConditionTree> childNodes;
     /**
      * 叶子节点不为null
      */
-    private Condition2 condition;
+    private Condition condition;
     /**
      * 是否叶子节点
      */
     private boolean isLeaf;
 
 
-    public ConditionTree2(){}
+    public ConditionTree(){}
 
-    public ConditionTree2(String joinType, List<ConditionTree2> childNodes, boolean isLeaf) {
+    public ConditionTree(String joinType, List<ConditionTree> childNodes, boolean isLeaf) {
         this.joinType = joinType;
         this.childNodes = childNodes;
         this.isLeaf = isLeaf;
@@ -42,11 +42,12 @@ public class ConditionTree2 {
         closeCondition(this);
     }
 
-    private void closeCondition(ConditionTree2 node) {
+
+    private void closeCondition(ConditionTree node) {
         if (node.isLeaf()) {
           node.getCondition().close();
         } else {
-            List<ConditionTree2> childNodes = node.getChildNodes();
+            List<ConditionTree> childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.size(); i++) {
                closeCondition(childNodes.get(i));
             }
@@ -70,19 +71,19 @@ public class ConditionTree2 {
         this.result = result;
     }
 
-    public List<ConditionTree2> getChildNodes() {
+    public List<ConditionTree> getChildNodes() {
         return childNodes;
     }
 
-    public void setChildNodes(List<ConditionTree2> childNodes) {
+    public void setChildNodes(List<ConditionTree> childNodes) {
         this.childNodes = childNodes;
     }
 
-    public Condition2 getCondition() {
+    public Condition getCondition() {
         return condition;
     }
 
-    public void setCondition(Condition2 condition) {
+    public void setCondition(Condition condition) {
         this.condition = condition;
     }
 

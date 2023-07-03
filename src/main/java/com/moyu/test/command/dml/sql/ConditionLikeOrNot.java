@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public class ConditionLikeOrNot extends AbstractCondition2 {
+public class ConditionLikeOrNot extends AbstractCondition {
 
     private Column column;
 

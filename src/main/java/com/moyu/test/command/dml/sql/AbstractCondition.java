@@ -7,7 +7,7 @@ import com.moyu.test.store.metadata.obj.Column;
  * @author xiaomingzhang
  * @date 2023/6/10
  */
-public abstract class AbstractCondition2 implements Condition2 {
+public abstract class AbstractCondition implements Condition {
 
 
     @Override

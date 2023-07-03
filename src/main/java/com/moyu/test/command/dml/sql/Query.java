@@ -2,6 +2,7 @@ package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.function.*;
+import com.moyu.test.command.dml.plan.Optimizer;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.CommonConstant;
@@ -41,7 +42,7 @@ public class Query {
     /**
      * where [conditionTree]
      */
-    private ConditionTree2 conditionTree;
+    private ConditionTree conditionTree;
     /**
      * 使用的索引
      */
@@ -523,7 +524,7 @@ public class Query {
     }
 
 
-    private Cursor doJoinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree2 joinCondition, String joinType) {
+    private Cursor doJoinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree joinCondition, String joinType) {
 
         // 字段元数据
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
@@ -582,9 +583,9 @@ public class Query {
 
 
 
-    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree2 joinCondition) {
+    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree joinCondition) {
 
-        Condition2 condition = joinCondition.getCondition();
+        Condition condition = joinCondition.getCondition();
         if(condition instanceof ConditionLeftRight) {
             ConditionLeftRight leftRight = (ConditionLeftRight) condition;
             // 左表字段
@@ -629,11 +630,11 @@ public class Query {
         this.mainTable = mainTable;
     }
 
-    public ConditionTree2 getConditionTree() {
+    public ConditionTree getConditionTree() {
         return conditionTree;
     }
 
-    public void setConditionTree(ConditionTree2 conditionTree) {
+    public void setConditionTree(ConditionTree conditionTree) {
         this.conditionTree = conditionTree;
     }
 

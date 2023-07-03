@@ -12,7 +12,7 @@ import com.moyu.test.util.TypeConvertUtil;
  * @author xiaomingzhang
  * @date 2023/6/21
  */
-public class ConditionRange extends AbstractCondition2 {
+public class ConditionRange extends AbstractCondition {
 
     private Column column;
 
