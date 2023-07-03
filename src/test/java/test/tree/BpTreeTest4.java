@@ -34,10 +34,10 @@ public class BpTreeTest4 {
 
         BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {
-            BTreeMap<Integer, RowValue> bTreeMap = new BTreeMap<>(1024, new IntColumnType(), new RowDataType(), bpTreeStore, false);
+            BTreeMap<Integer, RowValue> bTreeMap = new BTreeMap<>(new IntColumnType(), new RowDataType(), bpTreeStore, true);
             bTreeMap.initRootNode();
 
-            int count = 100000;
+            int count = 10000;
             long startTime = System.currentTimeMillis();
             for (int i = 0; i < count; i++) {
                 List<Column> columnList = new ArrayList<>();

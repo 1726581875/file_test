@@ -20,7 +20,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -37,9 +37,9 @@ public class TotalSqlTest {
         testSubQueryTempTableToDisk();
         testLikeString();
         gptRandom20Test();
+        gptRandom20Test2();*/
 
-        gptRandom20Test2();
-
+        yanStoreEngineTest();
 
 
 /*        fastInsertData("y_y_1", 100000);
@@ -48,14 +48,24 @@ public class TotalSqlTest {
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");*/
 
-
     }
 
 
-    private static void unsupportedSQL(){
-        // 字段带函数
-        //testExecSQL("SELECT * FROM xmz_o_2 WHERE DATE(time) = '2023-06-29'");
+    private static void yanStoreEngineTest() {
+        testExecSQL("drop table if exists xmz_table");
+        testExecSQL("create table xmz_table (id int, name varchar(10)) ENGINE=yanStore");
+        testExecSQL("insert into  xmz_table (id, name) value (1, null);");
+        testExecSQL("insert into  xmz_table (id, name) value (2, '摸鱼2');");
+        testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼3');");
+        testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼4');");
 
+        testExecSQL("insert into  xmz_table (id, name) value (5, 'aaaa');");
+        testExecSQL("insert into  xmz_table (id, name) value (6, '啊啊啊');");
+        testExecSQL("insert into  xmz_table (id, name) value (6, '摸鱼');");
+
+        testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
+        testExecSQL("select * from xmz_table");
+        testExecSQL("select count(*) from xmz_table");
     }
 
 
@@ -246,7 +256,7 @@ public class TotalSqlTest {
 
         testExecSQL("select count(*) from " + tableName);
 
-        testExecSQL("desc xmz_5");
+        testExecSQL("desc " + tableName);
     }
 
 

@@ -47,7 +47,7 @@ public class TableMetadataStore {
     }
 
 
-    public TableMetadata createTable(String tableName) {
+    public TableMetadata createTable(String tableName, String engineType) {
         TableMetadata metadata = null;
         synchronized (TableMetadataStore.class) {
             checkTableName(tableName);
@@ -55,6 +55,7 @@ public class TableMetadataStore {
             int nextTableId = lastData == null ? 0 : lastData.getTableId() + 1;
             long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
             metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
+            metadata.setEngineType(engineType);
             ByteBuffer byteBuffer = metadata.getByteBuffer();
             fileStore.write(byteBuffer, startPos);
             tableMetadataList.add(metadata);

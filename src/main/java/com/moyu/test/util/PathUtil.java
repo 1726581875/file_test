@@ -30,8 +30,16 @@ public class PathUtil {
     public static String getDataFilePath(Integer databaseId, String tableName) {
         String dirPath = getBaseDirPath() + File.separator + databaseId;
         FileUtil.createDirIfNotExists(dirPath);
-        return dirPath + File.separator + tableName + ".d";
+        return dirPath + File.separator + tableName + ".dyu";
     }
+
+    public static String getYanEngineDataFilePath(Integer databaseId, String tableName) {
+        String dirPath = getBaseDirPath() + File.separator + databaseId;
+        FileUtil.createDirIfNotExists(dirPath);
+        return dirPath + File.separator + tableName + ".dyan";
+    }
+
+
 
     public static String getIndexFilePath(Integer databaseId, String tableName, String indexName) {
         String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;

@@ -59,7 +59,7 @@ public class MetadataStoreTest {
         TableMetadataStore metadataStore = null;
         try {
             metadataStore = new TableMetadataStore(0, filePath);
-            metadataStore.createTable(tableName);
+            metadataStore.createTable(tableName, null);
             TableMetadataStore finalMetadataStore = metadataStore;
             metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println("==== table ==== ");

@@ -18,7 +18,7 @@ public class BTreeMap<K, V> {
 
     private int level;
 
-    private int maxNodeNum = 48;
+    private int maxNodeNum = 1024;
 
     private Page<K, V> rootNode;
 
@@ -27,23 +27,14 @@ public class BTreeMap<K, V> {
     private int nextPageIndex;
 
 
-    public BTreeMap(int maxNodeNum, DataType<K> keyType, DataType<V> valueType, BTreeStore bpTreeStore) {
-        this.maxNodeNum = maxNodeNum;
-        this.keyType = keyType;
-        this.valueType = valueType;
-        this.bpTreeStore = bpTreeStore;
-        this.isAutoCommit = true;
-    }
 
-    public BTreeMap(int maxNodeNum,
-                    DataType<K> keyType,
-                    DataType<V> valueType,
-                    BTreeStore bpTreeStore, boolean isAutoCommit) {
-        this.maxNodeNum = maxNodeNum;
+    public BTreeMap(DataType<K> keyType,DataType<V> valueType,BTreeStore bpTreeStore, boolean isAutoCommit) {
         this.keyType = keyType;
         this.valueType = valueType;
         this.bpTreeStore = bpTreeStore;
         this.isAutoCommit = isAutoCommit;
+
+        initRootNode();
     }
 
 
@@ -79,8 +70,8 @@ public class BTreeMap<K, V> {
      * 获取第一个叶子节点页(b+树最左边叶子节点)
      * @return
      */
-    public Page<K,V> getFirstLeafPage(){
-        Page<K,V> page = rootNode;
+    public Page<K, V> getFirstLeafPage() {
+        Page<K, V> page = rootNode;
         while (!page.isLeaf()) {
             page = page.getMap().getChildPage(page, 0);
         }
@@ -117,8 +108,9 @@ public class BTreeMap<K, V> {
         return childPage;
     }
 
-
-
+    public long getNextRowId(){
+       return bpTreeStore.getNextRowId();
+    }
 
     /**
      * 参考H2database关于b+树的实现，写得非常好的一段代码

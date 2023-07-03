@@ -25,7 +25,6 @@ public class SelectCommand extends AbstractCommand {
 
     public SelectCommand(Query query) {
         this.query = query;
-
     }
 
     @Override

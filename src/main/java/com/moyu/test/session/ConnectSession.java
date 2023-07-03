@@ -18,11 +18,6 @@ public class ConnectSession {
 
     private int transactionId;
 
-    /**
-     * yyStore b+树叶子节点存储行
-     * anStore 按顺序存储的
-     */
-    private String storeType = CommonConstant.STORE_TYPE_YU;
 
 
     public ConnectSession(String userName, Integer databaseId) {
@@ -59,7 +54,4 @@ public class ConnectSession {
         return sessionId;
     }
 
-    public String getStoreType() {
-        return storeType;
-    }
 }

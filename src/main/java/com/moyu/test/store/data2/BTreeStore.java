@@ -30,6 +30,8 @@ public class BTreeStore {
 
     private long rootStartPos;
 
+    private long nextRowId;
+
 
     public BTreeStore() throws IOException {
         this(defaultPath + File.separator + fileName);
@@ -41,12 +43,14 @@ public class BTreeStore {
         long endPosition = fileStore.getEndPosition();
         // 前8字节是记录根节点位置
         if(endPosition >= PAGE_START_POS) {
-            ByteBuffer byteBuffer = fileStore.read(0, JavaTypeConstant.LONG_LENGTH);
-            this.rootStartPos = DataUtils.readLong(byteBuffer);
+            this.rootStartPos = DataUtils.readLong(fileStore.read(0, JavaTypeConstant.LONG_LENGTH));
+            this.nextRowId = DataUtils.readLong(fileStore.read(8, JavaTypeConstant.LONG_LENGTH));
             this.pageCount = (int) ((endPosition - PAGE_START_POS) / Page.PAGE_SIZE);
+
         } else {
             this.rootStartPos = 0L;
             this.pageCount = 0;
+            this.nextRowId = 0L;
         }
         this.nextPageIndex = this.pageCount == 0 ? 0 : this.pageCount;
     }
@@ -96,6 +100,25 @@ public class BTreeStore {
             return next;
         }
     }
+
+    public long getNextRowId() {
+        synchronized (this) {
+            long next = this.nextRowId;
+            nextRowId++;
+            updateNextRowId();
+            return next;
+        }
+
+    }
+
+    public void updateNextRowId() {
+        ByteBuffer buffer = ByteBuffer.allocate(JavaTypeConstant.LONG_LENGTH);
+        DataUtils.writeLong(buffer, nextRowId);
+        buffer.rewind();
+        fileStore.write(buffer, 8);
+    }
+
+
 
     public int getPageCount() {
         return pageCount;

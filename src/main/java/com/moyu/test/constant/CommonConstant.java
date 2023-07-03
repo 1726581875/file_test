@@ -21,11 +21,9 @@ public interface CommonConstant {
      * yuStore 按简单顺序结构存储的(最初版本)
      * yanStore b+树叶子节点存储行
      */
+    String ENGINE_TYPE_YU = "yuStore";
 
-
-    String STORE_TYPE_YU = "yuStore";
-
-    String STORE_TYPE_YAN = "yanStore";
+    String ENGINE_TYPE_YAN = "yanStore";
 
 
 

@@ -20,6 +20,8 @@ public class CreateTableCommand extends AbstractCommand {
 
     private String tableName;
 
+    private String engineType;
+
     private List<Column> columnList;
 
     @Override
@@ -33,7 +35,7 @@ public class CreateTableCommand extends AbstractCommand {
             columnMetadataStore = new ColumnMetadataStore();
             indexMetadataStore = new IndexMetadataStore();
             // 插入table元数据
-            TableMetadata table = tableMetadataStore.createTable(tableName);
+            TableMetadata table = tableMetadataStore.createTable(tableName, engineType);
             // 插入column元数据
             columnMetadataStore.createColumnBlock(table.getTableId(), columnList);
             // 如果有主键，创建主键索引
@@ -101,6 +103,10 @@ public class CreateTableCommand extends AbstractCommand {
         this.columnList = columnList;
     }
 
+
+    public void setEngineType(String engineType) {
+        this.engineType = engineType;
+    }
 
     @Override
     public String toString() {

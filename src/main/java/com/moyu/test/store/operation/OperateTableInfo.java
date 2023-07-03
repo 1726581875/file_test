@@ -24,7 +24,7 @@ public class OperateTableInfo {
 
     private List<IndexMetadata> indexList;
 
-    private String engineType = CommonConstant.STORE_TYPE_YU;
+    private String engineType = CommonConstant.ENGINE_TYPE_YU;
     
     
 

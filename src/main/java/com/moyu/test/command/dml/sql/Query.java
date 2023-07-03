@@ -11,11 +11,10 @@ import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
-import com.moyu.test.store.data.DataChunk;
-import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
+import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.PathUtil;
 
@@ -230,6 +229,7 @@ public class Query {
         }
         // 保存到磁盘
         OperateTableInfo tableInfo = new OperateTableInfo(session, tmpTableName, null, null);
+        tableInfo.setEngineType(CommonConstant.ENGINE_TYPE_YU);
         InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         insertCommand.batchWriteRows(resultRowList);
         return tmpTableName;
@@ -514,39 +514,12 @@ public class Query {
 
 
     private Cursor getQueryCursor(FromTable table) throws IOException {
-        Cursor cursor = null;
-        DataChunkStore dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), table.getTableName()));
-        if (table.getSelectIndex() == null) {
-            System.out.println("不用索引，table:" + table.getTableName());
-            cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
-            // 如果是小表，直接读取整个表的数据到内存
-            if(dataChunkStore.getDataChunkNum() * DataChunk.DATA_CHUNK_LEN <= CommonConfig.TABLE_IN_MEMORY_MAX_SIZE) {
-                cursor =  convertToInMemoryCursor(cursor);
-            }
-
-        } else if(table.getSelectIndex() != null && table.getSelectIndex().isRangeQuery()){
-            System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
-            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
-            cursor = new RangeIndexCursor(dataChunkStore, mainTable.getAllColumns(),(ConditionRange) table.getSelectIndex().getCondition() , indexPath);
-        } else {
-            System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName() + ",table:" + table.getTableName());
-            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
-            cursor = new IndexCursor(dataChunkStore, mainTable.getAllColumns(), table.getSelectIndex().getIndexColumn(), indexPath);
-        }
-        cursorList.add(cursor);
-        return cursor;
-    }
-
-
-    private Cursor convertToInMemoryCursor(Cursor diskCursor) {
-        List<RowEntity> rows = new LinkedList();
-        RowEntity row;
-        while ((row = diskCursor.next()) != null) {
-            if (!row.isDeleted()) {
-                rows.add(row);
-            }
-        }
-        return new MemoryTemTableCursor(new ArrayList<>(rows), diskCursor.getColumns());
+        OperateTableInfo tableInfo = new OperateTableInfo(session, table.getTableName(), table.getTableColumns(), null);
+        tableInfo.setEngineType(table.getEngineType());
+        BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
+        Cursor queryCursor = engineOperation.getQueryCursor(table);
+        cursorList.add(queryCursor);
+        return queryCursor;
     }
 
 

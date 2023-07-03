@@ -137,6 +137,12 @@ public abstract class Page<K, V> implements SerializableByte {
         }
     }
 
+
+    public void commit() {
+        map.getBpTreeStore().savePage(this);
+    }
+
+
 /*    public Page(ByteBuffer byteBuffer, BTreeMap treeMap) {
         this.usedByteLen = byteBuffer.getInt();
         this.startPos = byteBuffer.getLong();
@@ -312,7 +318,7 @@ public abstract class Page<K, V> implements SerializableByte {
         private List<V> valueList;
 
         public Leaf(BTreeMap<K, V> map, List<K> keywordList, List<V> valueList, int pageIndex) {
-            super(map, keywordList, false, pageIndex);
+            super(map, keywordList, true, pageIndex);
             this.valueList = valueList;
             resetCountCrrMaxSize();
         }
@@ -462,7 +468,7 @@ public abstract class Page<K, V> implements SerializableByte {
         protected int countMaxSize() {
             if (this.childNodeList != null && this.childNodeList.size() > 0) {
                 this.currMaxByteLen += this.childNodeList.size() * 8;
-            } else {
+            } else if (this.childPosList != null && this.childPosList.size() > 0) {
                 this.currMaxByteLen += this.childPosList.size() * 8;
             }
             return this.currMaxByteLen;
@@ -652,4 +658,7 @@ public abstract class Page<K, V> implements SerializableByte {
         return map;
     }
 
+    public Long getRightPos() {
+        return rightPos;
+    }
 }

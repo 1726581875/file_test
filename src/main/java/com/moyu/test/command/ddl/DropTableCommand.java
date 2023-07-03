@@ -1,6 +1,7 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
@@ -51,7 +52,12 @@ public class DropTableCommand extends AbstractCommand {
                 // 删除字段元数据
                 columnMetadataStore.dropColumnBlock(tableMetadata.getTableId());
                 // 删除数据文件
-                String dataFilePath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+                String dataFilePath = null;
+                if(CommonConstant.ENGINE_TYPE_YAN.equals(tableMetadata.getEngineType())) {
+                    dataFilePath = PathUtil.getYanEngineDataFilePath(this.databaseId, this.tableName);
+                } else {
+                    dataFilePath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+                }
                 FileUtil.deleteOnExists(dataFilePath);
                 // 存在索引，则删除索引
                 TableIndexBlock columnBlock = indexStore.getColumnBlock(tableMetadata.getTableId());

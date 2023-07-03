@@ -1,10 +1,14 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.sql.ConditionTree2;
+import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.store.data.cursor.Cursor;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
+
+import java.io.IOException;
 
 /**
  * @author xiaomingzhang
@@ -35,16 +39,19 @@ public abstract class BasicOperation {
     public abstract int delete();
 
 
+    public abstract Cursor getQueryCursor(FromTable table) throws IOException;
+
+
     public static BasicOperation getEngineOperation(OperateTableInfo tableInfo) {
         if(tableInfo.getEngineType() == null) {
             throw new IllegalArgumentException("引擎类型不能为空");
         }
         BasicOperation basicOperation = null;
         switch (tableInfo.getEngineType()) {
-            case CommonConstant.STORE_TYPE_YU:
+            case CommonConstant.ENGINE_TYPE_YU:
                 basicOperation = new YuEngineOperation(tableInfo);
                 break;
-            case CommonConstant.STORE_TYPE_YAN:
+            case CommonConstant.ENGINE_TYPE_YAN:
                 basicOperation = new YanEngineOperation(tableInfo);
                 break;
             default:

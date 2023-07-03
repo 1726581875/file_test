@@ -97,6 +97,16 @@ public class RowValue extends Value {
     }
 
 
+    public void setColumns(Column[] columns) {
+        this.columnBytes = columnDataToBytes(columns);
+        this.rowByteLen = columnBytes.length;
+        this.totalByteLen = 25 + columnBytes.length;
+    }
+
+    public void setIsDeleted(byte isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
     private byte[] columnDataToBytes(Column[] columns) {
         WriteBuffer writeBuffer = new WriteBuffer(16);
         for (Column column : columns) {

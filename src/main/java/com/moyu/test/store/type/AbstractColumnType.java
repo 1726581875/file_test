@@ -1,5 +1,7 @@
 package com.moyu.test.store.type;
 
+import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.store.WriteBuffer;
 import java.nio.ByteBuffer;
 
@@ -60,6 +62,21 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
     protected abstract T readValue(ByteBuffer byteBuffer);
 
     protected abstract void writeValue(WriteBuffer writeBuffer, T value);
+
+
+    public static DataType getDataType(byte columnType) {
+        switch (columnType) {
+            case DbColumnTypeConstant.INT_4:
+                return new IntColumnType();
+            case DbColumnTypeConstant.INT_8:
+                return new LongColumnType();
+            case DbColumnTypeConstant.VARCHAR:
+            case DbColumnTypeConstant.CHAR:
+                return new StringColumnType();
+            default:
+                throw new DbException("不支持数据类型:" + columnType);
+        }
+    }
 
 
 }

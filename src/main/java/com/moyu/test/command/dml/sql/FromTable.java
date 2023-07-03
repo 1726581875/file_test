@@ -56,6 +56,10 @@ public class FromTable {
      * 使用的索引
      */
     private SelectIndex selectIndex;
+    /**
+     * 存储引擎类型
+     */
+    private String engineType;
 
 
     public FromTable(String tableName, Column[] tableColumns, ConditionTree2 tableCondition) {
@@ -78,6 +82,14 @@ public class FromTable {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public void setEngineType(String engineType) {
+        this.engineType = engineType;
+    }
+
+    public String getEngineType() {
+        return engineType;
     }
 
     public ConditionTree2 getTableCondition() {

@@ -1,5 +1,7 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.constant.CommonConstant;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -17,6 +19,13 @@ public class TableMetadata {
     private int databaseId;
 
     private int tableId;
+
+    /**
+     * 存储引擎类型
+     * 0 yuStore
+     * 1 yanStore
+     */
+    private byte engineType;
 
     private int tableNameByteLen;
     private int tableNameCharLen;
@@ -41,7 +50,7 @@ public class TableMetadata {
         this.createTableSql = createTableSql;
         this.createTableSqlByteLen = DataUtils.getDateStringByteLength(createTableSql);
         this.createTableSqlCharLen = createTableSql.length();
-        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 +this.tableNameByteLen + this.createTableSqlByteLen;
+        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 1 +this.tableNameByteLen + this.createTableSqlByteLen;
     }
 
     public TableMetadata(ByteBuffer byteBuffer) {
@@ -49,6 +58,7 @@ public class TableMetadata {
         this.startPos = DataUtils.readLong(byteBuffer);
         this.databaseId = DataUtils.readInt(byteBuffer);
         this.tableId = DataUtils.readInt(byteBuffer);
+        this.engineType = byteBuffer.get();
         this.tableNameByteLen = DataUtils.readInt(byteBuffer);
         this.tableNameCharLen = DataUtils.readInt(byteBuffer);
         this.tableName = DataUtils.readString(byteBuffer, this.tableNameCharLen);
@@ -64,6 +74,7 @@ public class TableMetadata {
         DataUtils.writeLong(byteBuffer, startPos);
         DataUtils.writeInt(byteBuffer, databaseId);
         DataUtils.writeInt(byteBuffer, tableId);
+        byteBuffer.put(engineType);
 
         DataUtils.writeInt(byteBuffer, tableNameByteLen);
         DataUtils.writeInt(byteBuffer, tableNameCharLen);
@@ -155,6 +166,24 @@ public class TableMetadata {
 
     public void setStartPos(long startPos) {
         this.startPos = startPos;
+    }
+
+    public void setEngineType(String engineType) {
+        byte engineTypeCode = 0;
+        if(CommonConstant.ENGINE_TYPE_YAN.equals(engineType)) {
+            engineTypeCode = 1;
+        }
+        this.engineType = engineTypeCode;
+    }
+
+    public String getEngineType() {
+        if(engineType == (byte)0) {
+            return CommonConstant.ENGINE_TYPE_YU;
+        } else if(engineType == (byte)1) {
+            return CommonConstant.ENGINE_TYPE_YAN;
+        } else {
+            throw new DbException("不支持存储引擎类型:" + engineType);
+        }
     }
 
     @Override

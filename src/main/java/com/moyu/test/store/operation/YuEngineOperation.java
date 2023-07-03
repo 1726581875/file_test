@@ -1,13 +1,16 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.sql.ConditionComparator;
+import com.moyu.test.command.dml.sql.ConditionRange;
+import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.data.cursor.RowEntity;
+import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -16,6 +19,9 @@ import com.moyu.test.store.transaction.Transaction;
 import com.moyu.test.store.transaction.TransactionManager;
 import com.moyu.test.util.PathUtil;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -184,6 +190,43 @@ public class YuEngineOperation extends BasicOperation {
             dataChunkStore.close();
         }
         return deleteRowNum;
+    }
+
+    @Override
+    public Cursor getQueryCursor(FromTable table) throws IOException {
+        Cursor cursor = null;
+        DataChunkStore dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), table.getTableName()));
+        if (table.getSelectIndex() == null) {
+            System.out.println("不用索引，table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+            cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
+            // 如果是小表，直接读取整个表的数据到内存
+            if(dataChunkStore.getDataChunkNum() * DataChunk.DATA_CHUNK_LEN <= CommonConfig.TABLE_IN_MEMORY_MAX_SIZE) {
+                cursor =  convertToInMemoryCursor(cursor);
+            }
+
+        } else if(table.getSelectIndex() != null && table.getSelectIndex().isRangeQuery()){
+            System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName()
+                    + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
+            cursor = new RangeIndexCursor(dataChunkStore, table.getTableColumns(),(ConditionRange) table.getSelectIndex().getCondition() , indexPath);
+        } else {
+            System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName()
+                    + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+            String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
+            cursor = new IndexCursor(dataChunkStore, table.getTableColumns(), table.getSelectIndex().getIndexColumn(), indexPath);
+        }
+        return cursor;
+    }
+
+    private Cursor convertToInMemoryCursor(Cursor diskCursor) {
+        List<RowEntity> rows = new LinkedList();
+        RowEntity row;
+        while ((row = diskCursor.next()) != null) {
+            if (!row.isDeleted()) {
+                rows.add(row);
+            }
+        }
+        return new MemoryTemTableCursor(new ArrayList<>(rows), diskCursor.getColumns());
     }
 
     /**

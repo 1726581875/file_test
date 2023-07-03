@@ -29,8 +29,7 @@ public class BpTreeTest3 {
         BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {
             BTreeMap<Integer, String> bTreeMap = null;
-            bTreeMap = new BTreeMap<>(1024,
-                    new IntColumnType(),
+            bTreeMap = new BTreeMap<>(new IntColumnType(),
                     new StringColumnType(),
                     bpTreeStore, false);
             bTreeMap.initRootNode();

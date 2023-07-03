@@ -28,7 +28,6 @@ public class SqlParser implements Parser {
 
     private ConnectSession connectSession;
 
-
     /**
      * 转换大写后sql
      */
@@ -129,15 +128,17 @@ public class SqlParser implements Parser {
                     case TABLE:
                         skipSpace();
                         String keyword99 = getNextKeyWordUnMove();
+                        DropTableCommand dropTableCommand = null;
                         if("IF".equals(keyword99)) {
                             assertNextKeywordIs("IF");
                             assertNextKeywordIs("EXISTS");
                             String tableName = getNextOriginalWord();
-                            return new DropTableCommand(this.connectSession.getDatabaseId(), tableName, true);
+                            dropTableCommand = new DropTableCommand(this.connectSession.getDatabaseId(), tableName, true);
                         } else {
                             String tableName = getNextOriginalWord();
-                            return new DropTableCommand(this.connectSession.getDatabaseId(), tableName, false);
+                            dropTableCommand =  new DropTableCommand(this.connectSession.getDatabaseId(), tableName, false);
                         }
+                        return dropTableCommand;
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
@@ -339,7 +340,7 @@ public class SqlParser implements Parser {
         }
 
 
-        OperateTableInfo operateTableInfo = new OperateTableInfo(this.connectSession, tableName, columns, root);
+        OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, root);
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
 
         return updateCommand;
@@ -380,11 +381,19 @@ public class SqlParser implements Parser {
             parseWhereCondition2(root, getColumnMap(columns), null);
         }
 
-        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, root);
-        tableInfo.setIndexList(indexMetadataList);
+        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, root);
         DeleteCommand deleteCommand = new DeleteCommand(tableInfo);
         return deleteCommand;
+    }
+
+
+    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, ConditionTree2 conditionTree) {
+        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
+        TableMetadata tableMeta = getTableMeta(tableName);
+        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, conditionTree);
+        tableInfo.setIndexList(indexMetadataList);
+        tableInfo.setEngineType(tableMeta.getEngineType());
+        return tableInfo;
     }
 
 
@@ -569,6 +578,7 @@ public class SqlParser implements Parser {
             newColumns[i] = subColumns[i].createNullValueColumn();
             newColumns[i].setTableAlias(tableName);
         }
+
         mainTable = new FromTable(tableName, newColumns, null);
         mainTable.setAlias(tableName);
 
@@ -675,7 +685,9 @@ public class SqlParser implements Parser {
         }
 
         Column[] columns = getColumns(tableName);
+        TableMetadata tableMeta = getTableMeta(tableName);
         FromTable table = new FromTable(tableName, columns, null);
+        table.setEngineType(tableMeta.getEngineType());
 
         String next = getNextKeyWordUnMove();
         if("AS".equals(next)) {
@@ -1408,12 +1420,7 @@ public class SqlParser implements Parser {
             dataColumns[i] = column;
         }
 
-        // 当前索引列表
-        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, columns, null);
-        tableInfo.setIndexList(indexMetadataList);
-
+        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, null);
         return new InsertCommand(tableInfo, dataColumns);
     }
 
@@ -1569,11 +1576,22 @@ public class SqlParser implements Parser {
             columnList.add(column);
         }
 
+        currIndex = bracketStartEnd.getEnd() + 1;
+
+        String engineType = null;
+        String nextOriginalWord = getNextOriginalWord();
+        if(nextOriginalWord.startsWith("ENGINE=")) {
+            engineType = nextOriginalWord.substring("ENGINE=".length());
+        }
+        if(engineType == null) {
+            engineType = CommonConstant.ENGINE_TYPE_YU;
+        }
         // 构造创建表命令
         CreateTableCommand command = new CreateTableCommand();
         command.setDatabaseId(connectSession.getDatabaseId());
         command.setTableName(tableName);
         command.setColumnList(columnList);
+        command.setEngineType(engineType);
         return command;
     }
 
