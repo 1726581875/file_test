@@ -24,7 +24,7 @@ public class TotalTest2 {
 
 
     private static void yanStoreEngineTest() {
- /*       testExecSQL("drop table if exists xmz_table");
+        testExecSQL("drop table if exists xmz_table");
         testExecSQL("create table xmz_table (id int primary key, name varchar(10)) ENGINE=" + engineType);
         testExecSQL("insert into  xmz_table (id, name) value (1, null);");
         testExecSQL("insert into  xmz_table (id, name) value (2, '摸鱼2');");
@@ -38,12 +38,12 @@ public class TotalTest2 {
         testExecSQL("select * from xmz_table where ((name = '摸鱼') and (name = '摸鱼') and (name = '摸鱼'))");
         testExecSQL("select * from xmz_table where ((name = '摸鱼'))");
         testExecSQL("select count(*) from xmz_table where 1 = 1");
-        testExecSQL("select * from xmz_table where 1 = 1");*/
+        testExecSQL("select * from xmz_table where 1 = 1");
         //testExecSQL("select * from xmz_table where '1'= '1'");
 
 
 
-        testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
+        //testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
         testExecSQL("select * from xmz_table where (((name = '摸鱼') and (name = '摸鱼') and (name = '摸鱼')) or 1 = 1)");
     }
 

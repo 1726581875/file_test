@@ -76,8 +76,8 @@ public abstract class Page<K, V> implements SerializableByte {
 
 
 
-    public static <K,V> Page<K,V> createNonLeaf(BTreeMap<K,V> map, List keywordList, List<Page<K,V>> childNodeList, List<Long> childPosList, int pageIndex) {
-         return new NonLeaf(map, keywordList, childNodeList, childPosList, pageIndex);
+    public static <K,V> Page<K,V> createNonLeaf(BTreeMap<K,V> map, List keywordList, List<PageReference<K,V>> childNodeList, int pageIndex) {
+         return new NonLeaf(map, keywordList, childNodeList, pageIndex);
     }
 
 
@@ -108,16 +108,16 @@ public abstract class Page<K, V> implements SerializableByte {
             keywordList.add(k);
         }
         // 0为非叶子节点，1为叶子节点
-        List<Long> childPosList = null;
+        List<PageReference<K,V>> childPageList = null;
         if (pageType == (byte) 0) {
-
             if (keywordCount > 0) {
-                childPosList = new ArrayList<>(keywordCount + 1);
+                childPageList = new ArrayList<>(keywordCount + 1);
                 for (int i = 0; i <= keywordCount; i++) {
-                    childPosList.add(byteBuffer.getLong());
+                    PageReference<K, V> item = new PageReference<>(null, byteBuffer.getLong());
+                    childPageList.add(item);
                 }
             }
-            NonLeaf nonLeaf = new NonLeaf(treeMap, keywordList, null, childPosList, pageIndex);
+            NonLeaf nonLeaf = new NonLeaf(treeMap, keywordList, childPageList, pageIndex);
             nonLeaf.setStartPos(startPos);
             nonLeaf.setUsedByteLen(usedByteLen);
             return nonLeaf;
@@ -233,19 +233,6 @@ public abstract class Page<K, V> implements SerializableByte {
     }
 
 
-    public static <K extends Comparable, V> V get(Page<K, V> p, K key) {
-        while (true) {
-            int index = p.binarySearch(key);
-            if (p.isLeaf()) {
-                return index >= 0 ? p.getValueList().get(index) : null;
-            } else if (index++ < 0) {
-                index = -index;
-            }
-            p = p.getChildNodeList().get(index);
-        }
-    }
-
-
 
     public K getKeyword(int index) {
         return this.keywordList.get(index);
@@ -262,17 +249,15 @@ public abstract class Page<K, V> implements SerializableByte {
     public abstract void insertLeaf(int index, K key, V value);
 
 
-    public abstract void setChild(int index, Page<K, V> node);
+    public abstract void setChild(int index, PageReference<K,V> node);
 
 
-    public abstract void insertNonLeaf(int index, K key, Page<K, V> node);
+    public abstract void insertNonLeaf(int index, K key, PageReference<K,V> node);
 
 
     public abstract void setLeafValue(int index, V value);
 
-    public abstract List<Page<K, V>> getChildNodeList();
-
-    public abstract List<Long> getChildPosList();
+    public abstract List<PageReference<K,V>> getChildNodeList();
 
     public abstract boolean isLeaf();
 
@@ -392,12 +377,12 @@ public abstract class Page<K, V> implements SerializableByte {
         }
 
         @Override
-        public void setChild(int index, Page<K, V> node) {
+        public void setChild(int index, PageReference<K,V> node) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void insertNonLeaf(int index, K key, Page<K, V> node) {
+        public void insertNonLeaf(int index, K key, PageReference<K,V> node) {
             throw new UnsupportedOperationException();
         }
 
@@ -407,15 +392,9 @@ public abstract class Page<K, V> implements SerializableByte {
         }
 
         @Override
-        public List<Page<K, V>> getChildNodeList() {
+        public List<PageReference<K,V>> getChildNodeList() {
             throw new UnsupportedOperationException();
         }
-
-        @Override
-        public List<Long> getChildPosList() {
-            throw new UnsupportedOperationException();
-        }
-
         @Override
         public boolean isLeaf() {
             return true;
@@ -450,41 +429,38 @@ public abstract class Page<K, V> implements SerializableByte {
         /**
          * 树子节点列表
          */
-        private List<Page<K, V>> childNodeList;
-        /**
-         * 子节点对应文件位置列表
-         */
-        private List<Long> childPosList;
+        private List<PageReference<K,V>> childPageList;
 
-        public NonLeaf(BTreeMap<K, V> map, List<K> keywordList, List<Page<K, V>> childNodeList, List<Long> childPosList, int pageIndex) {
+
+        public NonLeaf(BTreeMap<K, V> map, List<K> keywordList, List<PageReference<K,V>> childPageList, int pageIndex) {
             super(map, keywordList, false, pageIndex);
-            this.childNodeList = childNodeList;
-            this.childPosList = childPosList;
+            this.childPageList = childPageList;
             resetCountCrrMaxSize();
         }
 
 
         @Override
         protected int countMaxSize() {
-            if (this.childNodeList != null && this.childNodeList.size() > 0) {
-                this.currMaxByteLen += this.childNodeList.size() * 8;
-            } else if (this.childPosList != null && this.childPosList.size() > 0) {
-                this.currMaxByteLen += this.childPosList.size() * 8;
-            }
-            return this.currMaxByteLen;
+            return this.currMaxByteLen += this.childPageList.size() * 8;
         }
+
+
 
         @Override
         protected void writeValue(WriteBuffer writeBuffer) {
-
-            if(this.childNodeList != null && this.childNodeList.size() > 0) {
-                this.childPosList = this.childNodeList.stream().map(Page::getStartPos).collect(Collectors.toList());
+            if(this.keywordCount != this.childPageList.size() - 1) {
+                throw new DbException("非叶子节点指针数不正确");
             }
-
-            // 写入非叶子节点包含的指针(子页的文件内开始位置)，子节点数量为keywordCount + 1
+            // 写入非叶子节点包含的指针(子页的文件内开始位置)
             for (int i = 0; i <= this.keywordCount; i++) {
-                writeBuffer.putLong(this.childPosList.get(i));
+                PageReference<K, V> pageReference = this.childPageList.get(i);
+                writeBuffer.putLong(pageReference.getPos());
             }
+        }
+
+
+        private List<Long> getChildPos(List<Page<K, V>> childNodes){
+            return childNodes.stream().map(Page::getStartPos).collect(Collectors.toList());
         }
 
         @Override
@@ -508,52 +484,32 @@ public abstract class Page<K, V> implements SerializableByte {
             this.keywordList = leftKeywords;
             this.keywordCount = this.keywordList.size();
 
-
             // 分裂孩子节点
-            List<Page<K, V>> rightChildNodes = new ArrayList<>();
-            List<Long> rightChildPosList = new ArrayList<>();
+            List<PageReference<K,V>> rightChildNodes = new ArrayList<>();
             // 分裂内存指针
-            if(this.childNodeList != null) {
-                List<Page<K, V>> leftChildNodes = new ArrayList<>(index);
-                for (int i = 0; i < this.childNodeList.size(); i++) {
-                    Page<K, V> node = this.childNodeList.get(i);
+            if(this.childPageList != null) {
+                List<PageReference<K,V>> leftChildNodes = new ArrayList<>(index);
+                for (int i = 0; i < this.childPageList.size(); i++) {
+                    PageReference<K,V> node = this.childPageList.get(i);
                     if (i < index + 1) {
                         leftChildNodes.add(node);
                     } else {
                         rightChildNodes.add(node);
                     }
                 }
-                this.childNodeList = leftChildNodes;
-                this.keywordCount = this.keywordList.size();
+                this.childPageList = leftChildNodes;
             }
 
-            // 分裂磁盘指针
-            if(this.childPosList != null) {
-                List<Long> leftChildNodes = new ArrayList<>(this.childPosList.size() - index);
-                for (int i = 0; i < this.childPosList.size(); i++) {
-                    Long pos = this.childPosList.get(i);
-                    if (i < index + 1) {
-                        leftChildNodes.add(pos);
-                    } else {
-                        rightChildPosList.add(pos);
-                    }
-                }
-                this.childPosList = leftChildNodes;
-            }
+
             resetCountCrrMaxSize();
 
-            return new NonLeaf<>(map, rightKeywords, rightChildNodes, rightChildPosList, map.getNextPageIndex());
+            return new NonLeaf<>(map, rightKeywords, rightChildNodes, map.getNextPageIndex());
         }
 
         @Override
         public void remove(int i) {
             this.keywordList.remove(i);
-            if (this.childPosList != null && this.childPosList.size() > 0) {
-                this.childPosList.remove(i);
-            }
-            if (this.childNodeList != null && this.childNodeList.size() > 0) {
-                this.childNodeList.remove(i);
-            }
+            this.childPageList.remove(i);
             this.keywordCount--;
         }
 
@@ -563,18 +519,12 @@ public abstract class Page<K, V> implements SerializableByte {
         }
 
         @Override
-        public void setChild(int index, Page<K, V> node) {
-            if (this.childNodeList != null) {
-                this.childNodeList.set(index, node);
-            } else if (this.getChildPosList() != null) {
-                this.childPosList.set(index, node.getStartPos());
-            } else {
-                throw new DbException("设置子节点异常");
-            }
+        public void setChild(int index,PageReference<K,V> node) {
+            childPageList.set(index, node);
         }
 
         @Override
-        public void insertNonLeaf(int index, K key, Page<K, V> node) {
+        public void insertNonLeaf(int index, K key,PageReference<K,V> node) {
             // 插入关键字
             if (index >= this.keywordList.size()) {
                 this.keywordList.add(key);
@@ -583,19 +533,12 @@ public abstract class Page<K, V> implements SerializableByte {
             }
 
             // 插入节点
-            if (this.childNodeList != null) {
-                if (index >= this.childNodeList.size()) {
-                    this.childNodeList.add(node);
-                } else {
-                    this.childNodeList.add(index, node);
-                }
+            if (index >= this.childPageList.size()) {
+                this.childPageList.add(node);
             } else {
-                if (index >= this.childPosList.size()) {
-                    this.childPosList.add(node.getStartPos());
-                } else {
-                    this.childPosList.add(index, node.getStartPos());
-                }
+                this.childPageList.add(index, node);
             }
+
             this.keywordCount++;
             this.currMaxByteLen += 8 + map.getKeyType().getMaxByteSize(key);
         }
@@ -605,15 +548,12 @@ public abstract class Page<K, V> implements SerializableByte {
             throw new UnsupportedOperationException();
         }
 
-        @Override
-        public List<Page<K, V>> getChildNodeList() {
-            return childNodeList;
-        }
 
         @Override
-        public List<Long> getChildPosList() {
-            return childPosList;
+        public List<PageReference<K,V>> getChildNodeList() {
+            return childPageList;
         }
+
 
         @Override
         public boolean isLeaf() {
@@ -625,6 +565,32 @@ public abstract class Page<K, V> implements SerializableByte {
             throw new UnsupportedOperationException();
         }
 
+    }
+
+
+    public static final class PageReference<K,V> {
+
+        private long pos;
+
+        private Page<K,V> page;
+
+        public PageReference(Page<K,V> page) {
+            this(page, page.getStartPos());
+        }
+
+
+        private PageReference(Page<K,V> page, long pos) {
+            this.page = page;
+            this.pos = pos;
+        }
+
+        public Page<K,V> getPage() {
+            return page;
+        }
+
+        public long getPos() {
+            return pos;
+        }
     }
 
 

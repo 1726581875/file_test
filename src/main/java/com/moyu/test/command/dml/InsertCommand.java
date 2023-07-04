@@ -1,16 +1,13 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
-import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
-import com.moyu.test.util.PathUtil;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaomingzhang
@@ -36,39 +33,14 @@ public class InsertCommand extends AbstractCommand {
     }
 
 
-
-
-    public String batchWriteRows(List<RowEntity> columnsList) {
-        List<Column[]> columnList = new ArrayList<>(columnsList.size());
-        for (RowEntity row : columnsList) {
-            columnList.add(row.getColumns());
-        }
-        return batchWriteList(columnList);
+    public String batchFastInsert(List<RowEntity> rowEntityList) {
+        BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
+        int num = engineOperation.batchFastInsert(rowEntityList);
+        return num == 1 ? "ok" : "error";
     }
 
     public String batchWriteList(List<Column[]> columnsList) {
-        DataChunkStore dataChunkStore = null;
-        try {
-            String fileFullPath = PathUtil.getDataFilePath(tableInfo.getSession().getDatabaseId(), tableInfo.getTableName());
-            dataChunkStore = new DataChunkStore(fileFullPath);
-            List<byte[]> list = new ArrayList<>();
-
-            for (int i = 0; i < columnsList.size(); i++) {
-                Column[] columns = columnsList.get(i);
-                byte[] rowBytes = RowData.toRowByteData(columns);
-                list.add(rowBytes);
-            }
-            dataChunkStore.writeRow(list);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            dataChunkStore.close();
-        }
-        return "ok";
-    }
-
-
-    public Column[] getDataColumns() {
-        return dataColumns;
+        List<RowEntity> rowEntityList = columnsList.stream().map(e -> new RowEntity(e)).collect(Collectors.toList());
+        return batchFastInsert(rowEntityList);
     }
 }

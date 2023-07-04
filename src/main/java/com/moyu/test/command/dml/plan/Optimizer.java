@@ -42,13 +42,25 @@ public class Optimizer {
      */
     private ConditionTree optimizeConditionTree(ConditionTree currNode, ConditionTree parentNode, int currIndex) {
 
+        List<ConditionTree> childNodes = currNode.getChildNodes();
+        // 递归处理子树
+        if (childNodes != null && childNodes.size() > 0) {
+            for (int i = 0; i < childNodes.size(); i++) {
+                ConditionTree conditionTree = childNodes.get(i);
+                optimizeConditionTree(conditionTree, currNode, i);
+            }
+        }
+
         // 如果子节点只有一个，可以直接用子节点代替当前节点，以降低树高度
         if (currNode.getChildNodes() != null && currNode.getChildNodes().size() == 1) {
             currNode = currNode.getChildNodes().get(0);
             parentNode.getChildNodes().set(currIndex, currNode);
         }
 
-        List<ConditionTree> childNodes = currNode.getChildNodes();
+
+        if(currNode.isLeaf()) {
+
+        }
 
         // 合并等价的条件分支：
 /*        if (childNodes != null && childNodes.size() > 0) {
@@ -60,13 +72,7 @@ public class Optimizer {
             }
         }*/
 
-        // 递归处理子树
-        if (childNodes != null && childNodes.size() > 0) {
-            for (int i = 0; i < childNodes.size(); i++) {
-                ConditionTree conditionTree = childNodes.get(i);
-                optimizeConditionTree(conditionTree, currNode, i);
-            }
-        }
+
 
         return currNode;
     }

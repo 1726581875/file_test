@@ -13,6 +13,8 @@ import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.cursor.*;
+import com.moyu.test.store.data2.BTreeMap;
+import com.moyu.test.store.data2.type.RowValue;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.store.operation.BasicOperation;
@@ -232,7 +234,7 @@ public class Query {
         OperateTableInfo tableInfo = new OperateTableInfo(session, tmpTableName, null, null);
         tableInfo.setEngineType(CommonConstant.ENGINE_TYPE_YU);
         InsertCommand insertCommand = new InsertCommand(tableInfo, null);
-        insertCommand.batchWriteRows(resultRowList);
+        insertCommand.batchFastInsert(resultRowList);
         return tmpTableName;
     }
 
@@ -497,7 +499,11 @@ public class Query {
                     try {
                         // join table
                         joinCursor = getQueryCursor(joinTable);
-                        mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                        if(joinCursor instanceof BtreeCursor) {
+                            mainCursor = indexJoinTable(mainCursor, (BtreeCursor) joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                        } else {
+                            mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw new SqlExecutionException("连接查询异常");
@@ -581,6 +587,80 @@ public class Query {
         }
     }
 
+
+    private Cursor indexJoinTable(Cursor leftCursor, BtreeCursor rightCursor, ConditionTree joinCondition, String joinType) {
+        // 字段元数据
+        Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
+
+        BTreeMap bTreeMap = rightCursor.getBTreeMap();
+        List<RowEntity> resultList = new LinkedList<>();
+        // 内连接、左连接
+        if (CommonConstant.JOIN_TYPE_INNER.equals(joinType)
+                || CommonConstant.JOIN_TYPE_LEFT.equals(joinType)) {
+            RowEntity leftRow = null;
+            while ((leftRow = leftCursor.next()) != null) {
+
+                Object leftKeyValue = getLeftKeyValue(leftRow, joinCondition);
+                RowValue rowValue = (RowValue) bTreeMap.get(leftKeyValue);
+                List<RowEntity> rows = new LinkedList<>();
+                if(rowValue != null) {
+                    RowEntity rightRow = rowValue.getRowEntity(rightCursor.getColumns());
+                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
+                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
+                        rows.add(rowEntity);
+                    }
+                }
+                // 左连接，如果右表没有匹配行，要加一个空行
+                if (CommonConstant.JOIN_TYPE_LEFT.equals(joinType) && rows.size() == 0) {
+                    RowEntity rightNullRow = new RowEntity(rightCursor.getColumns());
+                    RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightNullRow);
+                    rows.add(rowEntity);
+                }
+
+                rightCursor.reset();
+                resultList.addAll(rows);
+            }
+            return new MemoryTemTableCursor(resultList, columns);
+            // 右连接
+        } else if (CommonConstant.JOIN_TYPE_RIGHT.equals(joinType)) {
+            RowEntity rightRow = null;
+            while ((rightRow = rightCursor.next()) != null) {
+                RowEntity leftRow = null;
+                List<RowEntity> rows = new ArrayList<>();
+                while ((leftRow = leftCursor.next()) != null) {
+                    if (isMatchJoinCondition(leftRow, rightRow, joinCondition)) {
+                        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
+                        rows.add(rowEntity);
+                    }
+                }
+                // 右连接，左表没有匹配行，加一个空行
+                if (rows.size() == 0) {
+                    RowEntity leftNullRow = new RowEntity(leftCursor.getColumns());
+                    RowEntity rowEntity = RowEntity.mergeRow(leftNullRow, rightRow);
+                    rows.add(rowEntity);
+                }
+                resultList.addAll(rows);
+                leftCursor.reset();
+            }
+            return new MemoryTemTableCursor(resultList, columns);
+        } else {
+            throw new SqlIllegalException("不支持连接类型:" + joinType);
+        }
+    }
+
+
+    private Object getLeftKeyValue(RowEntity leftRow, ConditionTree joinCondition) {
+
+        Condition condition = joinCondition.getCondition();
+        if(condition instanceof ConditionLeftRight) {
+            ConditionLeftRight leftRight = (ConditionLeftRight) condition;
+            // 左表字段
+            Column leftColumn = leftRow.getColumn(leftRight.getLeft().getColumnName(), leftRight.getLeft().getTableAlias());
+            return leftColumn.getValue() ;
+        } else {
+            throw new DbException("不支持连接条件");
+        }
+    }
 
 
     private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree joinCondition) {

@@ -9,6 +9,7 @@ import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -33,6 +34,8 @@ public abstract class BasicOperation {
     }
 
     public abstract int insert(RowEntity rowEntity);
+
+    public abstract int batchFastInsert(List<RowEntity> rowList);
 
     public abstract int update(Column[] updateColumns);
 

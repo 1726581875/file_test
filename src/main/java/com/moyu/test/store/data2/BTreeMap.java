@@ -41,8 +41,7 @@ public class BTreeMap<K, V> {
 
     public void initRootNode() {
         if (bpTreeStore.getPageCount() == 0) {
-            this.rootNode = Page.createLeaf(this, new ArrayList(), new ArrayList<>(), nextPageIndex);
-            //this.rootNode = new Page<>(this, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), true, bpTreeStore.getNextPageIndex());
+            this.rootNode = Page.createLeaf(this, new ArrayList(), new ArrayList<>(),  bpTreeStore.getNextPageIndex());
             bpTreeStore.savePage(rootNode);
             bpTreeStore.updateRootPos(rootNode.getStartPos());
         } else {
@@ -97,13 +96,13 @@ public class BTreeMap<K, V> {
 
 
     public Page<K, V> getChildPage(Page<K, V> page, int index) {
+        List<Page.PageReference<K, V>> childNodeList = page.getChildNodeList();
+        Page.PageReference<K, V> pageReference = childNodeList.get(index);
         Page<K, V> childPage = null;
-        if (page.getChildNodeList() == null || page.getChildNodeList().size() == 0) {
-            // 从磁盘中获取
-            Long childPos = page.getChildPosList().get(index);
-            childPage = bpTreeStore.getPage(childPos, this);
+        if(pageReference.getPage() == null) {
+            childPage = bpTreeStore.getPage(pageReference.getPos(), this);
         } else {
-            childPage = page.getChildNodeList().get(index);
+            childPage = pageReference.getPage();
         }
         return childPage;
     }
@@ -144,18 +143,18 @@ public class BTreeMap<K, V> {
                     List<K> keys = new ArrayList<>(1);
                     keys.add(k);
                     // 设置子节点
-                    List<Page<K,V>> children = new ArrayList<>(2);
-                    children.add(node);
-                    children.add(split);
+                    List<Page.PageReference<K,V>> children = new ArrayList<>(2);
+                    children.add(new Page.PageReference<K,V>(node));
+                    children.add(new Page.PageReference<K,V>(split));
                     int nextPageIndex = bpTreeStore.getNextPageIndex();
-                    rootNode = Page.createNonLeaf(this, keys, children, null, nextPageIndex);
+                    rootNode = Page.createNonLeaf(this, keys, children, nextPageIndex);
                     level++;
                     // 保存新的根节点到磁盘
                     bpTreeStore.savePage(rootNode);
                     bpTreeStore.updateRootPos(rootNode.getStartPos());
                     // 保存左边节点和右边节点
-                    bpTreeStore.savePage(split);
                     bpTreeStore.savePage(node);
+                    bpTreeStore.savePage(split);
                     // 结束
                     break;
                 }
@@ -169,9 +168,9 @@ public class BTreeMap<K, V> {
                 // 赋值为父节点, 往上，一直保持是node的父节点位置
                 cursor = cursor.getParent();
                 // 重新设置前面分裂左节点
-                node.setChild(index, c);
+                node.setChild(index, new Page.PageReference<>(c));
                 // 插入前面分裂的右节点
-                node.insertNonLeaf(index + 1, k, split);
+                node.insertNonLeaf(index + 1, k, new Page.PageReference<>(split));
 
                 // 更新到磁盘
                 bpTreeStore.savePage(c);
@@ -189,7 +188,8 @@ public class BTreeMap<K, V> {
 
     public Integer getNextPageIndex() {
         if (isAutoCommit) {
-            return bpTreeStore.getNextPageIndex();
+            int nextPageIndex = bpTreeStore.getNextPageIndex();
+            return nextPageIndex;
         } else {
             Integer next = nextPageIndex;
             nextPageIndex++;
@@ -224,12 +224,11 @@ public class BTreeMap<K, V> {
                     List<K> keys = new ArrayList<>();
                     keys.add(k);
                     // 设置子节点
-                    List<Page<K,V>> children = new ArrayList<>(2);
-                    children.add(node);
-                    children.add(split);
-                    int nextPageIndex = getNextPageIndex();
-                    rootNode = Page.createNonLeaf(this, keys, children, null, nextPageIndex);
-                    //rootNode = new Page<>(this, keys, null, children, false, nextPageIndex);
+                    List<Page.PageReference<K,V>> children = new ArrayList<>(2);
+                    children.add(new Page.PageReference<K,V>(node));
+                    children.add(new Page.PageReference<K,V>(split));
+                    int nextPageIndex = bpTreeStore.getNextPageIndex();
+                    rootNode = Page.createNonLeaf(this, keys, children, nextPageIndex);
                     level++;
                     // 结束
                     break;
@@ -244,9 +243,9 @@ public class BTreeMap<K, V> {
                 // 赋值为父节点, 往上，一直保持是node的父节点位置
                 cursor = cursor.getParent();
                 // 重新设置前面分裂左节点
-                node.setChild(index, c);
+                node.setChild(index, new Page.PageReference<>(c));
                 // 插入前面分裂的右节点
-                node.insertNonLeaf(index + 1, k, split);
+                node.insertNonLeaf(index + 1, k, new Page.PageReference<>(split));
             }
         } else {
             // index > 0 在叶子节点找到对应关键字， 直接替换为新值
@@ -290,12 +289,9 @@ public class BTreeMap<K, V> {
             bpTreeStore.savePage(node);
         } else {
             bpTreeStore.savePage(node);
-            List<Page<K, V>> childNodeList = node.getChildNodeList();
-            if(childNodeList == null) {
-                System.out.println("1");
-            }
-            for (Page<K, V> childNode : childNodeList) {
-                saveDisk(childNode);
+            List<Page.PageReference<K, V>> childNodeList = node.getChildNodeList();
+            for (Page.PageReference<K, V> childNode : childNodeList) {
+                saveDisk(childNode.getPage());
             }
         }
     }

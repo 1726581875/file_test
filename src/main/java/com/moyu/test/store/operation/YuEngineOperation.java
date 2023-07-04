@@ -95,6 +95,30 @@ public class YuEngineOperation extends BasicOperation {
         return 1;
     }
 
+    @Override
+    public int batchFastInsert(List<RowEntity> rowList) {
+        int num = 0;
+        DataChunkStore dataChunkStore = null;
+        try {
+            String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), tableName);
+            dataChunkStore = new DataChunkStore(fileFullPath);
+            List<byte[]> list = new ArrayList<>();
+            for (int i = 0; i < rowList.size(); i++) {
+                Column[] columns = rowList.get(i).getColumns();
+                byte[] rowBytes = RowData.toRowByteData(columns);
+                list.add(rowBytes);
+            }
+            dataChunkStore.writeRow(list);
+            num = list.size();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            dataChunkStore.close();
+        }
+
+        return num;
+    }
+
     private void insertIndex(IndexMetadata index, Column indexColumn, Long chunkPos) {
         String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
         if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {

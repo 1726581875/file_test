@@ -76,4 +76,8 @@ public class BtreeCursor extends AbstractCursor {
     public Column[] getColumns() {
         return columns;
     }
+
+    public BTreeMap getBTreeMap() {
+        return bTreeMap;
+    }
 }

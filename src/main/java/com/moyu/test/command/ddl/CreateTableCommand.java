@@ -40,7 +40,7 @@ public class CreateTableCommand extends AbstractCommand {
             columnMetadataStore.createColumnBlock(table.getTableId(), columnList);
             // 如果有主键，创建主键索引
             Column keyColumn = getPrimaryKeyColumn(columnList.toArray(new Column[0]));
-            if(keyColumn != null) {
+            if(keyColumn != null && CommonConstant.ENGINE_TYPE_YU.equals(engineType)) {
                 CreateIndexCommand indexCommand = new CreateIndexCommand();
                 indexCommand.setDatabaseId(databaseId);
                 indexCommand.setTableId(table.getTableId());

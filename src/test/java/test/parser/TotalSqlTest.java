@@ -4,6 +4,7 @@ import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -20,7 +21,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -39,14 +40,20 @@ public class TotalSqlTest {
         gptRandom20Test();
         gptRandom20Test2();
 
-        yanStoreEngineTest();
+        yanStoreEngineTest();*/
 
 
-/*        fastInsertData("y_y_1", 100000);
-        fastInsertData("y_y_2", 1000);
-
+        fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
+        fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
-        testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");*/
+        testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
+
+/*        fastInsertData("y_y_3", 10000);
+        fastInsertData("y_y_4", 1000);
+
+        testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
+        testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");*/
+
 
     }
 
@@ -227,6 +234,40 @@ public class TotalSqlTest {
 
 
 
+    private static void fastInsertData2(String tableName, int rowNum, String engineType) {
+        testExecSQL("drop table if exists " + tableName);
+
+        testExecSQL("create table "+ tableName +" (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
+        long beginTime = System.currentTimeMillis();
+        long time = beginTime;
+
+        List<Column[]> columnList = new ArrayList<>();
+        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        Column[] tableColumns = getColumns(null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
+        tableInfo.setEngineType(engineType);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
+        for (int i = 1; i <= rowNum; i++) {
+            Column[] columns = getColumns(i, "name_" + i);
+            columnList.add(columns);
+            if (i % 10000 == 0) {
+                insertCommand.batchWriteList(columnList);
+                System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+                time = System.currentTimeMillis();
+                columnList.clear();
+            }
+        }
+
+        insertCommand.batchWriteList(columnList);
+        System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
+        time = System.currentTimeMillis();
+        columnList.clear();
+
+        testExecSQL("select count(*) from " + tableName);
+
+        testExecSQL("desc " + tableName);
+    }
+
     private static void fastInsertData(String tableName, int rowNum) {
         testExecSQL("drop table if exists " + tableName);
 
@@ -236,7 +277,8 @@ public class TotalSqlTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 1);
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, null, null);
+        Column[] tableColumns = getColumns(null, null);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
         InsertCommand insertCommand = new InsertCommand(tableInfo, null);
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);

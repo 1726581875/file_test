@@ -55,6 +55,31 @@ public class YanEngineOperation extends BasicOperation {
         return 1;
     }
 
+    @Override
+    public int batchFastInsert(List<RowEntity> rowList) {
+        BTreeMap bTreeMap = null;
+        try {
+            bTreeMap = getBTreeMap();
+            for (RowEntity rowEntity : rowList) {
+                Column primaryKey = getPrimaryKey(rowEntity.getColumns());
+                long nextRowId = bTreeMap.getNextRowId();
+                RowValue rowValue = new RowValue(0L, rowEntity.getColumns(), nextRowId);
+                // 如果不存在主键，以行id作为b+树的key
+                if (primaryKey == null) {
+                    bTreeMap.put(nextRowId, rowValue);
+                } else {
+                    bTreeMap.put(primaryKey.getValue(), rowValue);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        } finally {
+            bTreeMap.close();
+        }
+        return 1;
+    }
+
     private Column getPrimaryKey(Column[] columns) {
         for (Column column : columns) {
             if (column.getIsPrimaryKey() == (byte) 1) {
