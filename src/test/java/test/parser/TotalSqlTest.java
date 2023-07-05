@@ -4,7 +4,6 @@ import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -43,15 +42,17 @@ public class TotalSqlTest {
         yanStoreEngineTest();*/
 
 
-        fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
-        fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
+        //fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
+        //fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
+        testExecSQL("select * from y_y_2 a inner join y_y_1 b on a.id = b.id");
 
-/*        fastInsertData("y_y_3", 10000);
-        fastInsertData("y_y_4", 1000);
 
-        testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
+        //fastInsertData2("y_y_3", 100000, CommonConstant.ENGINE_TYPE_YU);
+        //fastInsertData2("y_y_4", 1000, CommonConstant.ENGINE_TYPE_YU);
+
+/*        testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");*/
 
 

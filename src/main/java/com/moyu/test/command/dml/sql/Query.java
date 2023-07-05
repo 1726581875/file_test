@@ -2,7 +2,6 @@ package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.function.*;
-import com.moyu.test.command.dml.plan.Optimizer;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.CommonConstant;
@@ -499,8 +498,10 @@ public class Query {
                     try {
                         // join table
                         joinCursor = getQueryCursor(joinTable);
-                        if(joinCursor instanceof BtreeCursor) {
-                            mainCursor = indexJoinTable(mainCursor, (BtreeCursor) joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
+                        ConditionTree joinCondition = joinTable.getJoinCondition();
+                        if((joinCursor instanceof BtreeCursor)
+                                && isPrimaryKey(joinCondition.getCondition(), joinTable.getTableColumns())) {
+                            mainCursor = indexJoinTable(mainCursor, (BtreeCursor) joinCursor, joinCondition , joinTable.getJoinInType());
                         } else {
                             mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
                         }
@@ -517,6 +518,20 @@ public class Query {
             throw new SqlExecutionException("查询异常");
         }
         return mainCursor;
+    }
+
+
+    private boolean isPrimaryKey(Condition joinCondition, Column[] columns){
+        if(joinCondition instanceof ConditionLeftRight) {
+            Column right = ((ConditionLeftRight) joinCondition).getRight();
+            for (Column c : columns) {
+                if(c.getColumnName().equals(right.getColumnName())
+                        && c.getIsPrimaryKey() == CommonConstant.PRIMARY_KEY) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 
