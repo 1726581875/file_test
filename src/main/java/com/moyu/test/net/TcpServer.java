@@ -10,15 +10,16 @@ import java.net.Socket;
  */
 public class TcpServer {
 
-    public static void main(String[] args) {
+    private static int port = 8888;
 
+    public static void main(String[] args) {
+        printDatabaseMsg();
         ServerSocket serverSocket = null;
         try {
-            serverSocket = new ServerSocket(8888);
+            serverSocket = new ServerSocket(port);
             int threadNum = 0;
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("接收到请求");
                 TcpServerThread tcpServerThread = new TcpServerThread(socket);
                 Thread thread = new Thread(tcpServerThread, "TcpServerThread-" + threadNum);
                 thread.setDaemon(true);
@@ -37,5 +38,14 @@ public class TcpServer {
             }
         }
     }
+
+
+    private static void printDatabaseMsg() {
+        System.out.println("+-------------------------------+");
+        System.out.println("|       YanSQL1.0  (^_^)        |");
+        System.out.println("+-------------------------------+");
+        System.out.println("TCP服务启动中，端口为" + port + "。等待连接...");
+    }
+
 
 }

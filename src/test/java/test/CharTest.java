@@ -1,5 +1,10 @@
 package test;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,8 +17,14 @@ public class CharTest {
     public static void main(String[] args) {
 
 
-        System.out.println(10d/1000 * 1000);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+        LocalDate date1 = LocalDate.parse("2023-05-31", formatter);
+        LocalDate date2 = LocalDate.parse("2023-07-31", formatter);
+
+        long daysDiff = ChronoUnit.MONTHS.between(date1, date2);
+
+        System.out.println(daysDiff);
 
 /*        String str = "\uD83C\uDF7A";
         System.out.println("char:" + str);

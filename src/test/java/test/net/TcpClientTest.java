@@ -1,11 +1,7 @@
 package test.net;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
 /**
  * @author xiaomingzhang
@@ -21,21 +17,30 @@ public class TcpClientTest {
             InputStream inputStream = socket.getInputStream();
             OutputStream outputStream = socket.getOutputStream();
             DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+            DataInputStream dataInputStream = new DataInputStream(inputStream);
 
             // 发送数据库id给服务端
-            int dbId = 10;;
+            int dbId = 3;;
             dataOutputStream.writeInt(dbId);
 
             // 发送sql给服务端
-            String message = "select * from xma_table";
-
+            String message = "select * from xmz_table";
             int length1 = message.length();
             dataOutputStream.writeInt(length1);
             dataOutputStream.writeChars(message);
 
+
+            int resultCharLen = dataInputStream.readInt();
+            char[] sqlChars = new char[resultCharLen];
+            for (int i = 0; i < resultCharLen; i++) {
+                sqlChars[i] = dataInputStream.readChar();
+            }
+            System.out.println(new String(sqlChars));
+
             // 关闭资源
             dataOutputStream.close();
             outputStream.close();
+            dataInputStream.close();
             inputStream.close();
             socket.close();
 

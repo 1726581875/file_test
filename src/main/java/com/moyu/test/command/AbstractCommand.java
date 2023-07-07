@@ -15,6 +15,12 @@ public abstract class AbstractCommand implements Command {
         return strings;
     }
 
+    @Override
+    public String execCommand() {
+        String[] exec = exec();
+        return exec[0];
+    }
+
     /**
      * 执行命令
      *
