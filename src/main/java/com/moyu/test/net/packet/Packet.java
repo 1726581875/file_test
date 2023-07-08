@@ -5,8 +5,12 @@ package com.moyu.test.net.packet;
  * @date 2023/7/7
  */
 public class Packet {
+
+    public static final byte PACKET_TYPE_ERR = 0;
+    public static final byte PACKET_TYPE_OK = 1;
+
     /**
-     * 整个数据包长度
+     * 整个数据包长度,不包含自身和packetType
      */
     protected int packetLen;
     /**
@@ -16,4 +20,7 @@ public class Packet {
     protected byte packetType;
 
 
+    public byte getPacketType() {
+        return packetType;
+    }
 }
