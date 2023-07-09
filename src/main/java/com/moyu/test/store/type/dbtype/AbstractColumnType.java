@@ -1,8 +1,10 @@
-package com.moyu.test.store.type;
+package com.moyu.test.store.type.dbtype;
 
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.WriteBuffer;
+import com.moyu.test.store.type.DataType;
+
 import java.nio.ByteBuffer;
 
 /**

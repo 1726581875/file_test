@@ -1,7 +1,8 @@
-package com.moyu.test.store.type;
+package com.moyu.test.store.type.obj;
 
 import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.store.data2.type.RowValue;
+import com.moyu.test.store.type.obj.AbstractObjDataType;
 
 import java.nio.ByteBuffer;
 

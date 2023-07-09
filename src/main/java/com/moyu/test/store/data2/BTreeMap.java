@@ -1,5 +1,6 @@
 package com.moyu.test.store.data2;
 
+import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.type.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ public class BTreeMap<K, V> {
 
     private DataType<V> valueType;
 
-    private BTreeStore bpTreeStore;
+    private BTreeStore bTreeStore;
 
     private int level;
 
@@ -31,7 +32,7 @@ public class BTreeMap<K, V> {
     public BTreeMap(DataType<K> keyType,DataType<V> valueType,BTreeStore bpTreeStore, boolean isAutoCommit) {
         this.keyType = keyType;
         this.valueType = valueType;
-        this.bpTreeStore = bpTreeStore;
+        this.bTreeStore = bpTreeStore;
         this.isAutoCommit = isAutoCommit;
 
         initRootNode();
@@ -40,12 +41,12 @@ public class BTreeMap<K, V> {
 
 
     public void initRootNode() {
-        if (bpTreeStore.getPageCount() == 0) {
-            this.rootNode = Page.createLeaf(this, new ArrayList(), new ArrayList<>(),  bpTreeStore.getNextPageIndex());
-            bpTreeStore.savePage(rootNode);
-            bpTreeStore.updateRootPos(rootNode.getStartPos());
+        if (bTreeStore.getPageCount() == 0) {
+            this.rootNode = Page.createLeaf(this, new ArrayList(), new ArrayList<>(),  bTreeStore.getNextPageIndex());
+            bTreeStore.savePage(rootNode);
+            bTreeStore.updateRootPos(rootNode.getStartPos());
         } else {
-            this.rootNode = bpTreeStore.getRootPage(this);
+            this.rootNode = bTreeStore.getRootPage(this);
         }
         this.nextPageIndex++;
     }
@@ -89,7 +90,7 @@ public class BTreeMap<K, V> {
 
 
     public Page<K, V> getPageByPos(Long pos) {
-        return bpTreeStore.getPage(pos, this);
+        return bTreeStore.getPage(pos, this);
     }
 
 
@@ -100,7 +101,7 @@ public class BTreeMap<K, V> {
         Page.PageReference<K, V> pageReference = childNodeList.get(index);
         Page<K, V> childPage = null;
         if(pageReference.getPage() == null) {
-            childPage = bpTreeStore.getPage(pageReference.getPos(), this);
+            childPage = bTreeStore.getPage(pageReference.getPos(), this);
         } else {
             childPage = pageReference.getPage();
         }
@@ -108,7 +109,7 @@ public class BTreeMap<K, V> {
     }
 
     public long getNextRowId(){
-       return bpTreeStore.getNextRowId();
+       return bTreeStore.getNextRowId();
     }
 
     /**
@@ -146,15 +147,15 @@ public class BTreeMap<K, V> {
                     List<Page.PageReference<K,V>> children = new ArrayList<>(2);
                     children.add(new Page.PageReference<K,V>(node));
                     children.add(new Page.PageReference<K,V>(split));
-                    int nextPageIndex = bpTreeStore.getNextPageIndex();
+                    int nextPageIndex = bTreeStore.getNextPageIndex();
                     rootNode = Page.createNonLeaf(this, keys, children, nextPageIndex);
                     level++;
                     // 保存新的根节点到磁盘
-                    bpTreeStore.savePage(rootNode);
-                    bpTreeStore.updateRootPos(rootNode.getStartPos());
+                    bTreeStore.savePage(rootNode);
+                    bTreeStore.updateRootPos(rootNode.getStartPos());
                     // 保存左边节点和右边节点
-                    bpTreeStore.savePage(node);
-                    bpTreeStore.savePage(split);
+                    bTreeStore.savePage(node);
+                    bTreeStore.savePage(split);
                     // 结束
                     break;
                 }
@@ -173,22 +174,22 @@ public class BTreeMap<K, V> {
                 node.insertNonLeaf(index + 1, k, new Page.PageReference<>(split));
 
                 // 更新到磁盘
-                bpTreeStore.savePage(c);
-                bpTreeStore.savePage(split);
+                bTreeStore.savePage(c);
+                bTreeStore.savePage(split);
             }
-            bpTreeStore.savePage(node);
+            bTreeStore.savePage(node);
         } else {
             // index > 0 在叶子节点找到对应关键字， 直接替换为新值
             node.setLeafValue(index, value);
             // 更新到磁盘
-            bpTreeStore.savePage(node);
+            bTreeStore.savePage(node);
         }
     }
 
 
     public Integer getNextPageIndex() {
         if (isAutoCommit) {
-            int nextPageIndex = bpTreeStore.getNextPageIndex();
+            int nextPageIndex = bTreeStore.getNextPageIndex();
             return nextPageIndex;
         } else {
             Integer next = nextPageIndex;
@@ -227,7 +228,7 @@ public class BTreeMap<K, V> {
                     List<Page.PageReference<K,V>> children = new ArrayList<>(2);
                     children.add(new Page.PageReference<K,V>(node));
                     children.add(new Page.PageReference<K,V>(split));
-                    int nextPageIndex = bpTreeStore.getNextPageIndex();
+                    int nextPageIndex = bTreeStore.getNextPageIndex();
                     rootNode = Page.createNonLeaf(this, keys, children, nextPageIndex);
                     level++;
                     // 结束
@@ -267,11 +268,11 @@ public class BTreeMap<K, V> {
         }
 
         node.remove(index);
-        bpTreeStore.savePage(node);
+        bTreeStore.savePage(node);
     }
 
     public void clear() {
-        bpTreeStore.clear();
+        bTreeStore.clear();
         initRootNode();
     }
 
@@ -279,16 +280,16 @@ public class BTreeMap<K, V> {
 
     public void commitSaveDisk() {
         long startPos = rootNode.getStartPos();
-        bpTreeStore.updateRootPos(startPos);
+        bTreeStore.updateRootPos(startPos);
         saveDisk(rootNode);
 
     }
 
     public void saveDisk(Page<K, V> node) {
         if (node.isLeaf()) {
-            bpTreeStore.savePage(node);
+            bTreeStore.savePage(node);
         } else {
-            bpTreeStore.savePage(node);
+            bTreeStore.savePage(node);
             List<Page.PageReference<K, V>> childNodeList = node.getChildNodeList();
             for (Page.PageReference<K, V> childNode : childNodeList) {
                 saveDisk(childNode.getPage());
@@ -296,6 +297,33 @@ public class BTreeMap<K, V> {
         }
     }
 
+
+
+    /**
+     * 插入值数组
+     * @param arr 当前关键字对应的值数组
+     * @param rowKey 主键索引
+     * @return
+     */
+    public static Value[] insertValueArray(Value[] arr, Value rowKey) {
+        if (arr == null) {
+            arr = new Value[1];
+            arr[0] = rowKey;
+            return arr;
+        } else {
+            // 已经存在，不需要再插入（因为可能会存在某些数据是处于同一数据块内）
+            for (Value p : arr) {
+                if (p.equals(rowKey)) {
+                    return arr;
+                }
+            }
+            // 数组最后一个位置插入
+            Value[] newArr = new Value[arr.length + 1];
+            System.arraycopy(arr, 0, newArr, 0, arr.length);
+            newArr[newArr.length - 1] = rowKey;
+            return newArr;
+        }
+    }
 
 
 
@@ -325,13 +353,13 @@ public class BTreeMap<K, V> {
     }
 
 
-    public BTreeStore getBpTreeStore() {
-        return bpTreeStore;
+    public BTreeStore getbTreeStore() {
+        return bTreeStore;
     }
 
 
     public void close(){
-        bpTreeStore.close();
+        bTreeStore.close();
     }
 
 

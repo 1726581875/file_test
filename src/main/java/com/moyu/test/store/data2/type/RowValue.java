@@ -5,6 +5,7 @@ import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.ColumnTypeFactory;
 import com.moyu.test.store.type.DataType;
+import com.moyu.test.store.type.obj.RowDataType;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -132,8 +133,7 @@ public class RowValue extends Value {
             valueColumn.setValue(value);
             resultColumns[i] = valueColumn;
         }
-        RowEntity rowEntity = new RowEntity(resultColumns);
-        rowEntity.setDeleted(this.isDeleted == (byte) 1);
+        RowEntity rowEntity = new RowEntity(resultColumns, rowId, this.isDeleted == (byte) 1);
         return rowEntity;
     }
 
@@ -161,4 +161,18 @@ public class RowValue extends Value {
                 '}';
     }
 
+    @Override
+    public DataType getDataTypeObj() {
+        return new RowDataType();
+    }
+
+    @Override
+    public int getType() {
+        return Value.TYPE_ROW_VALUE;
+    }
+
+    @Override
+    public Object getObjValue() {
+        return null;
+    }
 }

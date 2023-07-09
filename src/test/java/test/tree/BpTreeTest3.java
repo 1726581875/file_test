@@ -2,8 +2,8 @@ package test.tree;
 
 import com.moyu.test.store.data2.BTreeMap;
 import com.moyu.test.store.data2.BTreeStore;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.StringColumnType;
+import com.moyu.test.store.type.dbtype.IntColumnType;
+import com.moyu.test.store.type.dbtype.StringColumnType;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 

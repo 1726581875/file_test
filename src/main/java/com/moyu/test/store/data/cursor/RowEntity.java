@@ -12,12 +12,20 @@ import java.util.Objects;
  */
 public class RowEntity {
 
+    private Long rowId;
+
     private boolean isDeleted;
 
     private Column[] columns;
 
     public RowEntity(Column[] columns) {
         this.columns = columns;
+    }
+
+    public RowEntity(Column[] columns, long rowId, boolean isDeleted) {
+        this.columns = columns;
+        this.rowId = rowId;
+        this.isDeleted = isDeleted;
     }
 
     public RowEntity(Column[] columns, String tableAlias) {
@@ -67,6 +75,10 @@ public class RowEntity {
         return new RowEntity(columns);
     }
 
+
+    public Long getRowId() {
+        return rowId;
+    }
 
     @Override
     public boolean equals(Object o) {

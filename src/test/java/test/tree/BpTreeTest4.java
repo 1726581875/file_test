@@ -5,9 +5,8 @@ import com.moyu.test.store.data2.BTreeMap;
 import com.moyu.test.store.data2.BTreeStore;
 import com.moyu.test.store.data2.type.RowValue;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.RowDataType;
-import com.moyu.test.store.type.StringColumnType;
+import com.moyu.test.store.type.dbtype.IntColumnType;
+import com.moyu.test.store.type.obj.RowDataType;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 

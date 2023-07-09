@@ -1,6 +1,10 @@
 package com.moyu.test.store.type;
 
 import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.store.type.dbtype.DateColumnType;
+import com.moyu.test.store.type.dbtype.IntColumnType;
+import com.moyu.test.store.type.dbtype.LongColumnType;
+import com.moyu.test.store.type.dbtype.StringColumnType;
 
 import java.util.HashMap;
 import java.util.Map;

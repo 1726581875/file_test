@@ -2,8 +2,8 @@ package test.tree;
 
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.data.tree.BpTreeStore;
-import com.moyu.test.store.type.IntColumnType;
-import com.moyu.test.store.type.StringColumnType;
+import com.moyu.test.store.type.dbtype.IntColumnType;
+import com.moyu.test.store.type.dbtype.StringColumnType;
 import com.moyu.test.util.PathUtil;
 
 import java.io.IOException;

@@ -1,5 +1,6 @@
-package com.moyu.test.store.type;
+package com.moyu.test.store.type.dbtype;
 import com.moyu.test.store.WriteBuffer;
+import com.moyu.test.store.type.DataType;
 
 import java.nio.ByteBuffer;
 

@@ -253,13 +253,12 @@ public class SqlParser implements Parser {
                 indexColumn = c;
             }
         }
-        CreateIndexCommand command = new CreateIndexCommand();
-        command.setDatabaseId(this.connectSession.getDatabaseId());
-        command.setTableName(tableName);
+        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, columns, null);
+        tableInfo.setEngineType(tableMeta.getEngineType());
+        CreateIndexCommand command = new CreateIndexCommand(tableInfo);
         command.setTableId(tableMeta.getTableId());
         command.setIndexName(indexName);
         command.setColumnName(columnName);
-        command.setColumns(columns);
         command.setIndexType(indexType);
         command.setIndexColumn(indexColumn);
         return command;
@@ -1621,6 +1620,7 @@ public class SqlParser implements Parser {
         command.setTableName(tableName);
         command.setColumnList(columnList);
         command.setEngineType(engineType);
+        command.setSession(connectSession);
         return command;
     }
 

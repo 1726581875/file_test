@@ -16,10 +16,40 @@ public class TotalTest2 {
 
     private static final Integer databaseId = 3;
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
+    //private static final String engineType = CommonConstant.ENGINE_TYPE_YU;
 
 
     public static void main(String[] args) {
-        yanStoreEngineTest();
+        //yanStoreEngineTest();
+        testCreateIndexCommand();
+    }
+
+    private static void testCreateIndexCommand(){
+        testExecSQL("drop table if exists  xmz_q_2");
+        testExecSQL("create table xmz_q_2 (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+
+
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (3, 'Mike', '2023-06-29 11:15:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (4, 'Emily', '2023-06-29 12:00:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (5, 'Tom', '2023-06-29 13:20:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (7, 'Daniel', '2023-06-29 15:45:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (8, 'Olivia', '2023-06-29 16:30:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (9, 'David', '2023-06-29 17:15:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (10, 'Emma', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma1', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma2', '2023-06-29 18:00:00')");
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma3', '2022-06-29 18:00:00')");
+        
+        testExecSQL("select count(*) from xmz_q_2");
+        testExecSQL("select * from xmz_q_2 where id = 5");
+
+        testExecSQL("create index idx_id on xmz_q_2(id)");
+
+        testExecSQL("select * from xmz_q_2 where id = 5");
+        testExecSQL("select * from xmz_q_2 where id = 11");
     }
 
 

@@ -1,4 +1,6 @@
-package com.moyu.test.store.type;
+package com.moyu.test.store.type.obj;
+
+import com.moyu.test.store.type.DataType;
 
 /**
  * @author xiaomingzhang

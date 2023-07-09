@@ -1,13 +1,15 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
-import com.moyu.test.command.dml.CreateIndexCommand;
 import com.moyu.test.constant.CommonConstant;
+import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.TableMetadata;
+import com.moyu.test.store.operation.OperateTableInfo;
+
 import java.util.List;
 
 /**
@@ -15,6 +17,8 @@ import java.util.List;
  * @date 2023/5/9
  */
 public class CreateTableCommand extends AbstractCommand {
+
+    private ConnectSession session;
 
     private Integer databaseId;
 
@@ -41,7 +45,8 @@ public class CreateTableCommand extends AbstractCommand {
             // 如果有主键，创建主键索引
             Column keyColumn = getPrimaryKeyColumn(columnList.toArray(new Column[0]));
             if(keyColumn != null && CommonConstant.ENGINE_TYPE_YU.equals(engineType)) {
-                CreateIndexCommand indexCommand = new CreateIndexCommand();
+                OperateTableInfo tableInfo = new OperateTableInfo(session, tableName, columnList.toArray(new Column[0]), null);
+                CreateIndexCommand indexCommand = new CreateIndexCommand(tableInfo);
                 indexCommand.setDatabaseId(databaseId);
                 indexCommand.setTableId(table.getTableId());
                 indexCommand.setColumnName(keyColumn.getColumnName());
@@ -107,6 +112,12 @@ public class CreateTableCommand extends AbstractCommand {
     public void setEngineType(String engineType) {
         this.engineType = engineType;
     }
+
+
+    public void setSession(ConnectSession session) {
+        this.session = session;
+    }
+
 
     @Override
     public String toString() {

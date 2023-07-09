@@ -12,13 +12,16 @@ import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.data.tree.BpTreeMap;
+import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.store.transaction.RowLogRecord;
 import com.moyu.test.store.transaction.Transaction;
 import com.moyu.test.store.transaction.TransactionManager;
+import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -215,6 +218,100 @@ public class YuEngineOperation extends BasicOperation {
         }
         return deleteRowNum;
     }
+
+    @Override
+    public void createIndex(Integer tableId,
+                            String indexName,
+                            String columnName,
+                            byte indexType) {
+        DataChunkStore dataChunkStore = null;
+        IndexMetadataStore indexStore = null;
+        try {
+            indexStore = new IndexMetadataStore();
+            IndexMetadata oldIndex = indexStore.getIndex(tableId, indexName);
+            // 存在则先删除索引元数据
+            if (oldIndex != null) {
+                indexStore.dropIndexMetadata(tableId, indexName);
+            }
+
+            // 保存索引元数据
+            IndexMetadata index = new IndexMetadata(0L, tableId, indexName, columnName, indexType);
+            indexStore.saveIndexMetadata(tableId, index);
+
+            // 索引路径
+            String dirPath = PathUtil.getBaseDirPath() + File.separator + this.session.getDatabaseId();
+            String indexPath = dirPath + File.separator + tableName + "_" + indexName + ".idx";
+            // 索引文件存在则先删除
+            File file = new File(indexPath);
+            if (file.exists()) {
+                file.delete();
+            }
+            // 创建索引文件
+            FileUtil.createFileIfNotExists(indexPath);
+
+            // 操作数据文件，获取数据块数量(后面遍历没一行数据，为每一行数据创建索引)
+            dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), this.tableName));
+            int dataChunkNum = dataChunkStore.getDataChunkNum();
+
+            Column indexColumn = getIndexColumnByColumnName(columnName, tableColumns);
+            // 根据索引类型构造索引
+            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, Integer.class);
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
+                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, Long.class);
+            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
+                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, String.class);
+            } else {
+                throw new SqlExecutionException("该字段类型不支持创建索引，类型:" + indexColumn.getColumnType());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            dataChunkStore.close();
+            indexStore.close();
+        }
+    }
+
+
+    private <T extends Comparable> void buildIndexTree(String indexPath,
+                                                       Integer dataChunkNum,
+                                                       String columnName,
+                                                       DataChunkStore dataChunkStore,
+                                                       Class<T> clazz) {
+        // 创建一颗b+树
+        BpTreeMap<T, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, false, clazz);
+        // 一行一行遍历数据
+        for (int i = 0; i < dataChunkNum; i++) {
+            DataChunk chunk = dataChunkStore.getChunk(i);
+            for (int j = 0; j < chunk.getDataRowList().size(); j++) {
+                RowData rowData = chunk.getDataRowList().get(j);
+                Column[] columnData = rowData.getColumnData(tableColumns);
+                // 找到对应索引字段
+                Column indexColumnValue = getIndexColumnByColumnName(columnName,columnData);
+                if (indexColumnValue != null) {
+                    // 当前行对应索引字段的值作为b+树的【关键字】，数据块位置作为b+数的【值】
+                    T key = (T) indexColumnValue.getValue();
+                    Long[] arr = bpTreeMap.get(key);
+                    Long[] valueArr = BpTreeMap.insertValueArray(arr, chunk.getStartPos());
+                    bpTreeMap.putUnSaveDisk(key, valueArr);
+                }
+            }
+        }
+        // 保存到磁盘
+        bpTreeMap.commitSaveDisk();
+    }
+
+
+    private Column getIndexColumnByColumnName(String columnName, Column[] columns) {
+        for (Column c : columns) {
+            if (columnName.equals(c.getColumnName())) {
+                return c;
+            }
+        }
+        return null;
+    }
+
 
     @Override
     public Cursor getQueryCursor(FromTable table) throws IOException {

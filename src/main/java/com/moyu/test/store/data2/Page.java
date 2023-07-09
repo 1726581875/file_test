@@ -139,7 +139,7 @@ public abstract class Page<K, V> implements SerializableByte {
 
 
     public void commit() {
-        map.getBpTreeStore().savePage(this);
+        map.getbTreeStore().savePage(this);
     }
 
 

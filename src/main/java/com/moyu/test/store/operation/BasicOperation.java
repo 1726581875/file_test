@@ -41,6 +41,8 @@ public abstract class BasicOperation {
 
     public abstract int delete();
 
+    public abstract void createIndex(Integer tableId, String indexName, String columnName, byte indexType);
+
 
     public abstract Cursor getQueryCursor(FromTable table) throws IOException;
 
