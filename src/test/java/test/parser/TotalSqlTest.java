@@ -20,7 +20,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -39,7 +39,7 @@ public class TotalSqlTest {
         gptRandom20Test();
         gptRandom20Test2();
 
-        yanStoreEngineTest();*/
+        yanStoreEngineTest();
 
 
         //fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);

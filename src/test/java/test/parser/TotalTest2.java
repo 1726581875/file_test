@@ -50,6 +50,9 @@ public class TotalTest2 {
 
         testExecSQL("select * from xmz_q_2 where id = 5");
         testExecSQL("select * from xmz_q_2 where id = 11");
+
+        testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (12, 'Emma3', '2022-06-29 18:00:00')");
+        testExecSQL("select * from xmz_q_2 where id = 12");
     }
 
 

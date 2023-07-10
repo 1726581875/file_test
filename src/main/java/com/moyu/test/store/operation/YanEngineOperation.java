@@ -1,13 +1,10 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.command.dml.sql.Condition;
 import com.moyu.test.command.dml.sql.ConditionComparator;
-import com.moyu.test.command.dml.sql.ConditionEqOrNq;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.DbException;
-import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.cursor.BTreeIndexCursor;
 import com.moyu.test.store.data.cursor.BtreeCursor;
 import com.moyu.test.store.data.cursor.Cursor;
@@ -19,11 +16,9 @@ import com.moyu.test.store.data2.type.*;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
-import com.moyu.test.store.type.dbtype.AbstractColumnType;
 import com.moyu.test.store.type.DataType;
-import com.moyu.test.store.type.dbtype.IntColumnType;
+import com.moyu.test.store.type.dbtype.AbstractColumnType;
 import com.moyu.test.store.type.dbtype.LongColumnType;
-import com.moyu.test.store.type.dbtype.StringColumnType;
 import com.moyu.test.store.type.obj.ArrayDataType;
 import com.moyu.test.store.type.obj.RowDataType;
 import com.moyu.test.util.FileUtil;
@@ -43,6 +38,7 @@ public class YanEngineOperation extends BasicOperation {
 
     public YanEngineOperation(OperateTableInfo tableInfo) {
         super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getConditionTree());
+        super.indexList = tableInfo.getIndexList();
     }
 
 
@@ -54,6 +50,7 @@ public class YanEngineOperation extends BasicOperation {
             bTreeMap = getBTreeMap();
             Column primaryKey = getPrimaryKey(rowEntity.getColumns());
             long nextRowId = bTreeMap.getNextRowId();
+            rowEntity.setRowId(nextRowId);
             RowValue rowValue = new RowValue(0L, rowEntity.getColumns(), nextRowId);
             // 如果不存在主键，以行id作为b+树的key
             if (primaryKey == null) {
@@ -61,6 +58,8 @@ public class YanEngineOperation extends BasicOperation {
             } else {
                 bTreeMap.put(primaryKey.getValue(), rowValue);
             }
+            // 如果存在索引插入到对应索引树
+            insertIndexTree(indexList, rowEntity, primaryKey);
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
@@ -85,6 +84,10 @@ public class YanEngineOperation extends BasicOperation {
                 } else {
                     bTreeMap.put(primaryKey.getValue(), rowValue);
                 }
+
+                // 如果存在索引插入到对应索引树
+                insertIndexTree(indexList, rowEntity, primaryKey);
+
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -94,6 +97,21 @@ public class YanEngineOperation extends BasicOperation {
         }
         return 1;
     }
+
+
+    private void insertIndexTree(List<IndexMetadata> indexList, RowEntity row, Column primaryKey) {
+        // 插入索引
+        if (indexList != null && indexList.size() > 0) {
+            for (IndexMetadata index : indexList) {
+                Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
+                if (indexColumnValue != null && indexColumnValue.getValue() != null) {
+                    insertIndexValue(index, row, primaryKey);
+                }
+            }
+        }
+    }
+
+
 
     private Column getPrimaryKey(Column[] columns) {
         for (Column column : columns) {
@@ -252,6 +270,44 @@ public class YanEngineOperation extends BasicOperation {
             bTreeIndexStore.close();
         }
     }
+
+
+    private void insertIndexValue(IndexMetadata index, RowEntity row, Column primaryKey) {
+        BTreeStore bTreeIndexStore = null;
+        try {
+            // 索引路径
+            String indexPath = getIndexPath(index.getIndexName());
+            Column indexColumn = getIndexColumnByColumnName(index.getColumnName(), tableColumns);
+            bTreeIndexStore = new BTreeStore(indexPath);
+            DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+            BTreeMap bTreeIndexMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeIndexStore, true);
+            // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
+            Value value = primaryKey != null ? getPrimaryValue(primaryKey) : new LongValue(row.getRowId());
+            DataType valueArrItemType = primaryKey != null
+                    ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
+
+            Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
+            ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
+
+            if (keyArrayValue == null) {
+                Value[] values = new Value[1];
+                values[0] = value;
+                keyArrayValue = new ArrayValue<>(values, valueArrItemType);
+            } else {
+                Value[] arr = keyArrayValue.getArr();
+                Value[] values = BTreeMap.insertValueArray(arr, value);
+                keyArrayValue = new ArrayValue<>(values, valueArrItemType);
+            }
+            bTreeIndexMap.put(indexColumnValue.getValue(), keyArrayValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(bTreeIndexStore != null) {
+                bTreeIndexStore.close();
+            }
+        }
+    }
+
 
     private Value getPrimaryValue(Column primaryKey) {
         switch (primaryKey.getColumnType()) {

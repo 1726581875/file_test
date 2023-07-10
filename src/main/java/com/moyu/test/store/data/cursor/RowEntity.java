@@ -99,6 +99,10 @@ public class RowEntity {
         return result;
     }
 
+    public void setRowId(Long rowId) {
+        this.rowId = rowId;
+    }
+
     @Override
     public String toString() {
         return "RowEntity{" +

@@ -7,6 +7,7 @@ import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.cursor.Cursor;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 
 import java.io.IOException;
 import java.util.List;
@@ -24,6 +25,8 @@ public abstract class BasicOperation {
     protected Column[] tableColumns;
 
     protected ConditionTree conditionTree;
+
+    protected List<IndexMetadata> indexList;
 
 
     public BasicOperation(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree conditionTree) {

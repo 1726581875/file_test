@@ -33,11 +33,9 @@ import java.util.List;
  */
 public class YuEngineOperation extends BasicOperation {
 
-    private List<IndexMetadata> indexList;
-
-
     public YuEngineOperation(OperateTableInfo tableInfo) {
         super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getConditionTree());
+        super.indexList = tableInfo.getIndexList();
     }
 
     public void setIndexList(List<IndexMetadata> indexList) {
