@@ -34,7 +34,16 @@ public class IntegerValue extends Value {
     }
 
     @Override
+    public int compare(Value v) {
+        return value.compareTo(((IntegerValue) v).getValue());
+    }
+
+    @Override
     public ByteBuffer getByteBuffer() {
         return null;
+    }
+
+    public Integer getValue() {
+        return value;
     }
 }

@@ -31,6 +31,8 @@ public abstract class Value implements SerializableByte {
 
     public abstract Object getObjValue();
 
+    public abstract int compare(Value v);
+
 
     public static int getValueTypeByColumnType(byte columnType) {
         switch (columnType) {

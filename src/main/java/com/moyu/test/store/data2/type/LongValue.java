@@ -33,6 +33,15 @@ public class LongValue extends Value {
     }
 
     @Override
+    public int compare(Value v) {
+        return value.compareTo(((LongValue) v).getValue());
+    }
+
+    public Long getValue() {
+        return value;
+    }
+
+    @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(8);
         byteBuffer.putLong(value);

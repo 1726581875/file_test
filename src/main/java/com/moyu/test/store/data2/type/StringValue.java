@@ -33,6 +33,15 @@ public final class StringValue extends Value {
     }
 
     @Override
+    public int compare(Value v) {
+        return value.compareTo(((StringValue) v).getValue());
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    @Override
     public ByteBuffer getByteBuffer() {
         return null;
     }

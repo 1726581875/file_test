@@ -96,6 +96,11 @@ public class ArrayValue<V extends Value> extends Value {
         return null;
     }
 
+    @Override
+    public int compare(Value v) {
+        return 0;
+    }
+
     public V[] getArr() {
         return arr;
     }

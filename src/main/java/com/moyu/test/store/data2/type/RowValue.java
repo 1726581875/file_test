@@ -175,4 +175,9 @@ public class RowValue extends Value {
     public Object getObjValue() {
         return null;
     }
+
+    @Override
+    public int compare(Value v) {
+        return 0;
+    }
 }
