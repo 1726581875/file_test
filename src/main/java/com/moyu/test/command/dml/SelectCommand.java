@@ -146,7 +146,10 @@ public class SelectCommand extends AbstractCommand {
         }
     }
 
-
+    @Override
+    public void reUse() {
+       query.openQuery();
+    }
 
     public QueryResult getQueryResult() {
         return queryResult;

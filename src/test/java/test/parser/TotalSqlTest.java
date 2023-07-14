@@ -4,6 +4,7 @@ import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
+import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -20,7 +21,7 @@ import java.util.List;
 public class TotalSqlTest {
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -39,11 +40,11 @@ public class TotalSqlTest {
         gptRandom20Test();
         gptRandom20Test2();
 
-        yanStoreEngineTest();
+        yanStoreEngineTest();*/
 
 
-        //fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
-        //fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
+        fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
+        fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
         testExecSQL("select * from y_y_2 a inner join y_y_1 b on a.id = b.id");
@@ -261,7 +262,6 @@ public class TotalSqlTest {
 
         insertCommand.batchWriteList(columnList);
         System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
-        time = System.currentTimeMillis();
         columnList.clear();
 
         testExecSQL("select count(*) from " + tableName);

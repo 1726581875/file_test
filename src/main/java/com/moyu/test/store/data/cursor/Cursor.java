@@ -16,4 +16,6 @@ public interface Cursor {
 
     void close();
 
+    void reUse();
+
 }

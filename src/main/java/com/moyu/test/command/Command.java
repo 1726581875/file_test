@@ -11,4 +11,6 @@ public interface Command {
 
     String execCommand();
 
+    void reUse();
+
 }

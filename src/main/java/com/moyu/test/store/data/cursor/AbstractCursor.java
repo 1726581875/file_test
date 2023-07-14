@@ -16,4 +16,8 @@ public abstract class AbstractCursor implements Cursor {
 
     abstract void closeCursor();
 
+    @Override
+    public void reUse() {
+        closed = false;
+    }
 }

@@ -29,4 +29,9 @@ public abstract class AbstractCommand implements Command {
      */
     abstract public String execute();
 
+
+    @Override
+    public void reUse() {
+
+    }
 }

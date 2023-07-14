@@ -1,6 +1,9 @@
 package com.moyu.test.session;
 
-import com.moyu.test.constant.CommonConstant;
+import com.moyu.test.command.Command;
+import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.dml.SelectCommand;
+import com.moyu.test.config.CommonConfig;
 
 import java.util.UUID;
 
@@ -17,6 +20,26 @@ public class ConnectSession {
     private Integer databaseId;
 
     private int transactionId;
+
+
+    public Command prepareCommand(String sql) {
+        if (CommonConfig.IS_ENABLE_QUERY_CACHE) {
+            Command cacheCommand = QueryCacheUtil.getQueryCache(databaseId, sql);
+            if (cacheCommand != null) {
+                System.out.println("use query cache");
+                return cacheCommand;
+            }
+
+        }
+        SqlParser sqlParser = new SqlParser(this);
+        Command command = sqlParser.prepareCommand(sql);
+
+        if (command instanceof SelectCommand) {
+            QueryCacheUtil.putQueryCache(databaseId, sql, command);
+        }
+
+        return command;
+    }
 
 
 

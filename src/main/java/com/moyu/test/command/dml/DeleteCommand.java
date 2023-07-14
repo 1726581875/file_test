@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.session.QueryCacheUtil;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.tree.BpTreeMap;
@@ -25,6 +26,7 @@ public class DeleteCommand extends AbstractCommand {
     public String execute() {
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
         int deleteRowNum = engineOperation.delete();
+        QueryCacheUtil.clearQueryCache(tableInfo.getSession().getDatabaseId());
         return "共删除了" + deleteRowNum + "行数据";
     }
 

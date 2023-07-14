@@ -15,5 +15,10 @@ public class CommonConfig {
      */
     public static int TABLE_IN_MEMORY_MAX_SIZE = 4096 * 1024;
 
+    /**
+     * 是否启用查询缓存
+     */
+    public static boolean IS_ENABLE_QUERY_CACHE = false;
+
 
 }
