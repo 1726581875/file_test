@@ -18,7 +18,7 @@ public class CommonConfig {
     /**
      * 是否启用查询缓存
      */
-    public static boolean IS_ENABLE_QUERY_CACHE = false;
+    public static boolean IS_ENABLE_QUERY_CACHE = true;
 
 
 }

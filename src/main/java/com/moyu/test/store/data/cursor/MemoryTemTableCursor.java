@@ -1,6 +1,4 @@
 package com.moyu.test.store.data.cursor;
-
-import com.moyu.test.exception.DbException;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.List;
@@ -26,10 +24,6 @@ public class MemoryTemTableCursor extends AbstractCursor {
 
     @Override
     public RowEntity next() {
-
-        if(closed) {
-            throw new DbException("游标已关闭");
-        }
 
         if(rows == null || rows.size() == 0) {
             return null;

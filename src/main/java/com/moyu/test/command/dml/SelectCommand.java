@@ -148,7 +148,7 @@ public class SelectCommand extends AbstractCommand {
 
     @Override
     public void reUse() {
-       query.openQuery();
+       query.resetQueryCursor();
     }
 
     public QueryResult getQueryResult() {

@@ -695,18 +695,9 @@ public class Query {
     }
 
 
-    public void openQuery() {
-        if (conditionTree != null) {
-            conditionTree.closeConditionTree();
-        }
-        if (cursorList != null && cursorList.size() > 0) {
-            for (Cursor cursor : cursorList) {
-                cursor.reUse();
-            }
-        }
-        if(queryCursor != null) {
-            queryCursor.reUse();
-        }
+    public void resetQueryCursor() {
+        cursorList = new ArrayList<>();
+        queryCursor = null;
     }
 
 
