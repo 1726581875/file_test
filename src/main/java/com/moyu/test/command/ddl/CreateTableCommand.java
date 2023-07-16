@@ -3,6 +3,8 @@ package com.moyu.test.command.ddl;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.session.Database;
+import com.moyu.test.session.Table;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
@@ -57,6 +59,9 @@ public class CreateTableCommand extends AbstractCommand {
                 indexCommand.setIndexType(CommonConstant.PRIMARY_KEY);
                 indexCommand.execute();
             }
+
+            Database database = session.getDatabase();
+            database.addTable(new Table(table));
         } catch (Exception e) {
             isSuccess = false;
             e.printStackTrace();

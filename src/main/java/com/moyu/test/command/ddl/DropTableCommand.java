@@ -3,6 +3,8 @@ package com.moyu.test.command.ddl;
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.session.ConnectSession;
+import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
@@ -20,15 +22,15 @@ import java.util.List;
  */
 public class DropTableCommand extends AbstractCommand {
 
-    private Integer databaseId;
+    private Database database;
 
     private String tableName;
 
     private boolean ifExists;
 
 
-    public DropTableCommand(Integer databaseId, String tableName, boolean ifExists) {
-        this.databaseId = databaseId;
+    public DropTableCommand(Database database, String tableName, boolean ifExists) {
+        this.database = database;
         this.tableName = tableName;
         this.ifExists = ifExists;
     }
@@ -41,7 +43,7 @@ public class DropTableCommand extends AbstractCommand {
         ColumnMetadataStore columnMetadataStore = null;
         IndexMetadataStore indexStore = null;
         try {
-            tableMetadataStore = new TableMetadataStore(databaseId);
+            tableMetadataStore = new TableMetadataStore(database.getDatabaseId());
             columnMetadataStore = new ColumnMetadataStore();
             indexStore = new IndexMetadataStore();
 
@@ -54,9 +56,9 @@ public class DropTableCommand extends AbstractCommand {
                 // 删除数据文件
                 String dataFilePath = null;
                 if(CommonConstant.ENGINE_TYPE_YAN.equals(tableMetadata.getEngineType())) {
-                    dataFilePath = PathUtil.getYanEngineDataFilePath(this.databaseId, this.tableName);
+                    dataFilePath = PathUtil.getYanEngineDataFilePath(database.getDatabaseId(), this.tableName);
                 } else {
-                    dataFilePath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
+                    dataFilePath = PathUtil.getDataFilePath(database.getDatabaseId(), this.tableName);
                 }
                 FileUtil.deleteOnExists(dataFilePath);
                 // 存在索引，则删除索引
@@ -67,10 +69,13 @@ public class DropTableCommand extends AbstractCommand {
                     // 删除索引文件
                     List<IndexMetadata> indexMetadataList = columnBlock.getIndexMetadataList();
                     for (IndexMetadata index : indexMetadataList) {
-                        String indexFilePath = PathUtil.getIndexFilePath(this.databaseId, this.tableName, index.getIndexName());
+                        String indexFilePath = PathUtil.getIndexFilePath(database.getDatabaseId(), this.tableName, index.getIndexName());
                         FileUtil.deleteOnExists(indexFilePath);
                     }
                 }
+
+                database.removeTable(tableName);
+
             } else if (table == null && !ifExists) {
                 throw new SqlExecutionException("表" + this.tableName + "不存在");
             }

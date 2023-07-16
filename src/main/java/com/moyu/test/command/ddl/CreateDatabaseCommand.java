@@ -1,7 +1,9 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
+import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 
 /**
  * @author xiaomingzhang
@@ -11,6 +13,10 @@ public class CreateDatabaseCommand extends AbstractCommand {
 
     private String databaseName;
 
+    public CreateDatabaseCommand(String databaseName) {
+        this.databaseName = databaseName;
+    }
+
     @Override
     public String execute() {
 
@@ -18,7 +24,8 @@ public class CreateDatabaseCommand extends AbstractCommand {
         DatabaseMetadataStore metadataStore = null;
         try {
             metadataStore = new DatabaseMetadataStore();
-            metadataStore.createDatabase(databaseName);
+            DatabaseMetadata metadata = metadataStore.createDatabase(databaseName);
+            Database.putDatabase(metadata.getDatabaseId(), new Database(metadata.getDatabaseId(), metadata.getName()));
         } catch (Exception e) {
             e.printStackTrace();
             success = false;
@@ -28,13 +35,5 @@ public class CreateDatabaseCommand extends AbstractCommand {
             }
         }
         return success ? "ok" : "error";
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
     }
 }

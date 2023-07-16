@@ -15,6 +15,8 @@ public class ShowTablesCommand extends AbstractCommand {
 
     private Integer databaseId;
 
+    private List<TableMetadata> resultList = new ArrayList<>();
+
 
     public ShowTablesCommand(Integer databaseId) {
         this.databaseId = databaseId;
@@ -30,6 +32,7 @@ public class ShowTablesCommand extends AbstractCommand {
             for (int i = 0; i < allData.size(); i++) {
                 list.add(allData.get(i).getTableName() + "  |  " + allData.get(i).getTableId());
             }
+            resultList = allData;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -59,6 +62,7 @@ public class ShowTablesCommand extends AbstractCommand {
     }
 
 
-
-
+    public List<TableMetadata> getResultList() {
+        return resultList;
+    }
 }

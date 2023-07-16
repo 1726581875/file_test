@@ -13,6 +13,8 @@ import java.util.List;
  */
 public class ShowDatabasesCommand extends AbstractCommand {
 
+    private List<DatabaseMetadata> resultList;
+
 
     public String[] execAndGetResult() {
         List<String> list = new ArrayList<>();
@@ -20,7 +22,7 @@ public class ShowDatabasesCommand extends AbstractCommand {
         try {
             metadataStore = new DatabaseMetadataStore();
             List<DatabaseMetadata> allData = metadataStore.getAllData();
-
+            resultList = allData;
             for (int i = 0; i < allData.size(); i++) {
                 list.add(allData.get(i).getName() + "  |  " + allData.get(i).getDatabaseId());
             }
@@ -52,4 +54,8 @@ public class ShowDatabasesCommand extends AbstractCommand {
         return stringBuilder.toString();
     }
 
+
+    public List<DatabaseMetadata> getResultList() {
+        return resultList;
+    }
 }

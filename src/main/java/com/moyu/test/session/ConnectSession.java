@@ -12,6 +12,8 @@ import java.util.UUID;
  */
 public class ConnectSession {
 
+    private Database database;
+
     private String sessionId;
 
     private String userName;
@@ -41,6 +43,12 @@ public class ConnectSession {
         return command;
     }
 
+
+    public ConnectSession(Database database){
+        this.databaseId = database.getDatabaseId();
+        this.database = database;
+        this.sessionId = UUID.randomUUID().toString().replace("-", "");
+    }
 
 
     public ConnectSession(String userName, Integer databaseId) {
@@ -77,4 +85,7 @@ public class ConnectSession {
         return sessionId;
     }
 
+    public Database getDatabase() {
+        return database;
+    }
 }

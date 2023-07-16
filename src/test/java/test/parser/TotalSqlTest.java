@@ -6,6 +6,7 @@ import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
+import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
 
@@ -20,8 +21,12 @@ import java.util.List;
  */
 public class TotalSqlTest {
 
+    private final static Integer databaseId = 1;
+    private final static String databaseName = "xmz";
+
+
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -40,7 +45,7 @@ public class TotalSqlTest {
         gptRandom20Test();
         gptRandom20Test2();
 
-        yanStoreEngineTest();*/
+        yanStoreEngineTest();
 
 
         fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
@@ -277,7 +282,7 @@ public class TotalSqlTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        ConnectSession connectSession = new ConnectSession("xmz", databaseId);
         Column[] tableColumns = getColumns(null, null);
         OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
         InsertCommand insertCommand = new InsertCommand(tableInfo, null);
@@ -488,14 +493,14 @@ public class TotalSqlTest {
         testExecSQL("insert into xmz_00(id,name,time) value (2,'222','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_00(id,name,time) value (3,'222','2023-05-19 00:00:00')");
 
-        testExecSQL("drop table xmz_01");
+        testExecSQL("drop table if exists xmz_01");
         testExecSQL("create table xmz_01 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_01(id,name,time) value (1,'111.','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_01(id,name,time) value (4,'444.','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_01(id,name,time) value (5,'555.','2023-05-19 00:00:00')");
 
 
-        testExecSQL("drop table xmz_02");
+        testExecSQL("drop table if exists xmz_02");
         testExecSQL("create table xmz_02 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_02(id,name,time) value (1,'111.2','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_02(id,name,time) value (3,'222.2','2023-05-19 00:00:00')");
@@ -598,7 +603,8 @@ public class TotalSqlTest {
     private static void testExecSQL(String sql) {
         System.out.println("====================================");
         System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        Database database = new Database(databaseId, databaseName);
+        ConnectSession connectSession = new ConnectSession(database);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
         String[] exec = command.exec();

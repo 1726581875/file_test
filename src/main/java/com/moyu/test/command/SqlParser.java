@@ -87,8 +87,7 @@ public class SqlParser implements Parser {
                     case DATABASE:
                         skipSpace();
                         String databaseName = getNextOriginalWord();
-                        CreateDatabaseCommand command = new CreateDatabaseCommand();
-                        command.setDatabaseName(databaseName);
+                        CreateDatabaseCommand command = new CreateDatabaseCommand(databaseName);
                         return command;
                     // create table
                     case TABLE:
@@ -134,10 +133,10 @@ public class SqlParser implements Parser {
                             assertNextKeywordIs("IF");
                             assertNextKeywordIs("EXISTS");
                             String tableName = getNextOriginalWord();
-                            dropTableCommand = new DropTableCommand(this.connectSession.getDatabaseId(), tableName, true);
+                            dropTableCommand = new DropTableCommand(this.connectSession.getDatabase(), tableName, true);
                         } else {
                             String tableName = getNextOriginalWord();
-                            dropTableCommand =  new DropTableCommand(this.connectSession.getDatabaseId(), tableName, false);
+                            dropTableCommand =  new DropTableCommand(this.connectSession.getDatabase(), tableName, false);
                         }
                         return dropTableCommand;
                     case INDEX:

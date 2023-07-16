@@ -19,14 +19,12 @@ public class DDLCommandTest {
 
             String databaseName = "database_" + i;
             // 创建数据库
-            CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand();
-            createDatabaseCommand.setDatabaseName(databaseName);
+            CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
             createDatabaseCommand.execute();
 
             // 删除数据库测试
             if(i % 2 == 0) {
                 DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand();
-                dropDatabaseCommand.setDatabaseName(databaseName);
                 dropDatabaseCommand.execute();
             }
         }

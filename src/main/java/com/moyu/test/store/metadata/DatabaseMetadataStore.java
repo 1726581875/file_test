@@ -40,7 +40,7 @@ public class DatabaseMetadataStore {
     }
 
 
-    public void createDatabase(String databaseName) {
+    public DatabaseMetadata createDatabase(String databaseName) {
         synchronized (DatabaseMetadataStore.class) {
             checkDbName(databaseName);
             DatabaseMetadata lastData = getLastData();
@@ -50,6 +50,7 @@ public class DatabaseMetadataStore {
             ByteBuffer byteBuffer = metadata.getByteBuffer();
             fileStore.write(byteBuffer, startPos);
             databaseMetadataList.add(metadata);
+            return metadata;
         }
     }
 
