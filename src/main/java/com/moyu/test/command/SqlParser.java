@@ -2,11 +2,13 @@ package com.moyu.test.command;
 
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
+import com.moyu.test.command.dml.expression.*;
 import com.moyu.test.command.dml.plan.Optimizer;
 import com.moyu.test.command.dml.sql.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.*;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
@@ -330,7 +332,10 @@ public class SqlParser implements Parser {
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if("WHERE".equals(nextKeyWord)) {
-            root = parseCondition(columns);
+            //root = parseCondition(columns);
+            Expression l = readCondition(columnMap);
+            Expression expression = readRightCondition(columnMap, l);
+            System.out.println(expression);
         }
 
 
@@ -1045,6 +1050,170 @@ public class SqlParser implements Parser {
         }
         return conditionTree;
     }
+
+
+    public Expression readCondition(Map<String, Column> columnMap) {
+        boolean isOpen = false;
+        Expression left = null;
+        int start = currIndex;
+        while (true) {
+            if (sqlCharArr[currIndex] == ' ') {
+                currIndex++;
+                continue;
+            }
+            if (sqlCharArr[currIndex] == '(') {
+                currIndex++;
+                isOpen = true;
+            }
+            do {
+                // 读一个条件表达式
+                left = readLeftExpression(columnMap);
+                left = readComparison(columnMap, left);
+
+                String andOrType = getNextKeyWordUnMove();
+                if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
+                    getNextKeyWord();
+                    Expression right = readCondition(columnMap);
+                    left = new ConditionAndOr2(andOrType, left, right);
+                }
+            } while (isOpen && sqlCharArr[currIndex] != ')');
+
+            if (isOpen && sqlCharArr[currIndex] == ')') {
+                currIndex++;
+            }
+            break;
+        }
+
+        return left;
+    }
+
+    public Expression readAndCondition(Map<String, Column> columnMap, Expression left) {
+        String nextKeyWord = getNextKeyWordUnMove();
+        if (!"AND".equals(nextKeyWord)) {
+            return left;
+        }
+
+        Expression right = readCondition(columnMap);
+        left = new ConditionAndOr2("AND", left, right);
+
+
+        return left;
+    }
+
+
+    public Expression readLeftExpression(Map<String, Column> columnMap) {
+        Expression l = null;
+        String nextKeyWord = getNextKeyWordUnMove();
+/*        if ("(".equals(nextKeyWord)) {
+            getNextKeyWord();
+            l = readCondition(columnMap);
+            l = readRightCondition(columnMap, l);
+        } else {
+            l = parseConditionColumn(columnMap);
+        }*/
+        l = parseConditionColumn(columnMap);
+        return l;
+    }
+
+
+    public Expression readRightCondition(Map<String, Column> columnMap, Expression l) {
+        String nextKeyWord = getNextKeyWordUnMove();
+        if ("AND".equals(nextKeyWord) || "OR".equals(nextKeyWord)) {
+            getNextKeyWord();
+            Expression right = readCondition(columnMap);
+            l = new ConditionAndOr2(nextKeyWord, l, right);
+        }
+        return l;
+    }
+
+
+    public Expression parseCondition4(Map<String, Column> columnMap) {
+        Expression left = parseConditionColumn(columnMap);
+        Expression expression = readComparison(columnMap, left);
+        return expression;
+    }
+
+
+
+    public Expression parseConditionColumn(Map<String, Column> columnMap) {
+        skipSpace();
+        int start = currIndex;
+        Expression columnExpression = null;
+        Column column = null;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+            // flag=1，当前为字段字段名
+            if ((sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '=' || sqlCharArr[currIndex] == '!' || sqlCharArr[currIndex] == '<')) {
+                String columnName = originalSql.substring(start, currIndex);
+                if (columnName.startsWith("'") && columnName.endsWith("'")) {
+                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
+                    column.setValue(columnName.substring(1, columnName.length() - 1));
+                } else if (isNumericString(columnName)) {
+                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
+                    column.setValue(columnName);
+                } else {
+                    column = columnMap.get(columnName);
+                    if (column == null) {
+                        throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
+                    }
+                }
+                column = column.copy();
+                columnExpression = new ColumnExpression(column);
+                skipSpace();
+                break;
+            }
+            currIndex++;
+        }
+
+        if(columnExpression == null) {
+            throw new DbException("解析sql发生异常，sql=" + originalSql);
+        }
+
+
+        return columnExpression;
+    }
+
+    private Expression readComparison(Map<String, Column> columnMap, Expression left) {
+        int start = currIndex;
+        Expression condition = null;
+        List<String> values = new ArrayList<>();
+        String operator = getNextKeyWord();
+        switch (operator) {
+            case OperatorConstant.EQUAL:
+            case OperatorConstant.NOT_EQUAL_1:
+            case OperatorConstant.NOT_EQUAL_2:
+                boolean isEq = OperatorConstant.EQUAL.equals(operator) ? true : false;
+                String nextValue = getNextOriginalWordUnMove();
+                if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
+
+                } else {
+                    Column rightColumn = columnMap.get(nextValue);
+                    if (rightColumn == null) {
+                        // attribute = value
+                        values = parseConditionValues(start, operator);
+                        String v = values.get(0);
+                        Expression right = new ConstantValue(v);
+                        condition = new Comparison(operator, left, right);
+                    } else {
+                        // attribute = attribute
+                        Expression right = parseConditionColumn(columnMap);
+                        condition = new Comparison(operator, left, right);
+                    }
+                }
+                break;
+            default:
+                throw new SqlIllegalException("sql语法有误");
+        }
+        // 校验是否合法
+        if (condition == null) {
+            throw new SqlIllegalException("sql语法有误");
+        }
+
+        return condition;
+    }
+
 
 
     private boolean readIf(String str) {

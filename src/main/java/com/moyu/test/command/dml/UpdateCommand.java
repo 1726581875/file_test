@@ -2,6 +2,7 @@ package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.session.QueryCacheUtil;
+import com.moyu.test.session.Table;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -25,7 +26,11 @@ public class UpdateCommand extends AbstractCommand {
     @Override
     public String execute() {
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
-        int updateRowNum = engineOperation.update(updateColumns);
+        Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
+        int updateRowNum = 0;
+        synchronized (table) {
+            updateRowNum = engineOperation.update(updateColumns);
+        }
         QueryCacheUtil.clearQueryCache(tableInfo.getSession().getDatabaseId());
         return "共更新了" + updateRowNum + "行数据";
     }

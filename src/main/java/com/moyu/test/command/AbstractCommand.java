@@ -1,10 +1,17 @@
 package com.moyu.test.command;
 
+import com.moyu.test.command.dml.sql.Parameter;
+
+import java.util.List;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/6
  */
 public abstract class AbstractCommand implements Command {
+
+
+    private List<Parameter> parameters;
 
 
     @Override
@@ -33,5 +40,13 @@ public abstract class AbstractCommand implements Command {
     @Override
     public void reUse() {
 
+    }
+
+    public List<Parameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<Parameter> parameters) {
+        this.parameters = parameters;
     }
 }

@@ -5,7 +5,6 @@ import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
-
 import java.util.List;
 
 /**

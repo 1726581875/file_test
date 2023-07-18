@@ -45,7 +45,9 @@ public class ConnectSession {
 
 
     public ConnectSession(Database database){
-        this.databaseId = database.getDatabaseId();
+        if(database != null) {
+            this.databaseId = database.getDatabaseId();
+        }
         this.database = database;
         this.sessionId = UUID.randomUUID().toString().replace("-", "");
     }
