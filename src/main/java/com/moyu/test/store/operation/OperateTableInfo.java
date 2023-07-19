@@ -1,5 +1,6 @@
 package com.moyu.test.store.operation;
 
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
@@ -20,6 +21,8 @@ public class OperateTableInfo {
     private Column[] tableColumns;
 
     private ConditionTree conditionTree;
+
+    private Expression condition;
 
     private List<IndexMetadata> indexList;
 
@@ -65,5 +68,13 @@ public class OperateTableInfo {
 
     public void setEngineType(String engineType) {
         this.engineType = engineType;
+    }
+
+    public void setCondition(Expression condition) {
+        this.condition = condition;
+    }
+
+    public Expression getCondition() {
+        return condition;
     }
 }

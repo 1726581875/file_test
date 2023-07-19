@@ -18,6 +18,7 @@ import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
 import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.AssertUtil;
+import com.moyu.test.util.TypeConvertUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -329,19 +330,19 @@ public class SqlParser implements Parser {
 
         // 解析where条件
         ConditionTree root = null;
+        Expression condition = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if("WHERE".equals(nextKeyWord)) {
             //root = parseCondition(columns);
             Expression l = readCondition(columnMap);
-            Expression expression = readRightCondition(columnMap, l);
-            System.out.println(expression);
+             condition = readRightCondition(columnMap, l);
         }
 
 
         OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, root);
+        operateTableInfo.setCondition(condition);
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
-
         return updateCommand;
     }
 
@@ -1176,32 +1177,50 @@ public class SqlParser implements Parser {
     }
 
     private Expression readComparison(Map<String, Column> columnMap, Expression left) {
-        int start = currIndex;
         Expression condition = null;
-        List<String> values = new ArrayList<>();
         String operator = getNextKeyWord();
+        skipSpace();
+        int start = currIndex;
         switch (operator) {
             case OperatorConstant.EQUAL:
             case OperatorConstant.NOT_EQUAL_1:
             case OperatorConstant.NOT_EQUAL_2:
-                boolean isEq = OperatorConstant.EQUAL.equals(operator) ? true : false;
-                String nextValue = getNextOriginalWordUnMove();
-                if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
-
-                } else {
-                    Column rightColumn = columnMap.get(nextValue);
-                    if (rightColumn == null) {
-                        // attribute = value
-                        values = parseConditionValues(start, operator);
-                        String v = values.get(0);
-                        Expression right = new ConstantValue(v);
-                        condition = new Comparison(operator, left, right);
-                    } else {
-                        // attribute = attribute
-                        Expression right = parseConditionColumn(columnMap);
-                        condition = new Comparison(operator, left, right);
-                    }
+            case OperatorConstant.LIKE:
+            case OperatorConstant.LESS_THAN:
+            case OperatorConstant.LESS_THAN_OR_EQUAL:
+            case OperatorConstant.GREATER_THAN:
+            case OperatorConstant.GREATER_THAN_OR_EQUAL:
+                condition = parseSingleComparison(columnMap, left, operator);
+                break;
+            case OperatorConstant.IN:
+                condition = parseInCondition(left, true);
+                break;
+            case OperatorConstant.EXISTS:
+                break;
+            case "NOT":
+                skipSpace();
+                String word0 = getNextKeyWord();
+                if ("IN".equals(word0)) {
+                    condition = parseInCondition(left, true);
+                } else if ("LIKE".equals(word0)) {
+                    condition = parseSingleComparison(columnMap, left, OperatorConstant.NOT_LIKE);
+                } else if ("EXISTS".equals(word0)) {
+                    throw new DbException("不支持EXISTS查询");
                 }
+                break;
+            case "IS":
+                String word1 = getNextKeyWord();
+                if ("NULL".equals(word1)) {
+                    condition = new SingleComparison(OperatorConstant.IS_NULL, left, new ConstantValue(null));
+                } else if ("NOT".equals(word1)) {
+                    condition = new SingleComparison(OperatorConstant.IS_NOT_NULL, left, new ConstantValue(null));
+                }
+                break;
+            case OperatorConstant.BETWEEN:
+                String lowerLimit = parseSimpleConditionValue(start);
+                assertNextKeywordIs("AND");
+                skipSpace();
+                String upperLimit = parseSimpleConditionValue(currIndex);
                 break;
             default:
                 throw new SqlIllegalException("sql语法有误");
@@ -1209,6 +1228,38 @@ public class SqlParser implements Parser {
         // 校验是否合法
         if (condition == null) {
             throw new SqlIllegalException("sql语法有误");
+        }
+
+        return condition;
+    }
+
+
+    private SingleComparison parseSingleComparison(Map<String,Column> columnMap, Expression left, String operator){
+        SingleComparison condition = null;
+        String nextValue = getNextOriginalWordUnMove();
+        if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
+            throw new DbException("条件表达式暂时不支持子查询");
+        } else {
+            Column rightColumn = columnMap.get(nextValue);
+            // attribute = value
+            if (rightColumn == null) {
+                String v = parseSimpleConditionValue();
+                // 转换值为对应类型对象
+                Object obj = null;
+                if(left instanceof ColumnExpression) {
+                    ColumnExpression c = (ColumnExpression) left;
+                    Column column = c.getColumn();
+                    obj = TypeConvertUtil.convertValueType(v, column.getColumnType());
+                } else {
+                    obj = v;
+                }
+                Expression right = new ConstantValue(obj);
+                condition = new SingleComparison(operator, left, right);
+            } else {
+                // attribute = attribute
+                Expression right = parseConditionColumn(columnMap);
+                condition = new SingleComparison(operator, left, right);
+            }
         }
 
         return condition;
@@ -1445,6 +1496,42 @@ public class SqlParser implements Parser {
     }
 
 
+    private ConditionIn parseInCondition(Expression left, boolean isIn) {
+        ConditionIn condition = null;
+        List<Expression> values = new ArrayList<>();
+        StartEndIndex startEnd = getNextBracketStartEnd();
+        String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
+        if (!(inValueStr.startsWith("SELECT") || inValueStr.startsWith("select"))) {
+            String[] split = inValueStr.split(",");
+            for (String v : split) {
+                String value = v.trim();
+                if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
+                    value = v.substring(1, v.length() - 1);
+                }
+                // 转换值为对应类型对象
+                Object obj = null;
+                if(left instanceof ColumnExpression) {
+                    ColumnExpression c = (ColumnExpression) left;
+                    Column column = c.getColumn();
+                    obj = TypeConvertUtil.convertValueType(v, column.getColumnType());
+                } else {
+                    obj = v;
+                }
+                values.add(new ConstantValue(obj));
+            }
+            currIndex = startEnd.getEnd();
+            condition = new ConditionIn(isIn, left, values);
+        } else {
+/*            currIndex = startEnd.getStart();
+            String nextKeyWord = getNextKeyWord();
+            Query query = parseQuery(startEnd);
+            condition = new ConditionIn(left, query, isIn);*/
+
+            throw new DbException("不支持子查询");
+        }
+        return condition;
+    }
+
     private ConditionInOrNot getInOrNotInCondition(Column column, boolean isIn) {
         ConditionInOrNot condition = null;
         List<String> values = new ArrayList<>();
@@ -1513,6 +1600,46 @@ public class SqlParser implements Parser {
         }
 
         return values;
+    }
+
+
+    private String parseSimpleConditionValue() {
+        String value = null;
+        // 标记字符串 "'" 符号是否打开状态
+        boolean strOpen = false;
+        int start = currIndex;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+            // 字符串开始
+            if (sqlCharArr[currIndex] == '\'' && !strOpen) {
+                strOpen = true;
+                if (currIndex + 1 < sqlCharArr.length) {
+                    start = currIndex + 1;
+                } else {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+            } else if (sqlCharArr[currIndex] == '\'' && strOpen) {
+                // 字符串结束
+                value = originalSql.substring(start, currIndex);
+                currIndex++;
+                break;
+                // 数值结束
+            } else if ((isEndChar(sqlCharArr[currIndex]) || currIndex == sqlCharArr.length - 1) && !strOpen) {
+                // 数值就是最后一个
+                if ((currIndex == sqlCharArr.length - 1) && !isEndChar(sqlCharArr[currIndex])) {
+                    value = originalSql.substring(start, sqlCharArr.length);
+                } else {
+                    value = originalSql.substring(start, currIndex);
+                }
+                break;
+            }
+
+            currIndex++;
+        }
+
+        return value;
     }
 
 

@@ -1,5 +1,6 @@
 package com.moyu.test.store.operation;
 
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.CommonConstant;
@@ -25,6 +26,8 @@ public abstract class BasicOperation {
     protected Column[] tableColumns;
 
     protected ConditionTree conditionTree;
+
+    protected Expression condition;
 
     protected List<IndexMetadata> indexList;
 

@@ -1,5 +1,6 @@
 package com.moyu.test.store.operation;
 
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.command.dml.sql.ConditionComparator;
 import com.moyu.test.command.dml.sql.FromTable;
@@ -40,6 +41,7 @@ public class YanEngineOperation extends BasicOperation {
     public YanEngineOperation(OperateTableInfo tableInfo) {
         super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getConditionTree());
         super.indexList = tableInfo.getIndexList();
+        super.condition = tableInfo.getCondition();
     }
 
 
@@ -137,7 +139,7 @@ public class YanEngineOperation extends BasicOperation {
                 while (i < valueList.size()) {
                     RowValue rowValue = valueList.get(i);
                     RowEntity rowEntity = rowValue.getRowEntity(tableColumns);
-                    if (ConditionComparator.isMatch(rowEntity, conditionTree)) {
+                    if (Expression.isMatch(condition, rowEntity)) {
                         // 更新数据
                         Column[] columns = rowEntity.getColumns();
                         for (Column updateColumn : updateColumns) {
