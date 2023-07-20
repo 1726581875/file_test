@@ -13,15 +13,27 @@ public class DropDatabaseCommand extends AbstractCommand {
 
     private String databaseName;
 
+    private boolean isExists;
+
+    public DropDatabaseCommand() {
+    }
+
+    public DropDatabaseCommand(String databaseName, boolean isExists) {
+        this.databaseName = databaseName;
+        this.isExists = isExists;
+    }
+
     @Override
     public String execute() {
         boolean isSuccess = true;
         DatabaseMetadataStore metadataStore = null;
-
         try {
             metadataStore = new DatabaseMetadataStore();
             DatabaseMetadata metadata = metadataStore.getDatabase(databaseName);
             Database database = Database.getDatabase(metadata.getDatabaseId());
+            if (database == null && isExists) {
+                return "ok";
+            }
             metadataStore.dropDatabase(databaseName);
             // 删除所有表
             ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());
@@ -31,6 +43,7 @@ public class DropDatabaseCommand extends AbstractCommand {
                 dropTableCommand.execute();
             }
             Database.removeDatabase(metadata.getDatabaseId());
+
         } catch (Exception e) {
             e.printStackTrace();
             isSuccess = false;
@@ -48,5 +61,9 @@ public class DropDatabaseCommand extends AbstractCommand {
 
     public void setDatabaseName(String databaseName) {
         this.databaseName = databaseName;
+    }
+
+    public void setExists(boolean exists) {
+        isExists = exists;
     }
 }

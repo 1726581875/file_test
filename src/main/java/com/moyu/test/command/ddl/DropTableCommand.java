@@ -46,7 +46,6 @@ public class DropTableCommand extends AbstractCommand {
             tableMetadataStore = new TableMetadataStore(database.getDatabaseId());
             columnMetadataStore = new ColumnMetadataStore();
             indexStore = new IndexMetadataStore();
-
             TableMetadata table = tableMetadataStore.getTable(tableName);
             if (table != null) {
                 // 删除表元数据

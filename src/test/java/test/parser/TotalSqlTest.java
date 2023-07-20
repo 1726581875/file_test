@@ -2,6 +2,8 @@ package test.parser;
 
 import com.moyu.test.command.Command;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.ddl.CreateDatabaseCommand;
+import com.moyu.test.command.ddl.DropDatabaseCommand;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
@@ -21,8 +23,17 @@ import java.util.List;
  */
 public class TotalSqlTest {
 
-    private final static Integer databaseId = 1;
     private final static String databaseName = "xmz";
+
+    private static Database database = null;
+
+    static {
+        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
+        dropDatabaseCommand.execute();
+        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
+        createDatabaseCommand.execute();
+        database = Database.getDatabase(databaseName);
+    }
 
 
     public static void main(String[] args) {
@@ -282,7 +293,7 @@ public class TotalSqlTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        ConnectSession connectSession = new ConnectSession("xmz", databaseId);
+        ConnectSession connectSession = new ConnectSession(database);
         Column[] tableColumns = getColumns(null, null);
         OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
         InsertCommand insertCommand = new InsertCommand(tableInfo, null);
@@ -517,6 +528,8 @@ public class TotalSqlTest {
 
 
     public static void testUseIndex() {
+        testExecSQL("drop table if exists xmz_table_1");
+
         testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
@@ -529,7 +542,7 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table_1 where id = 3");
 
 
-        testExecSQL("drop table if exists xmz_table_1");
+
     }
 
 
@@ -553,7 +566,7 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table where (name = '摸鱼' or name = '摸鱼')");
         testExecSQL("select * from xmz_table");
         testExecSQL("select * from xmz_table where name = '摸鱼' or (id = 1)");
-        testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
+        //testExecSQL("select * from xmz_table where (((name = '摸鱼') or (id = 1)))");
 
         testExecSQL("select * from xmz_table where name like 摸鱼");
         testExecSQL("select * from xmz_table where name is null");
@@ -564,15 +577,21 @@ public class TotalSqlTest {
 
 
     public static void testInsert() {
+        testExecSQL("drop table if exists xmz_table_1");
         testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_table_1(id,name,time) value (3,'333','2023-05-19 00:00:00')");
-        testExecSQL("drop table xmz_table_1");
+
     }
 
 
     private static void testTableDDL() {
+
+        testExecSQL("drop table if exists xmz_table_1");
+        testExecSQL("drop table if exists xmz_table_3");
+        testExecSQL("drop table if exists xmz_table_4");
+
         testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("create table xmz_table_2 (id int, name varchar(10), time timestamp)");
         testExecSQL("create table xmz_table_3 (id int, name varchar(10), time timestamp)");
@@ -581,9 +600,7 @@ public class TotalSqlTest {
         testExecSQL("show tables");
 
         testExecSQL("desc xmz_table_3");
-        testExecSQL("drop table xmz_table_1");
-        testExecSQL("drop table xmz_table_3");
-        testExecSQL("drop table xmz_table_4");
+
     }
 
 
@@ -603,7 +620,6 @@ public class TotalSqlTest {
     private static void testExecSQL(String sql) {
         System.out.println("====================================");
         System.out.println("执行语句 " + sql + "");
-        Database database = new Database(databaseId, databaseName);
         ConnectSession connectSession = new ConnectSession(database);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);

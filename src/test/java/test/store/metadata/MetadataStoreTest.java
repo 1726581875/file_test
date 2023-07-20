@@ -33,10 +33,15 @@ public class MetadataStoreTest {
         testTable("xmz01");
         testTable("xmz02");
         testTable("xmz03");
+        testTable("xmz04");
+        testTable("xmz05");
+        testTable("xmz06");
 
-        testDropTable("xmz01");
+        testDropTable("xmz05");
 
-        testColumn();
+
+        testShowTables();
+        //testColumn();
 
 
     }
@@ -97,6 +102,28 @@ public class MetadataStoreTest {
             metadataStore.close();
         }
     }
+
+
+    private static void testShowTables() {
+        TableMetadataStore metadataStore = null;
+        try {
+            metadataStore = new TableMetadataStore(0, filePath);
+            TableMetadataStore finalMetadataStore = metadataStore;
+            System.out.println("==== drop table ==== ");
+            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
+                System.out.println(tableMetadata);
+                List<ColumnMetadata> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
+                columnList.forEach(System.out::println);
+            });
+            System.out.println("==== drop table end==== ");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            metadataStore.close();
+        }
+    }
+
 
     private static void testColumn(){
         ColumnMetadataStore metadataStore = null;

@@ -98,7 +98,18 @@ public class TableMetadataStore {
             fileStore.truncate(startPos);
         }
 
+        if(tableName.equals("xmz_table_1")) {
+            System.out.println("------");
+        }
+
         tableMetadataList.remove(dropIndex);
+
+        try {
+            init();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         return tableMetadata;
     }
@@ -173,6 +184,7 @@ public class TableMetadataStore {
         }
         fileStore = new FileStore(databasePath);
         long endPosition = fileStore.getEndPosition();
+        tableMetadataList = new ArrayList<>();
         if (endPosition > JavaTypeConstant.INT_LENGTH) {
             long currPos = 0;
             while (currPos < endPosition) {

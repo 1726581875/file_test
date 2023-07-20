@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;
@@ -44,6 +45,8 @@ public class Query {
      * where [conditionTree]
      */
     private ConditionTree conditionTree;
+
+    private Expression condition;
     /**
      * 使用的索引
      */
@@ -181,7 +184,7 @@ public class Query {
             }
             rowEntity.setDeleted(row.isDeleted());
 
-            boolean matchCondition = ConditionComparator.isMatch(rowEntity, query.getConditionTree());
+            boolean matchCondition = Expression.isMatch(rowEntity, query.getCondition());
             if (matchCondition && query.isMatchLimit(query, currIndex)) {
                 Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
                 resultRowList.add(new RowEntity(resultColumns));
@@ -248,7 +251,7 @@ public class Query {
         // 2、遍历数据，执行计算函数
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            if (ConditionComparator.isMatch(row, query.getConditionTree())) {
+            if (Expression.isMatch(row, query.getCondition())) {
                 for (StatFunction statFunction : statFunctions) {
                     statFunction.stat(row.getColumns());
                 }
@@ -275,7 +278,7 @@ public class Query {
 
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            if (ConditionComparator.isMatch(row, query.getConditionTree())) {
+            if (Expression.isMatch(row, query.getCondition())) {
                 Column column = getColumn(row.getColumns(), query.getGroupByColumnName());
                 List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList(query));
                 // 进入计算函数
@@ -312,7 +315,7 @@ public class Query {
         Set<RowEntity> distinctSet = new HashSet<>();
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
-            if (ConditionComparator.isMatch(row, query.getConditionTree())) {
+            if (Expression.isMatch(row, query.getCondition())) {
                 RowEntity rowEntity = filterColumns(row, query.getSelectColumns());
                 if(!distinctSet.contains(rowEntity)) {
                     distinctSet.add(rowEntity);
@@ -732,14 +735,13 @@ public class Query {
         this.mainTable = mainTable;
     }
 
-    public ConditionTree getConditionTree() {
-        return conditionTree;
+    public void setCondition(Expression condition) {
+        this.condition = condition;
     }
 
-    public void setConditionTree(ConditionTree conditionTree) {
-        this.conditionTree = conditionTree;
+    public Expression getCondition() {
+        return condition;
     }
-
 
     public ConnectSession getSession() {
         return session;

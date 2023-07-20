@@ -14,7 +14,7 @@ public abstract class Expression {
 
     public abstract Value getValue(LocalSession session);
 
-    public static boolean isMatch(Expression condition, RowEntity row) {
+    public static boolean isMatch(RowEntity row, Expression condition) {
         if (condition == null || (boolean) condition.getValue(row)) {
             return true;
         }

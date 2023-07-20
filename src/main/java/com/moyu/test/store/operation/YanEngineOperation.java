@@ -139,7 +139,7 @@ public class YanEngineOperation extends BasicOperation {
                 while (i < valueList.size()) {
                     RowValue rowValue = valueList.get(i);
                     RowEntity rowEntity = rowValue.getRowEntity(tableColumns);
-                    if (Expression.isMatch(condition, rowEntity)) {
+                    if (Expression.isMatch(rowEntity, condition)) {
                         // 更新数据
                         Column[] columns = rowEntity.getColumns();
                         for (Column updateColumn : updateColumns) {

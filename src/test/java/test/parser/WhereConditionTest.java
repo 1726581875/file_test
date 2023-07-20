@@ -49,7 +49,7 @@ public class WhereConditionTest {
         //testExecSQL("update xmz_q_2 set name = '522' where name not like 'Emma%'");
         testExecSQL("update xmz_q_2 set name = '522' where id in (1,2,3,5)");
 
-        testExecSQL("select * from xmz_q_2 where");
+        //testExecSQL("select * from xmz_q_2 where 1 = 1");
 //        testExecSQL("update xmz_q_2 set id = 2 where id = 1 and id = 2 and id = 3");
 //        testExecSQL("update xmz_q_2 set id = 2 where ( id = 1 and id = 2 )");
         //testExecSQL("update xmz_q_2 set id = 2 where ( id = 1 and id = 2 ) or name = '1111'");

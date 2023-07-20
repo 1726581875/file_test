@@ -329,19 +329,14 @@ public class SqlParser implements Parser {
 
 
         // 解析where条件
-        ConditionTree root = null;
         Expression condition = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
-        if("WHERE".equals(nextKeyWord)) {
-            //root = parseCondition(columns);
+        if ("WHERE".equals(nextKeyWord)) {
             Expression l = readCondition(columnMap);
-             condition = readRightCondition(columnMap, l);
+            condition = readRightCondition(columnMap, l);
         }
-
-
-        OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, root);
-        operateTableInfo.setCondition(condition);
+        OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, condition);
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
         return updateCommand;
     }
@@ -378,23 +373,25 @@ public class SqlParser implements Parser {
         }
 
         Column[] columns = getColumns(tableName);
+        Map<String, Column> columnMap = getColumnMap(columns);
 
-        ConditionTree root = null;
+        Expression condition = null;
         String nextKeyWord = getNextKeyWord();
         if ("WHERE".equals(nextKeyWord)) {
-            root = parseCondition(columns);
+            Expression l = readCondition(columnMap);
+            condition = readRightCondition(columnMap, l);
         }
 
-        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, root);
+        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
         DeleteCommand deleteCommand = new DeleteCommand(tableInfo);
         return deleteCommand;
     }
 
 
-    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, ConditionTree conditionTree) {
+    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, Expression condition) {
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
         TableMetadata tableMeta = getTableMeta(tableName);
-        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, conditionTree);
+        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, condition);
         tableInfo.setIndexList(indexMetadataList);
         tableInfo.setEngineType(tableMeta.getEngineType());
         return tableInfo;
@@ -407,8 +404,8 @@ public class SqlParser implements Parser {
         Query query = parseQuery(null);
         query.setSession(connectSession);
         // 对查询进行优化
-        Optimizer optimizer = new Optimizer(query);
-        query = optimizer.optimizeQuery();
+/*        Optimizer optimizer = new Optimizer(query);
+        query = optimizer.optimizeQuery();*/
         SelectCommand selectCommand = new SelectCommand(query);
         return selectCommand;
     }
@@ -483,7 +480,8 @@ public class SqlParser implements Parser {
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
         // 解析条件
-        ConditionTree conditionRoot = new ConditionTree(ConditionConstant.AND, new ArrayList<>(), false);
+        //ConditionTree conditionRoot = new ConditionTree(ConditionConstant.AND, new ArrayList<>(), false);
+        Expression condition = null;
         // GROUP BY
         String groupByColumnName = null;
 
@@ -509,7 +507,11 @@ public class SqlParser implements Parser {
                 columnMap.put(c.getColumnName(), c);
             }
 
-            parseWhereCondition(conditionRoot, columnMap, null, subQueryStartEnd);
+            //parseWhereCondition(conditionRoot, columnMap, null, subQueryStartEnd);
+            // 解析where条件
+            Expression l = readCondition(columnMap);
+            condition = readRightCondition(columnMap, l);
+
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
             String nextKeyWord2 = getNextKeyWordUnMove();
@@ -542,7 +544,7 @@ public class SqlParser implements Parser {
 
         query.setMainTable(mainTable);
         query.setSelectColumns(selectColumns);
-        query.setConditionTree(conditionRoot);
+        query.setCondition(condition);
         query.setGroupByColumnName(groupByColumnName);
 
 
@@ -550,9 +552,9 @@ public class SqlParser implements Parser {
         if(mainTable.getSubQuery() == null) {
             List<IndexMetadata> indexMetadataList = getIndexList(tableName);
             // 设置查询计划（是否使用索引）
-            SelectIndex selectIndex = SqlPlan.getSelectPlan(conditionRoot, allColumns, indexMetadataList);
-            query.setSelectIndex(selectIndex);
-            mainTable.setSelectIndex(selectIndex);
+            //SelectIndex selectIndex = SqlPlan.getSelectPlan(conditionRoot, allColumns, indexMetadataList);
+/*            query.setSelectIndex(selectIndex);
+            mainTable.setSelectIndex(selectIndex);*/
         }
 
         return query;
@@ -1056,7 +1058,6 @@ public class SqlParser implements Parser {
     public Expression readCondition(Map<String, Column> columnMap) {
         boolean isOpen = false;
         Expression left = null;
-        int start = currIndex;
         while (true) {
             if (sqlCharArr[currIndex] == ' ') {
                 currIndex++;
@@ -1069,7 +1070,7 @@ public class SqlParser implements Parser {
             do {
                 // 读一个条件表达式
                 left = readLeftExpression(columnMap);
-                left = readComparison(columnMap, left);
+                left = readRightExpression(columnMap, left);
 
                 String andOrType = getNextKeyWordUnMove();
                 if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
@@ -1084,19 +1085,6 @@ public class SqlParser implements Parser {
             }
             break;
         }
-
-        return left;
-    }
-
-    public Expression readAndCondition(Map<String, Column> columnMap, Expression left) {
-        String nextKeyWord = getNextKeyWordUnMove();
-        if (!"AND".equals(nextKeyWord)) {
-            return left;
-        }
-
-        Expression right = readCondition(columnMap);
-        left = new ConditionAndOr2("AND", left, right);
-
 
         return left;
     }
@@ -1125,13 +1113,6 @@ public class SqlParser implements Parser {
             l = new ConditionAndOr2(nextKeyWord, l, right);
         }
         return l;
-    }
-
-
-    public Expression parseCondition4(Map<String, Column> columnMap) {
-        Expression left = parseConditionColumn(columnMap);
-        Expression expression = readComparison(columnMap, left);
-        return expression;
     }
 
 
@@ -1176,11 +1157,10 @@ public class SqlParser implements Parser {
         return columnExpression;
     }
 
-    private Expression readComparison(Map<String, Column> columnMap, Expression left) {
+    private Expression readRightExpression(Map<String, Column> columnMap, Expression left) {
         Expression condition = null;
         String operator = getNextKeyWord();
         skipSpace();
-        int start = currIndex;
         switch (operator) {
             case OperatorConstant.EQUAL:
             case OperatorConstant.NOT_EQUAL_1:
@@ -1217,10 +1197,14 @@ public class SqlParser implements Parser {
                 }
                 break;
             case OperatorConstant.BETWEEN:
-                String lowerLimit = parseSimpleConditionValue(start);
+                String lowerLimit = parseSimpleConditionValue(currIndex);
                 assertNextKeywordIs("AND");
                 skipSpace();
                 String upperLimit = parseSimpleConditionValue(currIndex);
+
+                Object lowValue = getTypeValueObj(left, lowerLimit);
+                Object upValue = getTypeValueObj(left, upperLimit);
+                condition = new ConditionBetween(left, new ConstantValue(lowValue),  new ConstantValue(upValue));
                 break;
             default:
                 throw new SqlIllegalException("sql语法有误");
@@ -1237,32 +1221,43 @@ public class SqlParser implements Parser {
     private SingleComparison parseSingleComparison(Map<String,Column> columnMap, Expression left, String operator){
         SingleComparison condition = null;
         String nextValue = getNextOriginalWordUnMove();
+
+        Expression right = null;
         if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
-            throw new DbException("条件表达式暂时不支持子查询");
+            StartEndIndex subStartEnd = getNextBracketStartEnd();
+            currIndex++;
+            assertNextKeywordIs(SELECT);
+            // 解析子查询
+            Query subQuery = parseQuery(subStartEnd);
+            right = new SubQueryValue((ColumnExpression) left, subQuery);
         } else {
             Column rightColumn = columnMap.get(nextValue);
             // attribute = value
             if (rightColumn == null) {
                 String v = parseSimpleConditionValue();
                 // 转换值为对应类型对象
-                Object obj = null;
-                if(left instanceof ColumnExpression) {
-                    ColumnExpression c = (ColumnExpression) left;
-                    Column column = c.getColumn();
-                    obj = TypeConvertUtil.convertValueType(v, column.getColumnType());
-                } else {
-                    obj = v;
-                }
-                Expression right = new ConstantValue(obj);
-                condition = new SingleComparison(operator, left, right);
+                Object obj = getTypeValueObj(left, v);
+                right = new ConstantValue(obj);
             } else {
                 // attribute = attribute
-                Expression right = parseConditionColumn(columnMap);
-                condition = new SingleComparison(operator, left, right);
+                right = parseConditionColumn(columnMap);
             }
         }
+        condition = new SingleComparison(operator, left, right);
 
         return condition;
+    }
+
+    private Object getTypeValueObj(Expression left, String value){
+        Object obj = null;
+        if(left instanceof ColumnExpression) {
+            ColumnExpression c = (ColumnExpression) left;
+            Column column = c.getColumn();
+            obj = TypeConvertUtil.convertValueType(value, column.getColumnType());
+        } else {
+            obj = value;
+        }
+        return obj;
     }
 
 
@@ -1496,8 +1491,8 @@ public class SqlParser implements Parser {
     }
 
 
-    private ConditionIn parseInCondition(Expression left, boolean isIn) {
-        ConditionIn condition = null;
+    private Expression parseInCondition(Expression left, boolean isIn) {
+        Expression condition = null;
         List<Expression> values = new ArrayList<>();
         StartEndIndex startEnd = getNextBracketStartEnd();
         String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
@@ -1506,28 +1501,26 @@ public class SqlParser implements Parser {
             for (String v : split) {
                 String value = v.trim();
                 if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
-                    value = v.substring(1, v.length() - 1);
+                    value = value.substring(1, value.length() - 1);
                 }
                 // 转换值为对应类型对象
                 Object obj = null;
                 if(left instanceof ColumnExpression) {
                     ColumnExpression c = (ColumnExpression) left;
                     Column column = c.getColumn();
-                    obj = TypeConvertUtil.convertValueType(v, column.getColumnType());
+                    obj = TypeConvertUtil.convertValueType(value, column.getColumnType());
                 } else {
-                    obj = v;
+                    obj = value;
                 }
                 values.add(new ConstantValue(obj));
             }
             currIndex = startEnd.getEnd();
             condition = new ConditionIn(isIn, left, values);
         } else {
-/*            currIndex = startEnd.getStart();
-            String nextKeyWord = getNextKeyWord();
+            currIndex = startEnd.getStart();
+            getNextKeyWord();
             Query query = parseQuery(startEnd);
-            condition = new ConditionIn(left, query, isIn);*/
-
-            throw new DbException("不支持子查询");
+            condition = new ConditionInSubQuery(isIn, left, query);
         }
         return condition;
     }

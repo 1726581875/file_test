@@ -50,13 +50,13 @@ public class SingleComparison extends Condition2 {
             case OperatorConstant.IS_NOT_NULL:
                 return leftValue != null;
             case OperatorConstant.LESS_THAN:
-                return ((Comparable) leftValue).compareTo((Comparable) rightValue) < 0;
+                return rightValue != null && ((Comparable) leftValue).compareTo((Comparable) rightValue) < 0;
             case OperatorConstant.LESS_THAN_OR_EQUAL:
-                return ((Comparable) leftValue).compareTo((Comparable) rightValue) <= 0;
+                return rightValue != null && ((Comparable) leftValue).compareTo((Comparable) rightValue) <= 0;
             case OperatorConstant.GREATER_THAN:
-                return ((Comparable) leftValue).compareTo((Comparable) rightValue) > 0;
+                return rightValue != null && ((Comparable) leftValue).compareTo((Comparable) rightValue) > 0;
             case OperatorConstant.GREATER_THAN_OR_EQUAL:
-                return ((Comparable) leftValue).compareTo((Comparable) rightValue) >= 0;
+                return rightValue != null && ((Comparable) leftValue).compareTo((Comparable) rightValue) >= 0;
             default:
                 throw new SqlIllegalException("sql语法有误,不支持" + operator);
         }

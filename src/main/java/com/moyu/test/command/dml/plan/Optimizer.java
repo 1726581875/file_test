@@ -23,15 +23,7 @@ public class Optimizer {
         this.optimizedQuery = originalQuery;
     }
 
-    public Query optimizeQuery() {
-
-        ConditionTree conditionTree = originalQuery.getConditionTree();
-        List<ConditionTree> childNodes = conditionTree.getChildNodes();
-        if (childNodes != null && childNodes.size() > 0) {
-            for (int i = 0; i < childNodes.size(); i++) {
-                optimizeConditionTree(childNodes.get(i), conditionTree, i);
-            }
-        }
+    public Query optimizeQuery(){
 
         return originalQuery;
     }

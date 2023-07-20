@@ -27,14 +27,13 @@ public class OperateTableInfo {
     private List<IndexMetadata> indexList;
 
     private String engineType = CommonConstant.ENGINE_TYPE_YU;
-    
-    
 
-    public OperateTableInfo(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree conditionTree) {
+
+    public OperateTableInfo(ConnectSession session, String tableName, Column[] tableColumns, Expression condition) {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;
-        this.conditionTree = conditionTree;
+        this.condition = condition;
     }
 
 
