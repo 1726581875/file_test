@@ -46,7 +46,7 @@ public class IndexCursor extends AbstractCursor {
 
         if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
             BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-            Integer key = Integer.valueOf((String) indexColumn.getValue());
+            Integer key = Integer.valueOf(String.valueOf(indexColumn.getValue()));
             this.indexColumn.setValue(key);
             posArr = bpTreeMap.get(key);
         } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){

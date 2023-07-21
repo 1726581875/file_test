@@ -1,11 +1,16 @@
 package com.moyu.test.command.dml.expression;
 
+import com.moyu.test.command.dml.plan.SelectIndex;
+import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data2.type.Value;
+import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,7 +18,7 @@ import java.util.regex.Pattern;
  * @author xiaomingzhang
  * @date 2023/7/17
  */
-public class SingleComparison extends Condition2 {
+public class SingleComparison extends AbstractCondition {
 
     private String operator;
 
@@ -79,4 +84,44 @@ public class SingleComparison extends Condition2 {
     public Expression optimize() {
         return null;
     }
+
+    @Override
+    public void setSelectIndexes(Query query) {
+        if(left instanceof ColumnExpression) {
+            ColumnExpression leftColumn = (ColumnExpression) left;
+
+            Object rightValue = right.getValue(new RowEntity(null));
+
+            switch (operator) {
+                case OperatorConstant.EQUAL:
+                    SelectIndex selectIndex = getSelectIndex(leftColumn.getColumn(), query.getMainTable().getIndexMap(), rightValue);
+                    if(selectIndex != null) {
+                        query.getMainTable().getIndexList().add(selectIndex);
+                    }
+                    break;
+                default:
+                    throw new SqlIllegalException("sql语法有误,不支持" + operator);
+            }
+        }
+    }
+
+    private SelectIndex getSelectIndex(Column column,
+                                       Map<String, IndexMetadata> indexMap,
+                                       Object value) {
+        IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
+        if(indexMetadata != null) {
+            column.setValue(value);
+            SelectIndex selectPlan = new SelectIndex();
+            selectPlan.setTableName(column.getColumnName());
+            selectPlan.setUseIndex(true);
+            selectPlan.setIndexType(indexMetadata.getIndexType());
+            selectPlan.setIndexColumn(column);
+            selectPlan.setTableId(indexMetadata.getTableId());
+            selectPlan.setIndexName(indexMetadata.getIndexName());
+            return selectPlan;
+        }
+        return null;
+    }
+
+
 }

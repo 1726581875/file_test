@@ -30,10 +30,10 @@ public class DropDatabaseCommand extends AbstractCommand {
         try {
             metadataStore = new DatabaseMetadataStore();
             DatabaseMetadata metadata = metadataStore.getDatabase(databaseName);
-            Database database = Database.getDatabase(metadata.getDatabaseId());
-            if (database == null && isExists) {
+            if (metadata == null && isExists) {
                 return "ok";
             }
+            Database database = Database.getDatabase(metadata.getDatabaseId());
             metadataStore.dropDatabase(databaseName);
             // 删除所有表
             ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());

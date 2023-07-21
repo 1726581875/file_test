@@ -8,7 +8,7 @@ import com.moyu.test.store.data2.type.Value;
  * @author xiaomingzhang
  * @date 2023/7/17
  */
-public abstract class Condition2 extends Expression {
+public abstract class AbstractCondition extends Expression {
 
 
     @Override

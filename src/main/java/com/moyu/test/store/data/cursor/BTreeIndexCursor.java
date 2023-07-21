@@ -16,11 +16,11 @@ public class BTreeIndexCursor extends AbstractCursor {
 
     private BTreeMap clusteredIndexMap;
 
-    private Value[]  keyArray;
+    private Object[]  keyArray;
 
     private int nextIndex;
 
-    public BTreeIndexCursor(Column[] columns, BTreeMap clusteredIndexMap, Value[] keyArray) {
+    public BTreeIndexCursor(Column[] columns, BTreeMap clusteredIndexMap, Object[] keyArray) {
         this.columns = columns;
         this.clusteredIndexMap = clusteredIndexMap;
         this.keyArray = keyArray;
@@ -41,7 +41,7 @@ public class BTreeIndexCursor extends AbstractCursor {
             return null;
         }
 
-        Object keyValue = keyArray[nextIndex++].getObjValue();
+        Object keyValue = keyArray[nextIndex++];
         RowValue rowValue = (RowValue)clusteredIndexMap.get(keyValue);
         if(rowValue == null) {
             throw new DbException("根据根据键查询结果应当不为空，key:" + keyValue);

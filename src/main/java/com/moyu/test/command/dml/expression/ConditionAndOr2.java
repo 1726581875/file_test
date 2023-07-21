@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
+import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data2.type.Value;
@@ -8,7 +9,7 @@ import com.moyu.test.store.data2.type.Value;
  * @author xiaomingzhang
  * @date 2023/7/17
  */
-public class ConditionAndOr2 extends Condition2 {
+public class ConditionAndOr2 extends AbstractCondition {
 
     public final static String TYPE_AND = "AND";
 
@@ -46,5 +47,14 @@ public class ConditionAndOr2 extends Condition2 {
     @Override
     public Expression optimize() {
         return null;
+    }
+
+
+    @Override
+    public void setSelectIndexes(Query query) {
+        if(TYPE_AND.equals(type)) {
+            left.setSelectIndexes(query);
+            right.setSelectIndexes(query);
+        }
     }
 }

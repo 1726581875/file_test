@@ -108,7 +108,7 @@ public class DatabaseMetadataStore {
                 return metadata;
             }
         }
-        throw new SqlExecutionException("数据库" + databaseName + "不存在");
+        return null;
     }
 
 

@@ -37,7 +37,7 @@ public class TotalSqlTest {
 
 
     public static void main(String[] args) {
-        testDatabaseDDL();
+/*        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -55,25 +55,34 @@ public class TotalSqlTest {
         testLikeString();
         gptRandom20Test();
         gptRandom20Test2();
-
         yanStoreEngineTest();
+        bigTableJoin();
+        **/
 
 
-        fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
-        fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
+        testUseIndex();
+
+
+
+    }
+
+
+    private static void bigTableJoin(){
+        //fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
+        //fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
-        testExecSQL("select * from y_y_2 a inner join y_y_1 b on a.id = b.id");
+        //testExecSQL("select * from y_y_2 a inner join y_y_1 b on a.id = b.id");
 
 
         //fastInsertData2("y_y_3", 100000, CommonConstant.ENGINE_TYPE_YU);
         //fastInsertData2("y_y_4", 1000, CommonConstant.ENGINE_TYPE_YU);
 
-/*        testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
-        testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");*/
-
-
+        testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
+        testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");
     }
+
+
 
 
     private static void yanStoreEngineTest() {
@@ -96,7 +105,7 @@ public class TotalSqlTest {
 
 
 
-    private static void gptRandom20Test2(){
+    private static void gptRandom20Test2() {
         testExecSQL("drop table if exists  xmz_o_2");
         testExecSQL("create table xmz_o_2 (id int, name varchar(10), time timestamp)");
 
@@ -260,7 +269,7 @@ public class TotalSqlTest {
         long time = beginTime;
 
         List<Column[]> columnList = new ArrayList<>();
-        ConnectSession connectSession = new ConnectSession("xmz", 1);
+        ConnectSession connectSession = new ConnectSession(database);
         Column[] tableColumns = getColumns(null, null);
         OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
         tableInfo.setEngineType(engineType);
@@ -535,14 +544,9 @@ public class TotalSqlTest {
         testExecSQL("insert into xmz_table_1(id,name,time) value (2,'222','2023-05-19 00:00:00')");
         testExecSQL("insert into xmz_table_1(id,name,time) value (3,'333','2023-05-19 00:00:00')");
 
-
-
         testExecSQL("create index id_idx on xmz_table_1(id)");
 
         testExecSQL("select * from xmz_table_1 where id = 3");
-
-
-
     }
 
 

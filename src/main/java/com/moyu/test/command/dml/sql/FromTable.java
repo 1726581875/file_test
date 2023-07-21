@@ -2,8 +2,11 @@ package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -51,11 +54,18 @@ public class FromTable {
      * 子查询
      */
     private Query subQuery;
-
     /**
-     * 使用的索引
+     * 最终选择使用的索引
      */
     private SelectIndex selectIndex;
+    /**
+     * 可以选择使用的索引列表
+     */
+    private List<SelectIndex> indexList = new LinkedList<>();
+    /**
+     * 当前表所有索引map
+     */
+    private Map<String, IndexMetadata> indexMap;
     /**
      * 存储引擎类型
      */
@@ -153,6 +163,25 @@ public class FromTable {
     }
 
     public SelectIndex getSelectIndex() {
+
+        if(selectIndex == null) {
+            if(indexList != null && indexList.size() > 0) {
+                return indexList.get(0);
+            }
+        }
+
         return selectIndex;
+    }
+
+    public List<SelectIndex> getIndexList() {
+        return indexList;
+    }
+
+    public void setIndexMap(Map<String, IndexMetadata> indexMap) {
+        this.indexMap = indexMap;
+    }
+
+    public Map<String, IndexMetadata> getIndexMap() {
+        return indexMap;
     }
 }

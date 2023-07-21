@@ -25,7 +25,6 @@ import com.moyu.test.store.type.obj.RowDataType;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 import com.moyu.test.util.TypeConvertUtil;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -399,6 +398,8 @@ public class YanEngineOperation extends BasicOperation {
             System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName()
                     + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
 
+            // todo 根据索引类型进行不同操作，如果是主键索引不需要进行回表操作
+
             ArrayValue keyArrValue = null;
             SelectIndex selectIndex = table.getSelectIndex();
             Column indexColumn = selectIndex.getIndexColumn();
@@ -417,12 +418,16 @@ public class YanEngineOperation extends BasicOperation {
                     bTreeIndexStore.close();
                 }
             }
-
+            Object[] keyObjArray = null;
             Value[] keyArr = null;
             if (keyArrValue != null) {
                 keyArr = keyArrValue.getArr();
+                keyObjArray = new Object[keyArr.length];
+                for (int i = 0; i < keyArr.length; i++) {
+                    keyObjArray[i] = keyArr[i].getObjValue();
+                }
             }
-            cursor = new BTreeIndexCursor(table.getTableColumns(), clusteredIndexMap, keyArr);
+            cursor = new BTreeIndexCursor(table.getTableColumns(), clusteredIndexMap, keyObjArray);
         }
         return cursor;
     }

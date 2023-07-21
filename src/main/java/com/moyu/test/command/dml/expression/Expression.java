@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
+import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.data2.type.Value;
@@ -22,6 +23,11 @@ public abstract class Expression {
     }
 
     public abstract Expression optimize();
+
+
+    public void setSelectIndexes(Query query) {
+
+    }
 
 
 }

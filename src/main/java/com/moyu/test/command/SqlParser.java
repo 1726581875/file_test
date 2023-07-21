@@ -407,6 +407,10 @@ public class SqlParser implements Parser {
 /*        Optimizer optimizer = new Optimizer(query);
         query = optimizer.optimizeQuery();*/
         SelectCommand selectCommand = new SelectCommand(query);
+        if(query.getCondition() != null) {
+            query.getCondition().setSelectIndexes(query);
+        }
+
         return selectCommand;
     }
 
@@ -551,10 +555,19 @@ public class SqlParser implements Parser {
         // 当前索引列表
         if(mainTable.getSubQuery() == null) {
             List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-            // 设置查询计划（是否使用索引）
-            //SelectIndex selectIndex = SqlPlan.getSelectPlan(conditionRoot, allColumns, indexMetadataList);
-/*            query.setSelectIndex(selectIndex);
-            mainTable.setSelectIndex(selectIndex);*/
+            Map<String, Column> columnMap = new HashMap<>();
+            for (Column c : mainTable.getTableColumns()) {
+                String tableAlias = c.getTableAlias() == null ? "" : c.getTableAlias() + ".";
+                columnMap.put(tableAlias + c.getColumnName(), c);
+            }
+
+            Map<String, IndexMetadata> indexMap = new HashMap<>();
+            if(indexMetadataList != null) {
+                for (IndexMetadata idx : indexMetadataList) {
+                    indexMap.put(idx.getColumnName(), idx);
+                }
+            }
+            mainTable.setIndexMap(indexMap);
         }
 
         return query;
@@ -1070,8 +1083,9 @@ public class SqlParser implements Parser {
             do {
                 // 读一个条件表达式
                 left = readLeftExpression(columnMap);
-                left = readRightExpression(columnMap, left);
-
+                if(left instanceof ColumnExpression) {
+                    left = readRightExpression(columnMap, left);
+                }
                 String andOrType = getNextKeyWordUnMove();
                 if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
                     getNextKeyWord();
@@ -1092,15 +1106,21 @@ public class SqlParser implements Parser {
 
     public Expression readLeftExpression(Map<String, Column> columnMap) {
         Expression l = null;
-        String nextKeyWord = getNextKeyWordUnMove();
-/*        if ("(".equals(nextKeyWord)) {
-            getNextKeyWord();
+       while (true) {
+        if (sqlCharArr[currIndex] == '(') {
             l = readCondition(columnMap);
-            l = readRightCondition(columnMap, l);
+            String andOrType = getNextKeyWordUnMove();
+            if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
+                getNextKeyWord();
+                Expression right = readCondition(columnMap);
+                l = new ConditionAndOr2(andOrType, l, right);
+            }
+            break;
         } else {
             l = parseConditionColumn(columnMap);
-        }*/
-        l = parseConditionColumn(columnMap);
+            break;
+        }
+       }
         return l;
     }
 

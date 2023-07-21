@@ -16,6 +16,7 @@ import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.data2.BTreeMap;
 import com.moyu.test.store.data2.type.RowValue;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -44,13 +45,16 @@ public class Query {
     /**
      * where [conditionTree]
      */
-    private ConditionTree conditionTree;
-
     private Expression condition;
     /**
-     * 使用的索引
+     * 最终选择使用的索引
      */
     private SelectIndex selectIndex;
+    /**
+     * 可以选择使用的索引列表
+     */
+    private List<SelectIndex> indexList = new LinkedList<>();
+
     /**
      * 当前查询最终的结果游标
      */
@@ -705,9 +709,7 @@ public class Query {
 
 
     public void closeQuery() {
-        if (conditionTree != null) {
-            conditionTree.closeConditionTree();
-        }
+
         if (cursorList != null && cursorList.size() > 0) {
             for (Cursor cursor : cursorList) {
                 cursor.close();
@@ -787,4 +789,9 @@ public class Query {
     public void setDistinct(boolean distinct) {
         isDistinct = distinct;
     }
+
+    public List<SelectIndex> getIndexList() {
+        return indexList;
+    }
+
 }
