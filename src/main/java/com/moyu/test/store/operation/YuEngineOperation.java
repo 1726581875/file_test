@@ -1,5 +1,6 @@
 package com.moyu.test.store.operation;
 
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.sql.ConditionComparator;
 import com.moyu.test.command.dml.sql.ConditionRange;
 import com.moyu.test.command.dml.sql.FromTable;
@@ -34,12 +35,12 @@ import java.util.List;
 public class YuEngineOperation extends BasicOperation {
 
     public YuEngineOperation(OperateTableInfo tableInfo) {
-        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getConditionTree());
-        super.indexList = tableInfo.getIndexList();
+        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getCondition());
+        super.allIndexList = tableInfo.getAllIndexList();
     }
 
     public void setIndexList(List<IndexMetadata> indexList) {
-        this.indexList = indexList;
+        this.allIndexList = indexList;
     }
 
     @Override
@@ -77,8 +78,8 @@ public class YuEngineOperation extends BasicOperation {
             }
 
             // 插入索引
-            if (indexList != null && indexList.size() > 0) {
-                for (IndexMetadata index : indexList) {
+            if (allIndexList != null && allIndexList.size() > 0) {
+                for (IndexMetadata index : allIndexList) {
                     Column indexColumn = getIndexColumn(index);
                     if (indexColumn != null && indexColumn.getValue() != null) {
                         insertIndex(index, indexColumn, chunkPos);
@@ -162,7 +163,7 @@ public class YuEngineOperation extends BasicOperation {
                     RowData rowData = dataRowList.get(j);
                     Column[] columnData = rowData.getColumnData(tableColumns);
 
-                    boolean match = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
+                    boolean match = Expression.isMatch(new RowEntity(columnData), condition);
                     if (match) {
 
                         // 如果存在事务，记录旧值到到undo log
@@ -367,7 +368,7 @@ public class YuEngineOperation extends BasicOperation {
             do {
                 RowData rowData = dataRowList.get(k);
                 Column[] columnData = rowData.getColumnData(tableColumns);
-                boolean compareResult = ConditionComparator.isMatch(new RowEntity(columnData), conditionTree);
+                boolean compareResult = Expression.isMatch(new RowEntity(columnData), condition);
                 // 只移除符合条件的行
                 if (compareResult) {
 
@@ -386,8 +387,8 @@ public class YuEngineOperation extends BasicOperation {
                     // 删除行
                     chunk.markRowIsDeleted(k);
                     // 删除主键索引
-                    if (indexList != null && indexList.size() > 0) {
-                        for (IndexMetadata index : indexList) {
+                    if (allIndexList != null && allIndexList.size() > 0) {
+                        for (IndexMetadata index : allIndexList) {
                             if (index.getIndexType() == CommonConstant.PRIMARY_KEY) {
                                 Column indexColumn = getIndexColumn(index);
                                 removePrimaryKeyValue(index, indexColumn);

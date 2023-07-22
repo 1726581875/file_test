@@ -2,7 +2,6 @@ package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.command.dml.sql.ConditionComparator;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.DbException;
@@ -38,9 +37,8 @@ public class YanEngineOperation extends BasicOperation {
 
 
     public YanEngineOperation(OperateTableInfo tableInfo) {
-        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getConditionTree());
-        super.indexList = tableInfo.getIndexList();
-        super.condition = tableInfo.getCondition();
+        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getCondition());
+        super.allIndexList = tableInfo.getAllIndexList();
     }
 
 
@@ -61,7 +59,7 @@ public class YanEngineOperation extends BasicOperation {
                 bTreeMap.put(primaryKey.getValue(), rowValue);
             }
             // 如果存在索引插入到对应索引树
-            insertIndexTree(indexList, rowEntity, primaryKey);
+            insertIndexTree(allIndexList, rowEntity, primaryKey);
         } catch (Exception e) {
             e.printStackTrace();
             return 0;
@@ -88,7 +86,7 @@ public class YanEngineOperation extends BasicOperation {
                 }
 
                 // 如果存在索引插入到对应索引树
-                insertIndexTree(indexList, rowEntity, primaryKey);
+                insertIndexTree(allIndexList, rowEntity, primaryKey);
 
             }
         } catch (Exception e) {
@@ -181,14 +179,14 @@ public class YanEngineOperation extends BasicOperation {
                 while (i < valueList.size()) {
                     RowValue rowValue = valueList.get(i);
                     RowEntity rowEntity = rowValue.getRowEntity(tableColumns);
-                    if (ConditionComparator.isMatch(rowEntity, conditionTree)) {
+                    if (Expression.isMatch(rowEntity, condition)) {
                         rowValue.setIsDeleted((byte) 0);
                         deleteNum++;
 
                         // 删除索引项
                         Column primaryKey = getPrimaryKey(rowEntity.getColumns());
-                        if (indexList != null && indexList.size() > 0) {
-                            for (IndexMetadata index : indexList) {
+                        if (allIndexList != null && allIndexList.size() > 0) {
+                            for (IndexMetadata index : allIndexList) {
                                 Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), rowEntity.getColumns());
                                 if (indexColumnValue != null && indexColumnValue.getValue() != null) {
                                     removeIndexItemValue(index, rowEntity, primaryKey);

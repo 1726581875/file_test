@@ -1,7 +1,6 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
-import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
@@ -25,18 +24,16 @@ public abstract class BasicOperation {
 
     protected Column[] tableColumns;
 
-    protected ConditionTree conditionTree;
-
     protected Expression condition;
 
-    protected List<IndexMetadata> indexList;
+    protected List<IndexMetadata> allIndexList;
 
 
-    public BasicOperation(ConnectSession session, String tableName, Column[] tableColumns, ConditionTree conditionTree) {
+    public BasicOperation(ConnectSession session, String tableName, Column[] tableColumns, Expression condition) {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;
-        this.conditionTree = conditionTree;
+        this.condition = condition;
     }
 
     public abstract int insert(RowEntity rowEntity);

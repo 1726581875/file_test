@@ -3,10 +3,7 @@ package com.moyu.test.command;
 import com.moyu.test.command.ddl.*;
 import com.moyu.test.command.dml.*;
 import com.moyu.test.command.dml.expression.*;
-import com.moyu.test.command.dml.plan.Optimizer;
 import com.moyu.test.command.dml.sql.*;
-import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.command.dml.plan.SqlPlan;
 import com.moyu.test.constant.*;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
@@ -392,7 +389,7 @@ public class SqlParser implements Parser {
         List<IndexMetadata> indexMetadataList = getIndexList(tableName);
         TableMetadata tableMeta = getTableMeta(tableName);
         OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, condition);
-        tableInfo.setIndexList(indexMetadataList);
+        tableInfo.setAllIndexList(indexMetadataList);
         tableInfo.setEngineType(tableMeta.getEngineType());
         return tableInfo;
     }
@@ -409,6 +406,9 @@ public class SqlParser implements Parser {
         SelectCommand selectCommand = new SelectCommand(query);
         if(query.getCondition() != null) {
             query.getCondition().setSelectIndexes(query);
+            // 优化查询条件
+            Expression optimizeCondition = query.getCondition().optimize();
+            query.setCondition(optimizeCondition);
         }
 
         return selectCommand;
@@ -1083,7 +1083,7 @@ public class SqlParser implements Parser {
             do {
                 // 读一个条件表达式
                 left = readLeftExpression(columnMap);
-                if(left instanceof ColumnExpression) {
+                if(left instanceof ColumnExpression || left instanceof ConstantValue) {
                     left = readRightExpression(columnMap, left);
                 }
                 String andOrType = getNextKeyWordUnMove();
@@ -1117,7 +1117,7 @@ public class SqlParser implements Parser {
             }
             break;
         } else {
-            l = parseConditionColumn(columnMap);
+            l = parseConditionLeft(columnMap);
             break;
         }
        }
@@ -1137,7 +1137,7 @@ public class SqlParser implements Parser {
 
 
 
-    public Expression parseConditionColumn(Map<String, Column> columnMap) {
+    public Expression parseConditionLeft(Map<String, Column> columnMap) {
         skipSpace();
         int start = currIndex;
         Expression columnExpression = null;
@@ -1150,19 +1150,18 @@ public class SqlParser implements Parser {
             if ((sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == '=' || sqlCharArr[currIndex] == '!' || sqlCharArr[currIndex] == '<')) {
                 String columnName = originalSql.substring(start, currIndex);
                 if (columnName.startsWith("'") && columnName.endsWith("'")) {
-                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
-                    column.setValue(columnName.substring(1, columnName.length() - 1));
+                    columnExpression = new ConstantValue(columnName);
                 } else if (isNumericString(columnName)) {
-                    column = new Column(null, ColumnTypeEnum.VARCHAR.getColumnType(), 0, 0);
-                    column.setValue(columnName);
+                    columnExpression = new ConstantValue(columnName);
                 } else {
                     column = columnMap.get(columnName);
                     if (column == null) {
                         throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
                     }
+                    column = column.copy();
+                    columnExpression = new ColumnExpression(column);
                 }
-                column = column.copy();
-                columnExpression = new ColumnExpression(column);
+
                 skipSpace();
                 break;
             }
@@ -1260,7 +1259,7 @@ public class SqlParser implements Parser {
                 right = new ConstantValue(obj);
             } else {
                 // attribute = attribute
-                right = parseConditionColumn(columnMap);
+                right = parseConditionLeft(columnMap);
             }
         }
         condition = new SingleComparison(operator, left, right);

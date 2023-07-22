@@ -74,15 +74,33 @@ public class SingleComparison extends AbstractCondition {
         return matcher.matches();
     }
 
-
-    @Override
-    public Value getValue(LocalSession session) {
-        return null;
-    }
-
     @Override
     public Expression optimize() {
-        return null;
+        switch (operator) {
+            case OperatorConstant.EQUAL:
+                if(left instanceof ConstantValue && right instanceof ConstantValue) {
+                    if(left.getValue(null).equals(right.getValue(null))) {
+                        return new ConstantValue(true);
+                    } else {
+                        return new ConstantValue(false);
+                    }
+                }
+            case OperatorConstant.NOT_EQUAL_1:
+            case OperatorConstant.NOT_EQUAL_2:
+            case OperatorConstant.LIKE:
+            case OperatorConstant.NOT_LIKE:
+            case OperatorConstant.IS_NULL:
+            case OperatorConstant.IS_NOT_NULL:
+            case OperatorConstant.LESS_THAN:
+            case OperatorConstant.LESS_THAN_OR_EQUAL:
+            case OperatorConstant.GREATER_THAN:
+            case OperatorConstant.GREATER_THAN_OR_EQUAL:
+                break;
+            default:
+                throw new SqlIllegalException("sql语法有误,不支持" + operator);
+        }
+
+        return this;
     }
 
     @Override
@@ -99,8 +117,6 @@ public class SingleComparison extends AbstractCondition {
                         query.getMainTable().getIndexList().add(selectIndex);
                     }
                     break;
-                default:
-                    throw new SqlIllegalException("sql语法有误,不支持" + operator);
             }
         }
     }
@@ -108,7 +124,7 @@ public class SingleComparison extends AbstractCondition {
     private SelectIndex getSelectIndex(Column column,
                                        Map<String, IndexMetadata> indexMap,
                                        Object value) {
-        IndexMetadata indexMetadata = indexMap.get(column.getColumnName());
+        IndexMetadata indexMetadata = indexMap != null ? indexMap.get(column.getColumnName()) : null;
         if(indexMetadata != null) {
             column.setValue(value);
             SelectIndex selectPlan = new SelectIndex();

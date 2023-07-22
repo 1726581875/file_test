@@ -23,11 +23,6 @@ public class ColumnExpression extends Expression {
         return column.getValue();
     }
 
-    @Override
-    public Value getValue(LocalSession session) {
-
-        return null;
-    }
 
     @Override
     public Expression optimize() {

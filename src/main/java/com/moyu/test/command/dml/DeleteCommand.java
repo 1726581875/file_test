@@ -55,8 +55,8 @@ public class DeleteCommand extends AbstractCommand {
         }
 
         // 清空所有索引
-        if (tableInfo.getIndexList() != null && tableInfo.getIndexList().size() > 0) {
-            for (IndexMetadata index : tableInfo.getIndexList()) {
+        if (tableInfo.getAllIndexList() != null && tableInfo.getAllIndexList().size() > 0) {
+            for (IndexMetadata index : tableInfo.getAllIndexList()) {
                 //Column indexColumn = getIndexColumn(index, columns);
                 String indexPath = PathUtil.getIndexFilePath(tableInfo.getSession().getDatabaseId(), tableInfo.getTableName(), index.getIndexName());
                 BpTreeMap<Comparable, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Comparable.class);

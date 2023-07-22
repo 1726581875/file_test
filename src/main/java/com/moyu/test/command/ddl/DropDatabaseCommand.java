@@ -4,6 +4,8 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
+import com.moyu.test.store.metadata.obj.TableMetadata;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -38,8 +40,9 @@ public class DropDatabaseCommand extends AbstractCommand {
             // 删除所有表
             ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());
             String[] allTable = showTablesCommand.getAllTable();
-            for (String tableName : allTable) {
-                DropTableCommand dropTableCommand = new DropTableCommand(database, tableName, true);
+            List<TableMetadata> resultList = showTablesCommand.getResultList();
+            for (TableMetadata tableMetadata : resultList) {
+                DropTableCommand dropTableCommand = new DropTableCommand(database, tableMetadata.getTableName(), true);
                 dropTableCommand.execute();
             }
             Database.removeDatabase(metadata.getDatabaseId());

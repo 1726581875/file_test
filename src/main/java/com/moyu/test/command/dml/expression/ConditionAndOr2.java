@@ -39,14 +39,58 @@ public class ConditionAndOr2 extends AbstractCondition {
         }
     }
 
-    @Override
-    public Value getValue(LocalSession session) {
-        return null;
-    }
 
     @Override
     public Expression optimize() {
-        return null;
+
+        Expression l = left.optimize();
+        Expression r = right.optimize();
+
+
+        if(TYPE_AND.equals(type)) {
+            if(l instanceof ConstantValue) {
+                boolean b = (Boolean)l.getValue(null);
+                if(b == false) {
+                    return new ConstantValue(false);
+                }
+            }
+
+            if(r instanceof ConstantValue) {
+                boolean b = (Boolean)r.getValue(null);
+                if(b == false) {
+                    return new ConstantValue(false);
+                }
+            }
+
+            if(l instanceof ConstantValue && r instanceof ConstantValue) {
+                boolean a = (Boolean)l.getValue(null);
+                boolean b = (Boolean)r.getValue(null);
+                return new ConstantValue(a && b);
+            }
+
+        } else {
+            if(l instanceof ConstantValue) {
+                boolean b = (Boolean)l.getValue(null);
+                if(b == true) {
+                    return new ConstantValue(true);
+                }
+            }
+            if(r instanceof ConstantValue) {
+                boolean b = (Boolean)r.getValue(null);
+                if(b == true) {
+                    return new ConstantValue(true);
+                }
+            }
+
+            if(l instanceof ConstantValue && r instanceof ConstantValue) {
+                boolean a = (Boolean)l.getValue(null);
+                boolean b = (Boolean)r.getValue(null);
+                return new ConstantValue(a || b);
+            }
+        }
+
+
+        return this;
     }
 
 

@@ -1,11 +1,11 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
-import com.moyu.test.command.dml.sql.ConditionTree;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
+
 import java.util.List;
 
 /**
@@ -20,11 +20,9 @@ public class OperateTableInfo {
 
     private Column[] tableColumns;
 
-    private ConditionTree conditionTree;
-
     private Expression condition;
 
-    private List<IndexMetadata> indexList;
+    private List<IndexMetadata> allIndexList;
 
     private String engineType = CommonConstant.ENGINE_TYPE_YU;
 
@@ -49,16 +47,13 @@ public class OperateTableInfo {
         return tableColumns;
     }
 
-    public ConditionTree getConditionTree() {
-        return conditionTree;
-    }
     
-    public void setIndexList(List<IndexMetadata> indexList) {
-        this.indexList = indexList;
+    public void setAllIndexList(List<IndexMetadata> allIndexList) {
+        this.allIndexList = allIndexList;
     }
 
-    public List<IndexMetadata> getIndexList() {
-        return indexList;
+    public List<IndexMetadata> getAllIndexList() {
+        return allIndexList;
     }
 
     public String getEngineType() {

@@ -68,11 +68,6 @@ public class ConditionInSubQuery extends Expression {
     }
 
     @Override
-    public Value getValue(LocalSession session) {
-        return null;
-    }
-
-    @Override
     public Expression optimize() {
         return null;
     }

@@ -37,7 +37,7 @@ public class TotalSqlTest {
 
 
     public static void main(String[] args) {
-/*        testDatabaseDDL();
+        testDatabaseDDL();
         testTableDDL();
         testInsert();
         testSimpleSelect();
@@ -56,8 +56,7 @@ public class TotalSqlTest {
         gptRandom20Test();
         gptRandom20Test2();
         yanStoreEngineTest();
-        bigTableJoin();
-        **/
+        //bigTableJoin();
 
 
         testUseIndex();
@@ -68,15 +67,15 @@ public class TotalSqlTest {
 
 
     private static void bigTableJoin(){
-        //fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
-        //fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
+        fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
+        fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_2 a inner join y_y_1 b on a.id = b.id");
         //testExecSQL("select * from y_y_2 a inner join y_y_1 b on a.id = b.id");
 
 
-        //fastInsertData2("y_y_3", 100000, CommonConstant.ENGINE_TYPE_YU);
-        //fastInsertData2("y_y_4", 1000, CommonConstant.ENGINE_TYPE_YU);
+        fastInsertData2("y_y_3", 100000, CommonConstant.ENGINE_TYPE_YU);
+        fastInsertData2("y_y_4", 1000, CommonConstant.ENGINE_TYPE_YU);
 
         testExecSQL("select count(*) from y_y_3 a inner join y_y_4 b on a.id = b.id");
         testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");

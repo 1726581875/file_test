@@ -7,6 +7,7 @@ import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 import com.moyu.test.util.DataUtils;
+import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 
 import java.io.File;
@@ -98,10 +99,6 @@ public class TableMetadataStore {
             fileStore.truncate(startPos);
         }
 
-        if(tableName.equals("xmz_table_1")) {
-            System.out.println("------");
-        }
-
         tableMetadataList.remove(dropIndex);
 
         try {
@@ -161,6 +158,16 @@ public class TableMetadataStore {
         for (TableMetadata metadata : tableMetadataList) {
             if (tableName.equals(metadata.getTableName())
                     && databaseId.equals(metadata.getDatabaseId())) {
+                try {
+                    init();
+                    for (TableMetadata m : tableMetadataList) {
+                        if (tableName.equals(m.getTableName()) && databaseId.equals(m.getDatabaseId())) {
+                            System.out.println("###############表" + m.getTableName() + "已存在");
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 throw new SqlExecutionException("表" + tableName + "已存在");
             }
         }
@@ -177,12 +184,16 @@ public class TableMetadataStore {
 
     private void init() throws IOException {
         // 初始化table的元数据文件，不存在会创建文件，并把所有表信息读取到内存
-        String databasePath = filePath + File.separator + TABLE_META_FILE_NAME;
-        File dbFile = new File(databasePath);
+        String basePath = filePath + File.separator + databaseId;
+        FileUtil.createDirIfNotExists(basePath);
+
+        String tableMetaPath = basePath + File.separator + TABLE_META_FILE_NAME;
+
+        File dbFile = new File(tableMetaPath);
         if (!dbFile.exists()) {
             dbFile.createNewFile();
         }
-        fileStore = new FileStore(databasePath);
+        fileStore = new FileStore(tableMetaPath);
         long endPosition = fileStore.getEndPosition();
         tableMetadataList = new ArrayList<>();
         if (endPosition > JavaTypeConstant.INT_LENGTH) {

@@ -83,8 +83,10 @@ public class FileStore {
 
     public void truncate(long size) {
         try {
+            //System.out.println("删除前endPosition=" + endPosition + ",size=" + size);
             fileChannel.truncate(size);
             endPosition = Math.min(endPosition, size);
+            //System.out.println("删除后大小" + fileChannel.size());
         } catch (IOException e) {
             throw new FileOperationException("truncate文件发生异常");
         }

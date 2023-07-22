@@ -46,12 +46,6 @@ public class SubQueryValue extends Expression {
         }
         return subQueryValue;
     }
-
-    @Override
-    public Value getValue(LocalSession session) {
-        return null;
-    }
-
     @Override
     public Expression optimize() {
         return null;

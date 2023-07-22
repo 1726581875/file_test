@@ -37,6 +37,8 @@ public class IndexMetadataStore {
      */
     private Map<Integer, TableIndexBlock> indexBlockMap = new HashMap<>();
 
+    private Integer databaseId;
+
 
     public IndexMetadataStore() throws IOException {
         this(DEFAULT_META_PATH);
