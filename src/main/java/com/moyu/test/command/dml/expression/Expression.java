@@ -25,5 +25,7 @@ public abstract class Expression {
 
     }
 
+    public abstract void getSQL(StringBuilder sqlBuilder);
+
 
 }

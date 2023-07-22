@@ -1,8 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
-import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.metadata.obj.Column;
 
 /**
@@ -26,10 +24,28 @@ public class ColumnExpression extends Expression {
 
     @Override
     public Expression optimize() {
-        return null;
+        return this;
+    }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+        sqlBuilder.append(column.getTableAliasColumnName());
     }
 
     public Column getColumn() {
         return column;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        ColumnExpression that = (ColumnExpression) o;
+        if(column == that.getColumn()) {
+            return true;
+        }
+        if(column.getColumnName().equals(that.getColumn().getColumnName())) {
+            return true;
+        }
+        return false;
+    }
+
 }

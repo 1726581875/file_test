@@ -1,8 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
-import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data2.type.Value;
 
 /**
  * @author xiaomingzhang
@@ -24,5 +22,30 @@ public class ConstantValue extends Expression {
     @Override
     public Expression optimize() {
         return null;
+    }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+        if(value instanceof String) {
+            sqlBuilder.append('\'');
+            sqlBuilder.append((String)value);
+            sqlBuilder.append('\'');
+        } else {
+            sqlBuilder.append(String.valueOf(value));
+        }
+    }
+
+
+    public Object getValue() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        ConstantValue that = (ConstantValue) o;
+        if(value.equals(that.getValue())) {
+            return true;
+        }
+        return false;
     }
 }

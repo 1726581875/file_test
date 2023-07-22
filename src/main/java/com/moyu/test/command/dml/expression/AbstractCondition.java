@@ -17,4 +17,9 @@ public abstract class AbstractCondition extends Expression {
     public Expression optimize() {
         return null;
     }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+
+    }
 }

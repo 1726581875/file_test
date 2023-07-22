@@ -48,6 +48,11 @@ public class SubQueryValue extends Expression {
     }
     @Override
     public Expression optimize() {
-        return null;
+        return this;
+    }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+
     }
 }

@@ -1,8 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
-import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data2.type.Value;
 
 /**
  * @author xiaomingzhang
@@ -39,6 +37,11 @@ public class ConditionBetween extends Expression {
 
     @Override
     public Expression optimize() {
-        return null;
+        return this;
+    }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+
     }
 }

@@ -61,7 +61,13 @@ public class TotalTest2 {
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma2', '2023-06-29 18:00:00')");
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma3', '2022-06-29 18:00:00')");
 
-        testExecSQL("select * from xmz_q_2 where 1 = 1 and 1 = 2");
+        //testExecSQL("select * from xmz_q_2 where 1 = 1 and 1 = 2");
+        //testExecSQL("select * from xmz_q_2 where 1 = 1 or id = 2");
+        //testExecSQL("select * from xmz_q_2 where id = 1 and id = 1 or id = 1");
+
+        //testExecSQL("select * from xmz_q_2 where id = 1 and 1 = 1 or id = 1");
+        //testExecSQL("select * from xmz_q_2 where id = 2 and 1 = 1 or id = 1");
+        testExecSQL("select * from xmz_q_2 where id = 2 and id = 1");
 
     }
 

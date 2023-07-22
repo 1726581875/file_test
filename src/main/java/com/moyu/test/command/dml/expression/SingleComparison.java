@@ -4,9 +4,7 @@ import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
-import com.moyu.test.session.LocalSession;
 import com.moyu.test.store.data.cursor.RowEntity;
-import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
 
@@ -107,9 +105,7 @@ public class SingleComparison extends AbstractCondition {
     public void setSelectIndexes(Query query) {
         if(left instanceof ColumnExpression) {
             ColumnExpression leftColumn = (ColumnExpression) left;
-
             Object rightValue = right.getValue(new RowEntity(null));
-
             switch (operator) {
                 case OperatorConstant.EQUAL:
                     SelectIndex selectIndex = getSelectIndex(leftColumn.getColumn(), query.getMainTable().getIndexMap(), rightValue);
@@ -119,6 +115,13 @@ public class SingleComparison extends AbstractCondition {
                     break;
             }
         }
+    }
+
+    @Override
+    public void getSQL(StringBuilder sqlBuilder) {
+        left.getSQL(sqlBuilder);
+        sqlBuilder.append(operator);
+        right.getSQL(sqlBuilder);
     }
 
     private SelectIndex getSelectIndex(Column column,
@@ -139,5 +142,29 @@ public class SingleComparison extends AbstractCondition {
         return null;
     }
 
+    public String getOperator() {
+        return operator;
+    }
 
+    public Expression getLeft() {
+        return left;
+    }
+
+    public Expression getRight() {
+        return right;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if(o instanceof SingleComparison) {
+            SingleComparison comparison = (SingleComparison) o;
+            if (operator.equals(comparison.getOperator())
+                    && left.equals(comparison.getLeft())
+                    && right.equals(comparison.getRight())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

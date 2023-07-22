@@ -330,8 +330,7 @@ public class SqlParser implements Parser {
         skipSpace();
         String nextKeyWord = getNextKeyWord();
         if ("WHERE".equals(nextKeyWord)) {
-            Expression l = readCondition(columnMap);
-            condition = readRightCondition(columnMap, l);
+            condition = parseWhereCondition(columnMap);
         }
         OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, condition);
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
@@ -375,8 +374,7 @@ public class SqlParser implements Parser {
         Expression condition = null;
         String nextKeyWord = getNextKeyWord();
         if ("WHERE".equals(nextKeyWord)) {
-            Expression l = readCondition(columnMap);
-            condition = readRightCondition(columnMap, l);
+            condition = parseWhereCondition(columnMap);
         }
 
         OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
@@ -406,9 +404,18 @@ public class SqlParser implements Parser {
         SelectCommand selectCommand = new SelectCommand(query);
         if(query.getCondition() != null) {
             query.getCondition().setSelectIndexes(query);
+
+            StringBuilder originSql = new StringBuilder();
+            query.getCondition().getSQL(originSql);
+            System.out.println("原始的条件:" + originSql.toString());
+
             // 优化查询条件
             Expression optimizeCondition = query.getCondition().optimize();
             query.setCondition(optimizeCondition);
+
+            StringBuilder optimizeSql = new StringBuilder();
+            optimizeCondition.getSQL(optimizeSql);
+            System.out.println("优化后的条件:" + optimizeSql.toString());
         }
 
         return selectCommand;
@@ -513,8 +520,7 @@ public class SqlParser implements Parser {
 
             //parseWhereCondition(conditionRoot, columnMap, null, subQueryStartEnd);
             // 解析where条件
-            Expression l = readCondition(columnMap);
-            condition = readRightCondition(columnMap, l);
+            condition = parseWhereCondition(columnMap);
 
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
@@ -571,6 +577,19 @@ public class SqlParser implements Parser {
         }
 
         return query;
+    }
+
+
+    private Expression parseWhereCondition(Map<String, Column> columnMap) {
+        Expression condition = null;
+        Expression l = readCondition(columnMap);
+        String nextKeyWordUnMove = getNextKeyWordUnMove();
+        if("AND".equals(nextKeyWordUnMove)) {
+            condition = readRightAndCondition(columnMap, l);
+        } else {
+            condition = readRightOrCondition(columnMap, l);
+        }
+        return condition;
     }
 
     /**
@@ -1081,11 +1100,16 @@ public class SqlParser implements Parser {
                 isOpen = true;
             }
             do {
-                // 读一个条件表达式
+                // 读左边条件表达式
                 left = readLeftExpression(columnMap);
                 if(left instanceof ColumnExpression || left instanceof ConstantValue) {
                     left = readRightExpression(columnMap, left);
                 }
+
+                if(!isOpen) {
+                    break;
+                }
+
                 String andOrType = getNextKeyWordUnMove();
                 if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
                     getNextKeyWord();
@@ -1131,6 +1155,47 @@ public class SqlParser implements Parser {
             getNextKeyWord();
             Expression right = readCondition(columnMap);
             l = new ConditionAndOr2(nextKeyWord, l, right);
+        }
+        return l;
+    }
+
+    public Expression readRightAndCondition(Map<String, Column> columnMap, Expression l) {
+        String nextKeyWord = getNextKeyWordUnMove();
+        if(!"AND".equals(nextKeyWord)) {
+            return l;
+        }
+        if ("AND".equals(nextKeyWord)) {
+            getNextKeyWord();
+            Expression right = readCondition(columnMap);
+            l = new ConditionAndOr2(nextKeyWord, l, right);
+        }
+
+        String next = getNextKeyWordUnMove();
+        if("OR".equals(next)) {
+            l = readRightOrCondition(columnMap, l);
+        } else {
+            l = readRightAndCondition(columnMap, l);
+        }
+        return l;
+    }
+
+    public Expression readRightOrCondition(Map<String, Column> columnMap, Expression l) {
+
+        String nextKeyWord = getNextKeyWordUnMove();
+        if(!"OR".equals(nextKeyWord)) {
+            return l;
+        }
+        if ("OR".equals(nextKeyWord)) {
+            getNextKeyWord();
+            Expression right = readCondition(columnMap);
+            l = new ConditionAndOr2(nextKeyWord, l, right);
+        }
+
+        String next = getNextKeyWordUnMove();
+        if("AND".equals(next)) {
+            l = readRightAndCondition(columnMap, l);
+        } else {
+            l = readRightOrCondition(columnMap, l);
         }
         return l;
     }
