@@ -1,5 +1,7 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.command.dml.sql.Parameter;
+
 /**
  * @author xiaomingzhang
  * @date 2023/5/9
@@ -83,6 +85,9 @@ public class Column {
     }
 
     public Object getValue() {
+        if(value != null && value instanceof Parameter) {
+         return ((Parameter) value).getValue();
+        }
         return value;
     }
 

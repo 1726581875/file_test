@@ -23,4 +23,21 @@ public class Parameter {
     public void setValue(Object value) {
         this.value = value;
     }
+
+    public int getIndex() {
+        return index;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        Parameter parameter = (Parameter) o;
+        if(this == parameter) {
+            return true;
+        }
+        if(value != null && value.equals(parameter.getValue())) {
+            return true;
+        }
+        return false;
+    }
+
 }

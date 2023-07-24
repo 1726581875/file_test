@@ -47,8 +47,7 @@ public class ConditionAndOr2 extends AbstractCondition {
         // 左右条件相等,可以合并为一个；像(a=1 and b=1)
         if (l.equals(r)) {
             if (l instanceof ConstantValue) {
-                boolean b = (Boolean) l.getValue(null);
-                return new ConstantValue(b);
+                return ConstantValue.getBooleanExpression((Boolean) l.getValue(null));
             }
             return l;
         }
@@ -60,7 +59,7 @@ public class ConditionAndOr2 extends AbstractCondition {
             SingleComparison rComparison = (SingleComparison) r;
             if(lComparison.getLeft().equals(rComparison.getLeft())
                     && !lComparison.getRight().equals(rComparison.getRight())) {
-                return new ConstantValue(false);
+                return ConstantValue.EXPRESSION_FALSE;
             }
         }
 
@@ -71,14 +70,14 @@ public class ConditionAndOr2 extends AbstractCondition {
             if(l instanceof ConstantValue && r instanceof ConstantValue) {
                 boolean a = (Boolean)l.getValue(null);
                 boolean b = (Boolean)r.getValue(null);
-                return new ConstantValue(a && b);
+                return ConstantValue.getBooleanExpression(a && b);
             }
 
             // 如(1=1 and a=1)
             if(l instanceof ConstantValue) {
                 boolean b = (Boolean)l.getValue(null);
                 if(b == false) {
-                    return new ConstantValue(false);
+                    return ConstantValue.EXPRESSION_FALSE;
                 } else {
                     return r;
                 }
@@ -87,7 +86,7 @@ public class ConditionAndOr2 extends AbstractCondition {
             if(r instanceof ConstantValue) {
                 boolean b = (Boolean)r.getValue(null);
                 if(b == false) {
-                    return new ConstantValue(false);
+                    return ConstantValue.EXPRESSION_FALSE;
                 } else {
                     return l;
                 }
@@ -98,21 +97,21 @@ public class ConditionAndOr2 extends AbstractCondition {
             if(l instanceof ConstantValue) {
                 boolean b = (Boolean)l.getValue(null);
                 if(b == true) {
-                    return new ConstantValue(true);
+                    return ConstantValue.EXPRESSION_TRUE;
                 }
             }
             // 如(a=1 or 1=1)
             if(r instanceof ConstantValue) {
                 boolean b = (Boolean)r.getValue(null);
                 if(b == true) {
-                    return new ConstantValue(true);
+                    return ConstantValue.EXPRESSION_TRUE;
                 }
             }
             // 如(1=1 or 1=1)
             if(l instanceof ConstantValue && r instanceof ConstantValue) {
                 boolean a = (Boolean)l.getValue(null);
                 boolean b = (Boolean)r.getValue(null);
-                return new ConstantValue(a || b);
+                return ConstantValue.getBooleanExpression(a || b);
             }
         }
 

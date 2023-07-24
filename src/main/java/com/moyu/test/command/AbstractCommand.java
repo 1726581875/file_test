@@ -1,7 +1,9 @@
 package com.moyu.test.command;
 
 import com.moyu.test.command.dml.sql.Parameter;
+import com.moyu.test.exception.DbException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,7 +13,7 @@ import java.util.List;
 public abstract class AbstractCommand implements Command {
 
 
-    private List<Parameter> parameters;
+    private List<Parameter> parameters = new ArrayList<>();
 
 
     @Override
@@ -46,7 +48,16 @@ public abstract class AbstractCommand implements Command {
         return parameters;
     }
 
-    public void setParameters(List<Parameter> parameters) {
-        this.parameters = parameters;
+    public void addParameters(List<Parameter> parameters) {
+        this.parameters.addAll(parameters);
+    }
+
+    public void setParameterValues(List<Parameter> parameterValues) {
+        if(parameters.size() != parameterValues.size()) {
+            throw new DbException("参数数量不一致,传入参数数量为:" + parameterValues.size() + ",可接受参数数量为:" + parameters.size());
+        }
+        for (int i = 0; i < parameters.size(); i++) {
+            parameters.get(i).setValue(parameterValues.get(i).getValue());
+        }
     }
 }

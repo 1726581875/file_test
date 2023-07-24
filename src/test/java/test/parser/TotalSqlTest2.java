@@ -21,7 +21,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/7/3
  */
-public class TotalTest2 {
+public class TotalSqlTest2 {
 
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
     //private static final String engineType = CommonConstant.ENGINE_TYPE_YU;

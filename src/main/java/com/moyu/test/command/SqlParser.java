@@ -44,6 +44,8 @@ public class SqlParser implements Parser {
 
     private int currIndex;
 
+    private List<Parameter> parameterList = new ArrayList<>();
+
 
     private static final String CREATE = "CREATE";
     private static final String UPDATE = "UPDATE";
@@ -417,6 +419,8 @@ public class SqlParser implements Parser {
             optimizeCondition.getSQL(optimizeSql);
             System.out.println("优化后的条件:" + optimizeSql.toString());
         }
+
+        selectCommand.addParameters(parameterList);
 
         return selectCommand;
     }
@@ -1319,9 +1323,17 @@ public class SqlParser implements Parser {
             // attribute = value
             if (rightColumn == null) {
                 String v = parseSimpleConditionValue();
-                // 转换值为对应类型对象
-                Object obj = getTypeValueObj(left, v);
-                right = new ConstantValue(obj);
+                if("?".equals(v)) {
+                    int size = parameterList.size();
+                    Parameter parameter = new Parameter(size + 1, null);
+                    parameterList.add(parameter);
+                    right = new ConstantValue(parameter);
+                } else {
+                    // 转换值为对应类型对象
+                    Object obj = getTypeValueObj(left, v);
+                    right = new ConstantValue(obj);
+                }
+
             } else {
                 // attribute = attribute
                 right = parseConditionLeft(columnMap);
@@ -1816,12 +1828,23 @@ public class SqlParser implements Parser {
         for (int i = 0; i < columns.length; i++) {
             Column column = columns[i].copy();
             String value = columnValueMap.get(column.getColumnName());
-            setColumnValue(column, value);
+            if("?".equals(value)) {
+                int size = parameterList.size();
+                Parameter parameter = new Parameter(size + 1, null);
+                parameterList.add(parameter);
+                column.setValue(parameter);
+            } else {
+                setColumnValue(column, value);
+            }
             dataColumns[i] = column;
         }
 
+
+
         OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, null);
-        return new InsertCommand(tableInfo, dataColumns);
+        InsertCommand insertCommand = new InsertCommand(tableInfo, dataColumns);
+        insertCommand.addParameters(parameterList);
+        return insertCommand;
     }
 
 
