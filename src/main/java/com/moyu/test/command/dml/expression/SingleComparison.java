@@ -76,29 +76,77 @@ public class SingleComparison extends AbstractCondition {
     public Expression optimize() {
         switch (operator) {
             case OperatorConstant.EQUAL:
-                if(left instanceof ConstantValue && right instanceof ConstantValue) {
-                    if(left.getValue(null).equals(right.getValue(null))) {
-                        return new ConstantValue(true);
-                    } else {
-                        return new ConstantValue(false);
-                    }
-                }
             case OperatorConstant.NOT_EQUAL_1:
             case OperatorConstant.NOT_EQUAL_2:
+                // 常量相等，如 1 = 1
+                if(left instanceof ConstantValue && right instanceof ConstantValue) {
+                    boolean result = constantLeftEqRight();
+                    if(OperatorConstant.EQUAL.equals(operator)) {
+                        return ConstantValue.getBooleanExpression(result);
+                    } else {
+                        return ConstantValue.getBooleanExpression(!result);
+                    }
+                }
+                break;
             case OperatorConstant.LIKE:
             case OperatorConstant.NOT_LIKE:
+                // 常量字符like,如 'name' like 'nam%'
+                if(left instanceof ConstantValue && right instanceof ConstantValue) {
+                    Object leftValue = left.getValue(null);
+                    Object rightValue = right.getValue(null);
+                    if(leftValue instanceof String && rightValue instanceof String){
+                        boolean result = likeMatch((String) leftValue, (String) rightValue);
+                        if(OperatorConstant.LIKE.equals(operator)) {
+                            return ConstantValue.getBooleanExpression(result);
+                        } else {
+                            return ConstantValue.getBooleanExpression(!result);
+                        }
+                    }
+                }
+                break;
             case OperatorConstant.IS_NULL:
+                break;
             case OperatorConstant.IS_NOT_NULL:
+                break;
             case OperatorConstant.LESS_THAN:
             case OperatorConstant.LESS_THAN_OR_EQUAL:
             case OperatorConstant.GREATER_THAN:
             case OperatorConstant.GREATER_THAN_OR_EQUAL:
+                // 对比两个常量大大小，如 1 < 2
+                if(left instanceof ConstantValue && right instanceof ConstantValue) {
+                    Object leftValue = left.getValue(null);
+                    Object rightValue = right.getValue(null);
+                    if(leftValue instanceof Comparable && rightValue instanceof Comparable) {
+                        boolean result = getLessOrGreResult((Comparable)leftValue, (Comparable)rightValue, operator);
+                        return ConstantValue.getBooleanExpression(result);
+                    }
+                }
                 break;
             default:
                 throw new SqlIllegalException("sql语法有误,不支持" + operator);
         }
 
         return this;
+    }
+
+    private boolean getLessOrGreResult(Comparable leftValue, Comparable rightValue, String operator) {
+        switch (operator) {
+            case OperatorConstant.LESS_THAN:
+                return rightValue != null && (leftValue).compareTo(rightValue) < 0;
+            case OperatorConstant.LESS_THAN_OR_EQUAL:
+                return rightValue != null && (leftValue).compareTo(rightValue) <= 0;
+            case OperatorConstant.GREATER_THAN:
+                return rightValue != null && (leftValue).compareTo(rightValue) > 0;
+            case OperatorConstant.GREATER_THAN_OR_EQUAL:
+                return rightValue != null && (leftValue).compareTo(rightValue) >= 0;
+            default:
+                throw new SqlIllegalException("sql语法有误,不支持" + operator);
+        }
+    }
+
+
+    private boolean constantLeftEqRight() {
+        return left.getValue(null).equals(right.getValue(null));
     }
 
     @Override
