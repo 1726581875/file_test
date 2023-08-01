@@ -52,9 +52,11 @@ public class ConstantValue extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        ConstantValue that = (ConstantValue) o;
-        if(value.equals(that.getValue())) {
-            return true;
+        if(o instanceof ConstantValue) {
+            ConstantValue that = (ConstantValue) o;
+            if (value.equals(that.getValue())) {
+                return true;
+            }
         }
         return false;
     }

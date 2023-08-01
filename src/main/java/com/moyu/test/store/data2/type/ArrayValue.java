@@ -101,6 +101,20 @@ public class ArrayValue<V extends Value> extends Value {
         return 0;
     }
 
+    @Override
+    public int getMaxSize() {
+        if (arr == null) {
+            return 1 + 4;
+        } else {
+            int size = 1 + 4 + 4;
+            int i = 0;
+            while (i < arr.length) {
+                size += arr[i++].getMaxSize();
+            }
+            return size;
+        }
+    }
+
     public V[] getArr() {
         return arr;
     }

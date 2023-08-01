@@ -38,6 +38,11 @@ public class BooleanValue extends Value {
     }
 
     @Override
+    public int getMaxSize() {
+        return 1;
+    }
+
+    @Override
     public ByteBuffer getByteBuffer() {
         return null;
     }

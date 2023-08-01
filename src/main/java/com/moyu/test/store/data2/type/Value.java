@@ -33,6 +33,12 @@ public abstract class Value implements SerializableByte {
 
     public abstract int compare(Value v);
 
+    /**
+     * 获取最大占用字节大小
+     * @return
+     */
+    public abstract int getMaxSize();
+
 
     public static int getValueTypeByColumnType(byte columnType) {
         switch (columnType) {

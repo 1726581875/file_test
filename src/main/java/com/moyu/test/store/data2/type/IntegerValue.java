@@ -39,6 +39,11 @@ public class IntegerValue extends Value {
     }
 
     @Override
+    public int getMaxSize() {
+        return 4;
+    }
+
+    @Override
     public ByteBuffer getByteBuffer() {
         return null;
     }

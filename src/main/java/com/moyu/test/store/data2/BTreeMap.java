@@ -45,10 +45,10 @@ public class BTreeMap<K, V> {
             this.rootNode = Page.createLeaf(this, new ArrayList(), new ArrayList<>(),  bTreeStore.getNextPageIndex());
             bTreeStore.savePage(rootNode);
             bTreeStore.updateRootPos(rootNode.getStartPos());
+            this.nextPageIndex++;
         } else {
             this.rootNode = bTreeStore.getRootPage(this);
         }
-        this.nextPageIndex++;
     }
 
 
@@ -228,7 +228,7 @@ public class BTreeMap<K, V> {
                     List<Page.PageReference<K,V>> children = new ArrayList<>(2);
                     children.add(new Page.PageReference<K,V>(node));
                     children.add(new Page.PageReference<K,V>(split));
-                    int nextPageIndex = bTreeStore.getNextPageIndex();
+                    int nextPageIndex = getNextPageIndex();
                     rootNode = Page.createNonLeaf(this, keys, children, nextPageIndex);
                     level++;
                     // 结束
@@ -273,7 +273,6 @@ public class BTreeMap<K, V> {
 
     public void clear() {
         bTreeStore.clear();
-        initRootNode();
     }
 
 

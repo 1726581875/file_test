@@ -37,6 +37,14 @@ public final class StringValue extends Value {
         return value.compareTo(((StringValue) v).getValue());
     }
 
+    @Override
+    public int getMaxSize() {
+        if(value != null) {
+            return 4 + (value.length() * 3);
+        }
+        return 0;
+    }
+
     public String getValue() {
         return value;
     }

@@ -26,7 +26,7 @@ public class TcpClientTest {
             DataInputStream dataInputStream = new DataInputStream(inputStream);
 
             // 发送数据库id给服务端
-            int dbId = 3;;
+            int dbId = 3;
             dataOutputStream.writeInt(dbId);
 
             // 发送sql给服务端
@@ -43,7 +43,7 @@ public class TcpClientTest {
                 System.out.println(okPacket.getResultStr());
             } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
                 ErrPacket errPacket = (ErrPacket) packet;
-                System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息" + errPacket.getErrMsg());
+                System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
             } else {
                 System.out.println("不支持的packet type" + packet.getPacketType());
             }

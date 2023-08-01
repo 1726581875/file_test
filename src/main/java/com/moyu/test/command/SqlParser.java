@@ -320,9 +320,15 @@ public class SqlParser implements Parser {
             if(column == null) {
                 throw new SqlIllegalException("表"+ tableName + "不存在字段" + columnNameStr);
             }
-
             Column updateColumn = column.createNullValueColumn();
-            setColumnValue(updateColumn, columnValueStr);
+            if("?".equals(columnValueStr)) {
+                int size = parameterList.size();
+                Parameter parameter = new Parameter(size + 1, null);
+                parameterList.add(parameter);
+                updateColumn.setValue(parameter);
+            } else {
+                setColumnValue(updateColumn, columnValueStr);
+            }
             updateColumnList.add(updateColumn);
         }
 
@@ -336,6 +342,7 @@ public class SqlParser implements Parser {
         }
         OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, condition);
         UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
+        updateCommand.addParameters(parameterList);
         return updateCommand;
     }
 

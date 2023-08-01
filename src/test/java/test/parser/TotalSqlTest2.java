@@ -43,6 +43,17 @@ public class TotalSqlTest2 {
 /*        yanStoreEngineTest();
         testCreateIndexCommand();
         fastInsertData2("abc_1", 10000, engineType);*/
+
+        //testOptimizeCondition();
+
+
+        fastInsertData2("xmz_idx_test", 1000, engineType);
+        testExecSQL("create index idx_id on xmz_idx_test(id)");
+        testExecSQL("select * from xmz_idx_test where id = 1");
+
+    }
+
+    private static void testOptimizeCondition(){
         testExecSQL("drop table if exists  xmz_q_2");
         testExecSQL("create table xmz_q_2 (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
 
@@ -61,21 +72,21 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma2', '2023-06-29 18:00:00')");
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (11, 'Emma3', '2022-06-29 18:00:00')");
 
-        //testExecSQL("select * from xmz_q_2 where 1 = 1 and 1 = 2");
-        //testExecSQL("select * from xmz_q_2 where 1 = 1 or id = 2");
-        //testExecSQL("select * from xmz_q_2 where id = 1 and id = 1 or id = 1");
-
-        //testExecSQL("select * from xmz_q_2 where id = 1 and 1 = 1 or id = 1");
-        //testExecSQL("select * from xmz_q_2 where id = 2 and 1 = 1 or id = 1");
+        testExecSQL("select * from xmz_q_2 where 1 = 1 and 1 = 2");
+        testExecSQL("select * from xmz_q_2 where 1 = 1 or id = 2");
+        testExecSQL("select * from xmz_q_2 where id = 1 and id = 1 or id = 1");
+        testExecSQL("select * from xmz_q_2 where id = 1 and 1 = 1 or id = 1");
+        testExecSQL("select * from xmz_q_2 where id = 2 and 1 = 1 or id = 1");
         testExecSQL("select * from xmz_q_2 where id = 2 and id = 1");
-
+        testExecSQL("select * from xmz_q_2 where id = 2 and id = 1");
     }
+
 
 
     private static void fastInsertData2(String tableName, int rowNum, String engineType) {
         testExecSQL("drop table if exists " + tableName);
 
-        testExecSQL("create table "+ tableName +" (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("create table "+ tableName +" (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
@@ -109,7 +120,7 @@ public class TotalSqlTest2 {
         Column[] columns = new Column[3];
         // 字段11
         columns[0] = new Column("id", ColumnTypeEnum.INT.getColumnType(), 0, 4);
-        columns[0].setIsPrimaryKey((byte) 1);
+        //columns[0].setIsPrimaryKey((byte) 1);
         columns[0].setValue(id);
 
         // 字段2

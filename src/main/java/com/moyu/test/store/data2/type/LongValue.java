@@ -37,6 +37,11 @@ public class LongValue extends Value {
         return value.compareTo(((LongValue) v).getValue());
     }
 
+    @Override
+    public int getMaxSize() {
+        return 8;
+    }
+
     public Long getValue() {
         return value;
     }

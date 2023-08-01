@@ -63,6 +63,16 @@ public class ParameterSqlTest {
         parameters.add(new Parameter(3, new Date()));
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (?, ?, ?)", parameters);
 
+
+        testExecSQL("select * from xmz_q_2");
+
+
+        List<Parameter> updateParams = new ArrayList<>();
+        updateParams.add(new Parameter(1, "aaaa"));
+        updateParams.add(new Parameter(2, new Date()));
+        updateParams.add(new Parameter(3,12));
+        testExecSQL("update xmz_q_2 set name=?,time=? where 1 = 1 and id = ?", updateParams);
+
         testExecSQL("select * from xmz_q_2");
 
     }

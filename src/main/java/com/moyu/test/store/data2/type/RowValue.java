@@ -180,4 +180,9 @@ public class RowValue extends Value {
     public int compare(Value v) {
         return 0;
     }
+
+    @Override
+    public int getMaxSize() {
+        return totalByteLen;
+    }
 }

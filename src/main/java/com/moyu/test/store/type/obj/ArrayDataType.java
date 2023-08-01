@@ -29,6 +29,6 @@ public class ArrayDataType extends AbstractObjDataType<ArrayValue> {
 
     @Override
     public int getMaxByteSize(ArrayValue value) {
-        return 0;
+        return value.getMaxSize();
     }
 }

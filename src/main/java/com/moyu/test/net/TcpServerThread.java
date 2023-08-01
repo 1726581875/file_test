@@ -35,15 +35,15 @@ public class TcpServerThread implements Runnable {
 
             // 读取数据库id
             Integer databaseId = in.readInt();
-            // 读取
+            // 读取语句长度
             Integer sqlCharLen = in.readInt();
-            System.out.println(sqlCharLen);
+            // 读取sql语句
             char[] sqlChars = new char[sqlCharLen];
             for (int i = 0; i < sqlCharLen; i++) {
                 sqlChars[i] = in.readChar();
             }
-
             String sql = new String(sqlChars);
+            System.out.println("数据库id:"+ databaseId +"接收到SQL:" + sql);
             try {
                 ConnectSession connectSession = new ConnectSession("xmz", databaseId);
                 SqlParser sqlParser = new SqlParser(connectSession);
