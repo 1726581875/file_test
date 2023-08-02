@@ -1254,7 +1254,7 @@ public class SqlParser implements Parser {
 
     private Expression readRightExpression(Map<String, Column> columnMap, Expression left) {
         Expression condition = null;
-        String operator = getNextKeyWord();
+        String operator = getNextOperatorKeyWord();
         skipSpace();
         switch (operator) {
             case OperatorConstant.EQUAL:
@@ -1310,6 +1310,69 @@ public class SqlParser implements Parser {
         }
 
         return condition;
+    }
+
+
+    private String getNextOperatorKeyWord() {
+        StringBuilder operator = new StringBuilder("");
+        skipSpace();
+
+        // 不等于 !=
+        if (sqlCharArr[currIndex] == '!') {
+            operator.append(sqlCharArr[currIndex]);
+            operator.append(sqlCharArr[++currIndex]);
+            currIndex++;
+            return operator.toString();
+        }
+        // 等于=
+        if (sqlCharArr[currIndex] == '=') {
+            operator.append(sqlCharArr[currIndex]);
+            currIndex++;
+            return operator.toString();
+        }
+        // < 、<=或<>
+        if (sqlCharArr[currIndex] == '<') {
+            operator.append(sqlCharArr[currIndex]);
+            if (sqlCharArr[currIndex + 1] == '>' || sqlCharArr[currIndex + 1] == '=') {
+                operator.append(sqlCharArr[++currIndex]);
+            }
+            currIndex++;
+            return operator.toString();
+        }
+        // > 、>=
+        if (sqlCharArr[currIndex] == '>') {
+            operator.append(sqlCharArr[currIndex]);
+            if (sqlCharArr[currIndex + 1] == '=') {
+                operator.append(sqlCharArr[++currIndex]);
+            }
+            currIndex++;
+            return operator.toString();
+        }
+
+        // IN
+        if (sqlCharArr[currIndex] == 'I') {
+            if (sqlCharArr[currIndex + 1] == 'N') {
+                operator.append(sqlCharArr[currIndex]);
+                currIndex++;
+                operator.append(sqlCharArr[currIndex]);
+                currIndex++;
+                return operator.toString();
+            }
+        }
+
+        // 其他，例如IS 、NOT
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                break;
+            }
+            if (sqlCharArr[currIndex] == ' ') {
+                currIndex++;
+                break;
+            }
+            operator.append(sqlCharArr[currIndex]);
+            currIndex++;
+        }
+        return operator.toString();
     }
 
 
