@@ -225,6 +225,11 @@ public abstract class Page<K, V> implements SerializableByte {
         writeBuffer.putInt(0, position);
         ByteBuffer buffer = writeBuffer.getBuffer();
         buffer.flip();
+
+        if(buffer.limit() > getCurrMaxByteLen()) {
+            throw new RuntimeException("实际大小比预估要大:" + buffer.limit());
+        }
+
         if (buffer.limit() > PAGE_SIZE) {
             throw new RuntimeException("页大小超出限制:" + buffer.limit());
         }

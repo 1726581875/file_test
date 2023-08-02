@@ -109,7 +109,8 @@ public class ArrayValue<V extends Value> extends Value {
             int size = 1 + 4 + 4;
             int i = 0;
             while (i < arr.length) {
-                size += arr[i++].getMaxSize();
+                size += itemDataType.getMaxByteSize(arr[i].getObjValue());
+                i++;
             }
             return size;
         }

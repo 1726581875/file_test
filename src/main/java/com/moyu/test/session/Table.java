@@ -43,7 +43,7 @@ public class Table {
 
     public Column[] getColumns() {
         if(columns == null || columns.length == 0) {
-            this.columns = getColumns(tableId, tableName);
+            this.columns = getColumns(databaseId, tableName);
         }
         return columns;
     }
