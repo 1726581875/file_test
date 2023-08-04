@@ -220,7 +220,7 @@ public class YanEngineOperation extends BasicOperation {
         IndexMetadataStore indexMetadataStore = null;
         BTreeStore bTreeIndexStore = null;
         try {
-            indexMetadataStore = new IndexMetadataStore();
+            indexMetadataStore = new IndexMetadataStore(session.getDatabase().getDatabaseId());
             IndexMetadata oldIndex = indexMetadataStore.getIndex(tableId, indexName);
             // 存在则先删除索引元数据
             if (oldIndex != null) {

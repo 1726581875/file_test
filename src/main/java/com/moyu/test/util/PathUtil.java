@@ -40,6 +40,10 @@ public class PathUtil {
     }
 
 
+    public static String getIndexMetaPath(Integer databaseId) {
+        return  getMetaDirPath() + File.separator + databaseId;
+    }
+
 
     public static String getIndexFilePath(Integer databaseId, String tableName, String indexName) {
         String dirPath = PathUtil.getBaseDirPath() + File.separator + databaseId;

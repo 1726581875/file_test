@@ -33,7 +33,7 @@ public class DropIndexCommand extends AbstractCommand {
     public String execute() {
         IndexMetadataStore indexStore = null;
         try {
-            indexStore = new IndexMetadataStore();
+            indexStore = new IndexMetadataStore(databaseId);
             indexStore.dropIndexMetadata(this.tableId, this.indexName);
 
             // 索引路径

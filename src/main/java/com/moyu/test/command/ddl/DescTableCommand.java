@@ -64,7 +64,7 @@ public class DescTableCommand extends AbstractCommand {
             }
 
             // 索引信息
-            indexStore = new IndexMetadataStore();
+            indexStore = new IndexMetadataStore(databaseId);
             Map<Integer, TableIndexBlock> indexMap = indexStore.getIndexMap();
             TableIndexBlock tableIndexBlock = indexMap.get(table.getTableId());
             if(tableIndexBlock != null) {

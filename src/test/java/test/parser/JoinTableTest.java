@@ -38,16 +38,17 @@ public class JoinTableTest {
     }
 
     public static void main(String[] args) {
-        fastInsertData("table_1", 1000, engineType);
+
+        simpleJoinTest();
+
+/*        fastInsertData("table_1", 1000, engineType);
         fastInsertData("table_2", 1000, engineType);
-
         //testExecSQL("create index idx_id on table_2(id)");
-
-        testExecSQL("select count(*) from table_1 a inner join table_2 b on a.id = b.id");
+        testExecSQL("select count(*) from table_1 a inner join table_2 b on a.id = b.id");*/
     }
 
 
-    private void simpleJoinTest(){
+    private static void simpleJoinTest(){
 
         testExecSQL("drop table if exists xmz_q_1");
         testExecSQL("create table xmz_q_1 (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
@@ -73,12 +74,12 @@ public class JoinTableTest {
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (4, 'Emily', '2023-06-29 12:00:00')");
         testExecSQL("INSERT INTO xmz_q_2 (id, name, time) VALUES (5, 'Tom', '2023-06-29 13:20:00')");
 
-/*        // 内连接
+        // 内连接
         testExecSQL("select * from xmz_q_2 a inner join xmz_q_1 b on a.id = b.id");
         // 左连接
         testExecSQL("select * from xmz_q_1 a left join xmz_q_2 b on a.id = b.id");
         // 右连接
-        testExecSQL("select * from xmz_q_2 a right join xmz_q_1 b on a.id = b.id");*/
+        testExecSQL("select * from xmz_q_2 a right join xmz_q_1 b on a.id = b.id");
 
 
         testExecSQL("select * from xmz_q_2 a , xmz_q_1 b where a.id = b.id");

@@ -15,7 +15,7 @@ public class IndexMetadataStoreTest {
     public static void main(String[] args) {
         IndexMetadataStore metadataStore = null;
         try {
-            metadataStore = new IndexMetadataStore();
+            metadataStore = new IndexMetadataStore(0);
             IndexMetadata index = new IndexMetadata(0L, 1, "aaa", "bbb", (byte) 0);
             //metadataStore.saveIndexMetadata(2, index);
             //metadataStore.dropIndexMetadata(1, "indexName");

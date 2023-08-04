@@ -39,7 +39,7 @@ public class CreateTableCommand extends AbstractCommand {
         try {
             tableMetadataStore = new TableMetadataStore(databaseId);
             columnMetadataStore = new ColumnMetadataStore();
-            indexMetadataStore = new IndexMetadataStore();
+            indexMetadataStore = new IndexMetadataStore(databaseId);
             // 插入table元数据
             TableMetadata table = tableMetadataStore.createTable(tableName, engineType);
             // 插入column元数据

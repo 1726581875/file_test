@@ -1,7 +1,9 @@
 package com.moyu.test.command.dml.sql;
 
 import com.moyu.test.command.dml.InsertCommand;
+import com.moyu.test.command.dml.expression.ColumnExpression;
 import com.moyu.test.command.dml.expression.Expression;
+import com.moyu.test.command.dml.expression.SingleComparison;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;
@@ -505,9 +507,9 @@ public class Query {
                     try {
                         // join table
                         joinCursor = getQueryCursor(joinTable);
-                        ConditionTree joinCondition = joinTable.getJoinCondition();
+                        Expression joinCondition = joinTable.getJoinCondition();
                         if((joinCursor instanceof BtreeCursor)
-                                && isPrimaryKey(joinCondition.getCondition(), joinTable.getTableColumns())) {
+                                && isPrimaryKey(joinCondition, joinTable.getTableColumns())) {
                             mainCursor = indexJoinTable(mainCursor, (BtreeCursor) joinCursor, joinCondition , joinTable.getJoinInType());
                         } else {
                             mainCursor = doJoinTable(mainCursor, joinCursor, joinTable.getJoinCondition(), joinTable.getJoinInType());
@@ -528,8 +530,8 @@ public class Query {
     }
 
 
-    private boolean isPrimaryKey(Condition joinCondition, Column[] columns){
-        if(joinCondition instanceof ConditionLeftRight) {
+    private boolean isPrimaryKey(Expression joinCondition, Column[] columns){
+/*        if(joinCondition instanceof ConditionLeftRight) {
             Column right = ((ConditionLeftRight) joinCondition).getRight();
             for (Column c : columns) {
                 if(c.getColumnName().equals(right.getColumnName())
@@ -537,7 +539,7 @@ public class Query {
                     return true;
                 }
             }
-        }
+        }*/
         return false;
     }
 
@@ -552,7 +554,7 @@ public class Query {
     }
 
 
-    private Cursor doJoinTable(Cursor leftCursor, Cursor rightCursor, ConditionTree joinCondition, String joinType) {
+    private Cursor doJoinTable(Cursor leftCursor, Cursor rightCursor, Expression joinCondition, String joinType) {
 
         // 字段元数据
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
@@ -610,7 +612,7 @@ public class Query {
     }
 
 
-    private Cursor indexJoinTable(Cursor leftCursor, BtreeCursor rightCursor, ConditionTree joinCondition, String joinType) {
+    private Cursor indexJoinTable(Cursor leftCursor, BtreeCursor rightCursor, Expression joinCondition, String joinType) {
         // 字段元数据
         Column[] columns = Column.mergeColumns(leftCursor.getColumns(), rightCursor.getColumns());
 
@@ -671,34 +673,22 @@ public class Query {
     }
 
 
-    private Object getLeftKeyValue(RowEntity leftRow, ConditionTree joinCondition) {
+    private Object getLeftKeyValue(RowEntity leftRow, Expression joinCondition) {
 
-        Condition condition = joinCondition.getCondition();
-        if(condition instanceof ConditionLeftRight) {
-            ConditionLeftRight leftRight = (ConditionLeftRight) condition;
+        if(joinCondition instanceof SingleComparison) {
+            SingleComparison leftRight = (SingleComparison) condition;
             // 左表字段
-            Column leftColumn = leftRow.getColumn(leftRight.getLeft().getColumnName(), leftRight.getLeft().getTableAlias());
-            return leftColumn.getValue() ;
+            Expression left = (ColumnExpression)leftRight.getLeft();
+            return left.getValue(leftRow);
         } else {
             throw new DbException("不支持连接条件");
         }
     }
 
 
-    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, ConditionTree joinCondition) {
-
-        Condition condition = joinCondition.getCondition();
-        if(condition instanceof ConditionLeftRight) {
-            ConditionLeftRight leftRight = (ConditionLeftRight) condition;
-            // 左表字段
-            Column leftColumn = leftRow.getColumn(leftRight.getLeft().getColumnName(), leftRight.getLeft().getTableAlias());
-            // 右边字段
-            Column rightColumn = rightRow.getColumn(leftRight.getRight().getColumnName(), leftRight.getRight().getTableAlias());
-
-            return leftColumn.getValue() != null && leftColumn.getValue().equals(rightColumn.getValue());
-        } else {
-            throw new DbException("不支持连接条件");
-        }
+    private boolean isMatchJoinCondition(RowEntity leftRow, RowEntity rightRow, Expression joinCondition) {
+        RowEntity rowEntity = RowEntity.mergeRow(leftRow, rightRow);
+        return Expression.isMatch(rowEntity, joinCondition);
     }
 
 

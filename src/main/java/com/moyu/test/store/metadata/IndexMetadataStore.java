@@ -40,12 +40,10 @@ public class IndexMetadataStore {
     private Integer databaseId;
 
 
-    public IndexMetadataStore() throws IOException {
-        this(DEFAULT_META_PATH);
-    }
 
-    public IndexMetadataStore(String filePath) throws IOException {
-        this.filePath = filePath;
+    public IndexMetadataStore(Integer databaseId) throws IOException {
+        this.databaseId = databaseId;
+        this.filePath = PathUtil.getIndexMetaPath(databaseId);
         init();
     }
 

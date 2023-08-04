@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.sql;
 
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
@@ -30,11 +31,6 @@ public class FromTable {
      * 当前表所有字段信息
      */
     private Column[] tableColumns;
-
-    /**
-     * 查询条件
-     */
-    private ConditionTree tableCondition;
     /**
      * 连接类型
      * LEFT 左连接
@@ -45,7 +41,7 @@ public class FromTable {
     /**
      * 连接条件
      */
-    private ConditionTree joinCondition;
+    private Expression joinCondition;
     /**
      * 连接的表
      */
@@ -72,10 +68,9 @@ public class FromTable {
     private String engineType;
 
 
-    public FromTable(String tableName, Column[] tableColumns, ConditionTree tableCondition) {
+    public FromTable(String tableName, Column[] tableColumns) {
         this.tableName = tableName;
         this.tableColumns = tableColumns;
-        this.tableCondition = tableCondition;
     }
 
     public String getTableName() {
@@ -102,14 +97,6 @@ public class FromTable {
         return engineType;
     }
 
-    public ConditionTree getTableCondition() {
-        return tableCondition;
-    }
-
-    public void setTableCondition(ConditionTree tableCondition) {
-        this.tableCondition = tableCondition;
-    }
-
     public String getJoinInType() {
         return joinInType;
     }
@@ -126,11 +113,11 @@ public class FromTable {
         this.joinTables = joinTables;
     }
 
-    public ConditionTree getJoinCondition() {
+    public Expression getJoinCondition() {
         return joinCondition;
     }
 
-    public void setJoinCondition(ConditionTree joinCondition) {
+    public void setJoinCondition(Expression joinCondition) {
         this.joinCondition = joinCondition;
     }
 

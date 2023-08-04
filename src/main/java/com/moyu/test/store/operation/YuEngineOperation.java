@@ -1,7 +1,6 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
-import com.moyu.test.command.dml.sql.ConditionComparator;
 import com.moyu.test.command.dml.sql.ConditionRange;
 import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.config.CommonConfig;
@@ -226,7 +225,7 @@ public class YuEngineOperation extends BasicOperation {
         DataChunkStore dataChunkStore = null;
         IndexMetadataStore indexStore = null;
         try {
-            indexStore = new IndexMetadataStore();
+            indexStore = new IndexMetadataStore(session.getDatabase().getDatabaseId());
             IndexMetadata oldIndex = indexStore.getIndex(tableId, indexName);
             // 存在则先删除索引元数据
             if (oldIndex != null) {
