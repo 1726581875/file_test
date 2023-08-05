@@ -18,7 +18,6 @@ import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.data2.BTreeMap;
 import com.moyu.test.store.data2.type.RowValue;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -43,7 +42,7 @@ public class Query {
     /**
      * from [mainTable]
      */
-    private FromTable mainTable;
+    private QueryTable mainTable;
     /**
      * where [conditionTree]
      */
@@ -106,7 +105,7 @@ public class Query {
 
         while (!queryStack.isEmpty()) {
             Query q = queryStack.pop();
-            FromTable fromTable = q.getMainTable();
+            QueryTable fromTable = q.getMainTable();
 
             if (fromTable.getSubQuery() == null) {
                 mainCursor = getMainQueryCursor(q);
@@ -497,12 +496,12 @@ public class Query {
         Cursor mainCursor = null;
         try {
             // 主表
-            FromTable mTable = query.getMainTable();
+            QueryTable mTable = query.getMainTable();
             mainCursor = getQueryCursor(mTable);
-            List<FromTable> joinTables = mTable.getJoinTables();
+            List<QueryTable> joinTables = mTable.getJoinTables();
             // 如果存在连接表则进行join操作
             if (joinTables != null && joinTables.size() > 0) {
-                for (FromTable joinTable : joinTables) {
+                for (QueryTable joinTable : joinTables) {
                     Cursor joinCursor = null;
                     try {
                         // join table
@@ -544,7 +543,7 @@ public class Query {
     }
 
 
-    private Cursor getQueryCursor(FromTable table) throws IOException {
+    private Cursor getQueryCursor(QueryTable table) throws IOException {
         OperateTableInfo tableInfo = new OperateTableInfo(session, table.getTableName(), table.getTableColumns(), null);
         tableInfo.setEngineType(table.getEngineType());
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
@@ -719,11 +718,11 @@ public class Query {
         this.selectColumns = selectColumns;
     }
 
-    public FromTable getMainTable() {
+    public QueryTable getMainTable() {
         return mainTable;
     }
 
-    public void setMainTable(FromTable mainTable) {
+    public void setMainTable(QueryTable mainTable) {
         this.mainTable = mainTable;
     }
 

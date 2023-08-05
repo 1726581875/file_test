@@ -1,6 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
-import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.store.data.cursor.RowEntity;
 
@@ -8,7 +8,7 @@ import com.moyu.test.store.data.cursor.RowEntity;
  * @author xiaomingzhang
  * @date 2023/7/17
  */
-public class ConditionAndOr2 extends AbstractCondition {
+public class ConditionAndOr extends AbstractCondition {
 
     public final static String TYPE_AND = "AND";
 
@@ -21,15 +21,15 @@ public class ConditionAndOr2 extends AbstractCondition {
     private Expression right;
 
 
-    public ConditionAndOr2(String type, Expression left, Expression right) {
+    public ConditionAndOr(String type, Expression left, Expression right) {
         this.type = type;
         this.left = left;
         this.right = right;
     }
 
 
-    public static ConditionAndOr2 buildAnd(Expression left, Expression right){
-        return new ConditionAndOr2(TYPE_AND, left, right);
+    public static ConditionAndOr buildAnd(Expression left, Expression right){
+        return new ConditionAndOr(TYPE_AND, left, right);
     }
 
 
@@ -154,7 +154,7 @@ public class ConditionAndOr2 extends AbstractCondition {
     }
 
     @Override
-    public Expression getJoinCondition(FromTable mainTable, FromTable joinTable) {
+    public Expression getJoinCondition(QueryTable mainTable, QueryTable joinTable) {
         Expression l = left.getJoinCondition(mainTable, joinTable);
         Expression r = right.getJoinCondition(mainTable, joinTable);
         if (l != null && r != null) {

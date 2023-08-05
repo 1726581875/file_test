@@ -1,19 +1,18 @@
 package com.moyu.test.store.data.cursor;
 
-import com.moyu.test.command.dml.sql.ConditionRange;
-import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.constant.OperatorConstant;
+import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.exception.DbException;
-import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.tree.BpTreeMap;
 import com.moyu.test.store.data.tree.Page;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.util.TypeConvertUtil;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author xiaomingzhang
@@ -39,12 +38,12 @@ public class RangeIndexCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public RangeIndexCursor(DataChunkStore dataChunkStore, Column[] columns, ConditionRange range, String indexPath) {
+    public RangeIndexCursor(DataChunkStore dataChunkStore, Column[] columns, Expression range, String indexPath) {
         this.dataChunkStore = dataChunkStore;
         this.columns = columns;
         this.indexPath = indexPath;
 
-        if (range.getColumn().getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
+/*        if (range.getColumn().getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
             BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
             init(bpTreeMap, range, ColumnTypeEnum.INT.getColumnType());
         } else if (range.getColumn().getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
@@ -53,11 +52,12 @@ public class RangeIndexCursor extends AbstractCursor {
         } else if (range.getColumn().getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
             BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
             init(bpTreeMap, range, ColumnTypeEnum.VARCHAR.getColumnType());
-        }
+        }*/
     }
 
 
 
+/*
     private <T extends Comparable> void init(BpTreeMap<T, Long[]> bpTreeMap, ConditionRange range, byte columnType){
 
         Long startIndexPos = null;
@@ -92,6 +92,7 @@ public class RangeIndexCursor extends AbstractCursor {
 
         initAllDataChunkPos(bpTreeMap, startIndexPos, endIndexPos);
     }
+*/
 
 
     private <T extends Comparable> void  initAllDataChunkPos(BpTreeMap<T, Long[]> bpTreeMap, Long startIndexPos, Long endIndexPos) {

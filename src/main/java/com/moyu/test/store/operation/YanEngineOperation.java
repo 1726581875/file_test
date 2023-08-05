@@ -2,7 +2,7 @@ package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.cursor.BTreeIndexCursor;
@@ -386,7 +386,7 @@ public class YanEngineOperation extends BasicOperation {
 
 
     @Override
-    public Cursor getQueryCursor(FromTable table) throws IOException {
+    public Cursor getQueryCursor(QueryTable table) throws IOException {
         Cursor cursor = null;
         BTreeMap clusteredIndexMap = getBTreeMap();
         if (table.getSelectIndex() == null) {

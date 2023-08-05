@@ -1,8 +1,7 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
-import com.moyu.test.command.dml.sql.ConditionRange;
-import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
@@ -36,10 +35,6 @@ public class YuEngineOperation extends BasicOperation {
     public YuEngineOperation(OperateTableInfo tableInfo) {
         super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getCondition());
         super.allIndexList = tableInfo.getAllIndexList();
-    }
-
-    public void setIndexList(List<IndexMetadata> indexList) {
-        this.allIndexList = indexList;
     }
 
     @Override
@@ -312,7 +307,7 @@ public class YuEngineOperation extends BasicOperation {
 
 
     @Override
-    public Cursor getQueryCursor(FromTable table) throws IOException {
+    public Cursor getQueryCursor(QueryTable table) throws IOException {
         Cursor cursor = null;
         DataChunkStore dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), table.getTableName()));
         if (table.getSelectIndex() == null) {
@@ -327,7 +322,7 @@ public class YuEngineOperation extends BasicOperation {
             System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName()
                     + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
-            cursor = new RangeIndexCursor(dataChunkStore, table.getTableColumns(),(ConditionRange) table.getSelectIndex().getCondition() , indexPath);
+            cursor = new RangeIndexCursor(dataChunkStore, table.getTableColumns(), table.getSelectIndex().getCondition() , indexPath);
         } else {
             System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName()
                     + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());

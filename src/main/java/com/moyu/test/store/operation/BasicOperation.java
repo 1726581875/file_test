@@ -1,7 +1,7 @@
 package com.moyu.test.store.operation;
 
 import com.moyu.test.command.dml.expression.Expression;
-import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.cursor.Cursor;
@@ -47,7 +47,7 @@ public abstract class BasicOperation {
     public abstract void createIndex(Integer tableId, String indexName, String columnName, byte indexType);
 
 
-    public abstract Cursor getQueryCursor(FromTable table) throws IOException;
+    public abstract Cursor getQueryCursor(QueryTable table) throws IOException;
 
 
     public static BasicOperation getEngineOperation(OperateTableInfo tableInfo) {

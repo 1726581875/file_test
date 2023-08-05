@@ -415,13 +415,14 @@ public class SqlParser implements Parser {
         }
 
         // 下推条件，把where后面条件下推到连接条件(即在进行连接时候尽可能筛选掉不符合条件的行，而不是等到连接完再筛选)
-        FromTable mainTable = query.getMainTable();
+        QueryTable mainTable = query.getMainTable();
         Expression condition = query.getCondition();
-        if (mainTable.getJoinTables() != null && mainTable.getJoinTables().size() > 0) {
-            for (FromTable joinTable : mainTable.getJoinTables()) {
+        if (mainTable.getJoinTables() != null && mainTable.getJoinTables().size() > 0
+                && condition != null) {
+            for (QueryTable joinTable : mainTable.getJoinTables()) {
                 Expression joinCondition = condition.getJoinCondition(mainTable, joinTable);
                 if (joinTable.getJoinCondition() != null) {
-                    joinCondition = ConditionAndOr2.buildAnd(joinTable.getJoinCondition(), joinCondition);
+                    joinCondition = ConditionAndOr.buildAnd(joinTable.getJoinCondition(), joinCondition);
 
                 }
 
@@ -450,7 +451,7 @@ public class SqlParser implements Parser {
         String tableName = null;
         int startIndex = currIndex;
         int endIndex = currIndex;
-        FromTable mainTable = null;
+        QueryTable mainTable = null;
         Query subQuery = null;
         while (true) {
             skipSpace();
@@ -491,9 +492,9 @@ public class SqlParser implements Parser {
         // 合并所有表的所有字段
         Column[] allColumns = mainTable.getTableColumns();
         Column.setColumnTableAlias(allColumns, mainTable.getAlias());
-        List<FromTable> joinTables = mainTable.getJoinTables();
+        List<QueryTable> joinTables = mainTable.getJoinTables();
         if(joinTables != null) {
-            for (FromTable joinTable : joinTables) {
+            for (QueryTable joinTable : joinTables) {
                 Column[] joinColumns = getColumns(joinTable.getTableName());
                 Column.setColumnTableAlias(joinColumns, joinTable.getAlias());
                 allColumns = Column.mergeColumns(allColumns, joinColumns);
@@ -616,8 +617,8 @@ public class SqlParser implements Parser {
      * @param subQuery
      * @return
      */
-    private FromTable getSubQueryAliasMainTable(Query subQuery) {
-        FromTable mainTable = null;
+    private QueryTable getSubQueryAliasMainTable(Query subQuery) {
+        QueryTable mainTable = null;
         String as = getNextKeyWordUnMove();
         if ("AS".equals(as)) {
             // skip as
@@ -634,7 +635,7 @@ public class SqlParser implements Parser {
             newColumns[i].setTableAlias(tableName);
         }
 
-        mainTable = new FromTable(tableName, newColumns);
+        mainTable = new QueryTable(tableName, newColumns);
         mainTable.setAlias(tableName);
 
         return mainTable;
@@ -659,10 +660,10 @@ public class SqlParser implements Parser {
     }
 
 
-    private FromTable parseFormTableOperation() {
+    private QueryTable parseFormTableOperation() {
         Map<String,Column> columnMap = new HashMap<>();
         // 解析查询的表信息
-        FromTable mainTable = parseTableInfo();
+        QueryTable mainTable = parseTableInfo();
 
         mainTable.setJoinTables(new ArrayList<>());
 
@@ -698,7 +699,7 @@ public class SqlParser implements Parser {
                 assertNextKeywordIs("JOIN");
 
                 // 解析连接表信息
-                FromTable joinTable = parseTableInfo();
+                QueryTable joinTable = parseTableInfo();
                 Column[] columns2 = getColumns(joinTable.getTableName());
                 Column.setColumnTableAlias(columns2, joinTable.getAlias());
                 for (Column c : columns2) {
@@ -713,7 +714,7 @@ public class SqlParser implements Parser {
                 mainTable.getJoinTables().add(joinTable);
             } else if(",".equals(word11)){
                 assertNextKeywordIs(",");
-                FromTable joinTable = parseTableInfo();
+                QueryTable joinTable = parseTableInfo();
                 Column[] columns2 = getColumns(joinTable.getTableName());
                 Column.setColumnTableAlias(columns2, joinTable.getAlias());
                 for (Column c : columns2) {
@@ -733,7 +734,7 @@ public class SqlParser implements Parser {
      * 解析表信息，表名、表别名
      * @return
      */
-    private FromTable parseTableInfo() {
+    private QueryTable parseTableInfo() {
 
         String tableName = getNextOriginalWord();
 
@@ -744,7 +745,7 @@ public class SqlParser implements Parser {
 
         Column[] columns = getColumns(tableName);
         TableMetadata tableMeta = getTableMeta(tableName);
-        FromTable table = new FromTable(tableName, columns);
+        QueryTable table = new QueryTable(tableName, columns);
         table.setEngineType(tableMeta.getEngineType());
 
         String next = getNextKeyWordUnMove();
@@ -1031,7 +1032,7 @@ public class SqlParser implements Parser {
                 if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
                     getNextKeyWord();
                     Expression right = readCondition(columnMap);
-                    left = new ConditionAndOr2(andOrType, left, right);
+                    left = new ConditionAndOr(andOrType, left, right);
                 }
             } while (isOpen && sqlCharArr[currIndex] != ')');
 
@@ -1054,7 +1055,7 @@ public class SqlParser implements Parser {
             if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
                 getNextKeyWord();
                 Expression right = readCondition(columnMap);
-                l = new ConditionAndOr2(andOrType, l, right);
+                l = new ConditionAndOr(andOrType, l, right);
             }
             break;
         } else {
@@ -1074,7 +1075,7 @@ public class SqlParser implements Parser {
         if ("AND".equals(nextKeyWord)) {
             getNextKeyWord();
             Expression right = readCondition(columnMap);
-            l = new ConditionAndOr2(nextKeyWord, l, right);
+            l = new ConditionAndOr(nextKeyWord, l, right);
         }
 
         String next = getNextKeyWordUnMove();
@@ -1095,7 +1096,7 @@ public class SqlParser implements Parser {
         if ("OR".equals(nextKeyWord)) {
             getNextKeyWord();
             Expression right = readCondition(columnMap);
-            l = new ConditionAndOr2(nextKeyWord, l, right);
+            l = new ConditionAndOr(nextKeyWord, l, right);
         }
 
         String next = getNextKeyWordUnMove();

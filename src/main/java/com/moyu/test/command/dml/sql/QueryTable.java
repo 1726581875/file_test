@@ -13,7 +13,7 @@ import java.util.Map;
  * @author xiaomingzhang
  * @date 2023/6/7
  */
-public class FromTable {
+public class QueryTable {
     /**
      * 表名
      */
@@ -45,7 +45,7 @@ public class FromTable {
     /**
      * 连接的表
      */
-    private List<FromTable> joinTables;
+    private List<QueryTable> joinTables;
     /**
      * 子查询
      */
@@ -68,7 +68,7 @@ public class FromTable {
     private String engineType;
 
 
-    public FromTable(String tableName, Column[] tableColumns) {
+    public QueryTable(String tableName, Column[] tableColumns) {
         this.tableName = tableName;
         this.tableColumns = tableColumns;
     }
@@ -105,11 +105,11 @@ public class FromTable {
         this.joinInType = joinInType;
     }
 
-    public List<FromTable> getJoinTables() {
+    public List<QueryTable> getJoinTables() {
         return joinTables;
     }
 
-    public void setJoinTables(List<FromTable> joinTables) {
+    public void setJoinTables(List<QueryTable> joinTables) {
         this.joinTables = joinTables;
     }
 

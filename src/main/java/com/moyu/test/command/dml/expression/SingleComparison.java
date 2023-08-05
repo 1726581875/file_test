@@ -1,7 +1,7 @@
 package com.moyu.test.command.dml.expression;
 
 import com.moyu.test.command.dml.plan.SelectIndex;
-import com.moyu.test.command.dml.sql.FromTable;
+import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -205,7 +205,7 @@ public class SingleComparison extends AbstractCondition {
 
 
     @Override
-    public Expression getJoinCondition(FromTable mainTable, FromTable joinTable) {
+    public Expression getJoinCondition(QueryTable mainTable, QueryTable joinTable) {
         if (left instanceof ColumnExpression) {
             ColumnExpression lExp = (ColumnExpression) left;
             if (mainTable.getAlias().equals(lExp.getColumn().getTableAlias())) {
