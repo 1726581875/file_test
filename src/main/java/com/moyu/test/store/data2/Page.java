@@ -143,51 +143,6 @@ public abstract class Page<K, V> implements SerializableByte {
     }
 
 
-/*    public Page(ByteBuffer byteBuffer, BTreeMap treeMap) {
-        this.usedByteLen = byteBuffer.getInt();
-        this.startPos = byteBuffer.getLong();
-        this.pageIndex = byteBuffer.getInt();
-        this.keywordCount = byteBuffer.getInt();
-        this.pageType = byteBuffer.get();
-        // 指向右边指针，叶子节点才有
-        long rPos = byteBuffer.getLong();
-        if(rPos < 0) {
-            this.rightPos = null;
-        } else {
-            this.rightPos = rPos;
-        }
-
-        this.map = treeMap;
-        // 关键字
-        this.keywordList = new ArrayList<>(this.keywordCount);
-        for (int i = 0; i < this.keywordCount; i++) {
-            K k = this.map.getKeyType().read(byteBuffer);
-            this.keywordList.add(k);
-        }
-        // 0为非叶子节点，1为叶子节点
-        if (this.pageType == (byte) 0) {
-            if (this.keywordCount > 0) {
-                this.childPosList = new ArrayList<>(this.keywordCount + 1);
-                //DataType<Long> longType = ColumnTypeFactory.getColumnType(ColumnTypeEnum.BIGINT.getColumnType());
-                for (int i = 0; i <= this.keywordCount; i++) {
-                    this.childPosList.add(byteBuffer.getLong());
-                }
-            }
-        } else {
-            // 值
-            this.valueList = new ArrayList<>(this.keywordCount);
-            for (int i = 0; i < this.keywordCount; i++) {
-                V v = this.map.getValueType().read(byteBuffer);
-                this.valueList.add(v);
-            }
-        }
-        resetCountCrrMaxSize();
-    }*/
-
-
-
-
-
     protected int resetCountCrrMaxSize() {
         this.currMaxByteLen = pageBasicSize;
         if (keywordList != null) {
@@ -394,6 +349,7 @@ public abstract class Page<K, V> implements SerializableByte {
         @Override
         public void setLeafValue(int index, V value) {
             this.valueList.set(index, value);
+            resetCountCrrMaxSize();
         }
 
         @Override

@@ -51,6 +51,7 @@ public class JoinTableTest {
     private static void simpleJoinTest(){
 
         testExecSQL("drop table if exists xmz_q_1");
+
         testExecSQL("create table xmz_q_1 (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
         testExecSQL("INSERT INTO xmz_q_1 (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
         testExecSQL("INSERT INTO xmz_q_1 (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
@@ -83,6 +84,8 @@ public class JoinTableTest {
 
 
         testExecSQL("select * from xmz_q_2 a , xmz_q_1 b where a.id = b.id");
+
+        testExecSQL("select count(*) from xmz_q_2 a inner join xmz_q_1 b on 1=1 or a.id = b.id");
     }
 
     private static void fastInsertData(String tableName, int rowNum, String engineType) {
