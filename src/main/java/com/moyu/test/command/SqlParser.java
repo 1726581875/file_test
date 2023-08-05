@@ -15,7 +15,6 @@ import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
 import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.AssertUtil;
-import com.moyu.test.util.PathUtil;
 import com.moyu.test.util.TypeConvertUtil;
 
 import java.text.ParseException;
@@ -400,23 +399,39 @@ public class SqlParser implements Parser {
         Query query = parseQuery(null);
         query.setSession(connectSession);
         // 对查询进行优化
-/*        Optimizer optimizer = new Optimizer(query);
-        query = optimizer.optimizeQuery();*/
         SelectCommand selectCommand = new SelectCommand(query);
         if(query.getCondition() != null) {
+            // 选择可用索引
             query.getCondition().setSelectIndexes(query);
-
-            StringBuilder originSql = new StringBuilder();
-            query.getCondition().getSQL(originSql);
-            System.out.println("原始的条件:" + originSql.toString());
+            // 打印优化前的条件（方便观察）
+            System.out.println("原始的条件:" + query.getCondition().getConditionSQL());
 
             // 优化查询条件
             Expression optimizeCondition = query.getCondition().optimize();
             query.setCondition(optimizeCondition);
 
-            StringBuilder optimizeSql = new StringBuilder();
-            optimizeCondition.getSQL(optimizeSql);
-            System.out.println("优化后的条件:" + optimizeSql.toString());
+            // 打印优化后的条件（方便观察）
+            System.out.println("优化后的条件:" + optimizeCondition.getConditionSQL());
+        }
+
+        // 下推条件，把where后面条件下推到连接条件(即在进行连接时候尽可能筛选掉不符合条件的行，而不是等到连接完再筛选)
+        FromTable mainTable = query.getMainTable();
+        Expression condition = query.getCondition();
+        if (mainTable.getJoinTables() != null && mainTable.getJoinTables().size() > 0) {
+            for (FromTable joinTable : mainTable.getJoinTables()) {
+                Expression joinCondition = condition.getJoinCondition(mainTable, joinTable);
+                if (joinTable.getJoinCondition() != null) {
+                    joinCondition = ConditionAndOr2.buildAnd(joinTable.getJoinCondition(), joinCondition);
+
+                }
+
+                // TODO 打印条件，方便观察条件是否正确
+                String joinConditionSql = joinCondition != null ? joinCondition.getConditionSQL() : "null";
+                System.out.println("表["+ mainTable.getTableName() +"] 与表["+ joinTable.getTableName() +"] " +
+                        "进行"+ joinTable.getJoinInType()+"连接. 连接条件为:" + joinConditionSql);
+
+                joinTable.setJoinCondition(joinCondition);
+            }
         }
 
         selectCommand.addParameters(parameterList);
@@ -691,13 +706,20 @@ public class SqlParser implements Parser {
                 }
                 // skip keyword ON
                 assertNextKeywordIs("ON");
-
-                // todo 目前只支持单条件连接
                 // 解析连接条件
                 Expression condition = parseWhereCondition(columnMap);
                 joinTable.setJoinCondition(condition);
                 joinTable.setJoinInType(word11);
-
+                mainTable.getJoinTables().add(joinTable);
+            } else if(",".equals(word11)){
+                assertNextKeywordIs(",");
+                FromTable joinTable = parseTableInfo();
+                Column[] columns2 = getColumns(joinTable.getTableName());
+                Column.setColumnTableAlias(columns2, joinTable.getAlias());
+                for (Column c : columns2) {
+                    columnMap.put(c.getTableAliasColumnName(), c);
+                }
+                joinTable.setJoinInType(CommonConstant.JOIN_TYPE_INNER);
                 mainTable.getJoinTables().add(joinTable);
             } else {
                 break;

@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml.expression;
 
 import com.moyu.test.command.dml.plan.SelectIndex;
+import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.SqlIllegalException;
@@ -151,7 +152,7 @@ public class SingleComparison extends AbstractCondition {
 
     @Override
     public void setSelectIndexes(Query query) {
-        if(left instanceof ColumnExpression) {
+        if(left instanceof ColumnExpression && !(right instanceof ColumnExpression)) {
             ColumnExpression leftColumn = (ColumnExpression) left;
             Object rightValue = right.getValue(new RowEntity(null));
             switch (operator) {
@@ -202,6 +203,24 @@ public class SingleComparison extends AbstractCondition {
         return right;
     }
 
+
+    @Override
+    public Expression getJoinCondition(FromTable mainTable, FromTable joinTable) {
+        if (left instanceof ColumnExpression) {
+            ColumnExpression lExp = (ColumnExpression) left;
+            if (mainTable.getAlias().equals(lExp.getColumn().getTableAlias())) {
+                return this;
+            }
+        }
+        if (right instanceof ColumnExpression) {
+            ColumnExpression rExp = (ColumnExpression) right;
+            if (mainTable.getAlias().equals(rExp.getColumn().getTableAlias())) {
+                return this;
+            }
+        }
+        return super.getJoinCondition(mainTable, joinTable);
+    }
+
     @Override
     public boolean equals(Object o) {
 
@@ -215,4 +234,7 @@ public class SingleComparison extends AbstractCondition {
         }
         return false;
     }
+
+
+
 }

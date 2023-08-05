@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
+import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.store.data.cursor.RowEntity;
 
@@ -25,6 +26,12 @@ public class ConditionAndOr2 extends AbstractCondition {
         this.left = left;
         this.right = right;
     }
+
+
+    public static ConditionAndOr2 buildAnd(Expression left, Expression right){
+        return new ConditionAndOr2(TYPE_AND, left, right);
+    }
+
 
     @Override
     public Object getValue(RowEntity rowEntity) {
@@ -57,9 +64,12 @@ public class ConditionAndOr2 extends AbstractCondition {
                 && r instanceof SingleComparison) {
             SingleComparison lComparison = (SingleComparison) l;
             SingleComparison rComparison = (SingleComparison) r;
-            if(lComparison.getLeft().equals(rComparison.getLeft())
-                    && !lComparison.getRight().equals(rComparison.getRight())) {
-                return ConstantValue.EXPRESSION_FALSE;
+            if(lComparison.getLeft().equals(rComparison.getLeft())) {
+                if(lComparison.getRight() instanceof ConstantValue && rComparison.getRight() instanceof ConstantValue) {
+                    if (!lComparison.getRight().equals(rComparison.getRight())) {
+                        return ConstantValue.EXPRESSION_FALSE;
+                    }
+                }
             }
         }
 
@@ -141,5 +151,20 @@ public class ConditionAndOr2 extends AbstractCondition {
         sqlBuilder.append(' ' + type + ' ');
         right.getSQL(sqlBuilder);
         sqlBuilder.append(")");
+    }
+
+    @Override
+    public Expression getJoinCondition(FromTable mainTable, FromTable joinTable) {
+        Expression l = left.getJoinCondition(mainTable, joinTable);
+        Expression r = right.getJoinCondition(mainTable, joinTable);
+        if (l != null && r != null) {
+            return this;
+        } else if (l != null && r == null) {
+            return l;
+        } else if (l == null && r != null) {
+            return r;
+        } else {
+            return null;
+        }
     }
 }

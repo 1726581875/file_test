@@ -38,12 +38,22 @@ public class ColumnExpression extends Expression {
 
     @Override
     public boolean equals(Object o) {
-        ColumnExpression that = (ColumnExpression) o;
-        if(column == that.getColumn()) {
-            return true;
-        }
-        if(column.getColumnName().equals(that.getColumn().getColumnName())) {
-            return true;
+        if(o instanceof ColumnExpression) {
+            ColumnExpression that = (ColumnExpression) o;
+            if (column == that.getColumn()) {
+                return true;
+            }
+
+            if(column.getTableAlias() == null && that.getColumn().getTableAlias() == null) {
+                if (column.getColumnName().equals(that.getColumn().getColumnName())) {
+                    return true;
+                }
+            } else if(column.getTableAlias() != null) {
+                if (column.getTableAlias().equals(that.getColumn().getTableAlias())
+                        && column.getColumnName().equals(that.getColumn().getColumnName())) {
+                    return true;
+                }
+            }
         }
         return false;
     }

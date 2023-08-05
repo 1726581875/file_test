@@ -1,5 +1,6 @@
 package com.moyu.test.command.dml.expression;
 
+import com.moyu.test.command.dml.sql.FromTable;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.store.data.cursor.RowEntity;
 
@@ -26,6 +27,16 @@ public abstract class Expression {
     }
 
     public abstract void getSQL(StringBuilder sqlBuilder);
+
+    public String getConditionSQL(){
+        StringBuilder conditionSql = new StringBuilder();
+        getSQL(conditionSql);
+        return conditionSql.toString();
+    }
+
+    public Expression getJoinCondition(FromTable mainTable, FromTable joinTable){
+        return null;
+    }
 
 
 }
