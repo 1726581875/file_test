@@ -17,7 +17,7 @@ public interface CommonConstant {
 
 
     /**
-     * 类型mysql的存储引擎，数据存储方式
+     * 类似mysql的存储引擎，数据存储方式
      * yuStore 按简单顺序结构存储的(最初版本)
      * yanStore b+树叶子节点存储行
      */

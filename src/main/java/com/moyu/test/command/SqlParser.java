@@ -66,6 +66,16 @@ public class SqlParser implements Parser {
 
     private static final String DISTINCT = "DISTINCT";
 
+    private static final String FROM = "FROM";
+    private static final String WHERE = "WHERE";
+    private static final String GROUP = "GROUP";
+    private static final String ORDER = "ORDER";
+    private static final String OFFSET = "OFFSET";
+    private static final String LIMIT = "LIMIT";
+    private static final String BY = "BY";
+    private static final String AS = "AS";
+    private static final String ON = "ON";
+
 
     public SqlParser(ConnectSession connectSession) {
         this.connectSession = connectSession;
@@ -98,7 +108,7 @@ public class SqlParser implements Parser {
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
-                        assertNextKeywordIs("ON");
+                        assertNextKeywordIs(ON);
                         skipSpace();
                         String tableName = parseTableNameOrIndexName();
                         StartEndIndex startEnd = getNextBracketStartEnd();
@@ -144,7 +154,7 @@ public class SqlParser implements Parser {
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
-                        assertNextKeywordIs("ON");
+                        assertNextKeywordIs(ON);
                         skipSpace();
                         String tableName11 = getNextOriginalWord();
                         TableMetadata tableMeta = getTableMeta(tableName11);
@@ -298,7 +308,7 @@ public class SqlParser implements Parser {
             }
             end = currIndex;
             String word = getNextKeyWord();
-            if ("WHERE".equals(word)) {
+            if (WHERE.equals(word)) {
                 break;
             }
         }
@@ -337,7 +347,7 @@ public class SqlParser implements Parser {
         Expression condition = null;
         skipSpace();
         String nextKeyWord = getNextKeyWord();
-        if ("WHERE".equals(nextKeyWord)) {
+        if (WHERE.equals(nextKeyWord)) {
             condition = parseWhereCondition(columnMap);
         }
         OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, condition);
@@ -357,7 +367,7 @@ public class SqlParser implements Parser {
                 throw new SqlIllegalException("sql语法有误");
             }
             String word = getNextKeyWord();
-            if("FROM".equals(word)) {
+            if(FROM.equals(word)) {
                 skipSpace();
                 tableName = getNextOriginalWord();
                 break;
@@ -373,7 +383,7 @@ public class SqlParser implements Parser {
 
         Expression condition = null;
         String nextKeyWord = getNextKeyWord();
-        if ("WHERE".equals(nextKeyWord)) {
+        if (WHERE.equals(nextKeyWord)) {
             condition = parseWhereCondition(columnMap);
         }
 
@@ -465,7 +475,7 @@ public class SqlParser implements Parser {
             endIndex = currIndex;
             String word = getNextKeyWord();
             // 解析form后面 至 where前面这段语句。可能会有join操作
-            if("FROM".equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
+            if(FROM.equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
                 String nextWord = getNextKeyWordUnMove();
                 // 存在子查询
                 // 像select * from [*](select * from table_1) as tmp
@@ -503,14 +513,13 @@ public class SqlParser implements Parser {
 
         // 解析select字段
         String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
-        if(selectColumnsStr.startsWith("DISTINCT")  || selectColumnsStr.startsWith("distinct")) {
+        if(selectColumnsStr.toUpperCase().startsWith(DISTINCT)) {
             query.setDistinct(true);
-            selectColumnsStr = selectColumnsStr.substring("DISTINCT".length()).trim();
+            selectColumnsStr = selectColumnsStr.substring(DISTINCT.length()).trim();
         }
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
         // 解析条件
-        //ConditionTree conditionRoot = new ConditionTree(ConditionConstant.AND, new ArrayList<>(), false);
         Expression condition = null;
         // GROUP BY
         String groupByColumnName = null;
@@ -525,7 +534,7 @@ public class SqlParser implements Parser {
          * 关于group by、order by还不支持
          *
          */
-        if("WHERE".equals(nextKeyWord)) {
+        if(WHERE.equals(nextKeyWord)) {
             getNextKeyWord();
             Map<String, Column> columnMap = new HashMap<>();
             for (Column c : allColumns) {
@@ -536,27 +545,25 @@ public class SqlParser implements Parser {
             for (Column c : allColumns) {
                 columnMap.put(c.getColumnName(), c);
             }
-
-            //parseWhereCondition(conditionRoot, columnMap, null, subQueryStartEnd);
             // 解析where条件
             condition = parseWhereCondition(columnMap);
 
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             skipSpace();
             String nextKeyWord2 = getNextKeyWordUnMove();
-            if("LIMIT".equals(nextKeyWord2)) {
+            if(LIMIT.equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
-            } else if ("ORDER".equals(nextKeyWord2)) {
+            } else if (ORDER.equals(nextKeyWord2)) {
 
             }
             // table后面直接接limit,如:select * from table limit 10
-        } else if("LIMIT".equals(nextKeyWord)) {
+        } else if(LIMIT.equals(nextKeyWord)) {
             parseOffsetLimit(query);
-        } else if ("ORDER".equals(nextKeyWord)) {
+        } else if (ORDER.equals(nextKeyWord)) {
 
-        } else if("GROUP".equals(nextKeyWord)) {
+        } else if(GROUP.equals(nextKeyWord)) {
             getNextKeyWord();
-            assertNextKeywordIs("BY");
+            assertNextKeywordIs(BY);
             skipSpace();
             groupByColumnName = getNextOriginalWord();
             // select * from (select id,count(*) from xmz_yan group by id) t
@@ -603,7 +610,7 @@ public class SqlParser implements Parser {
         Expression condition = null;
         Expression l = readCondition(columnMap);
         String nextKeyWordUnMove = getNextKeyWordUnMove();
-        if("AND".equals(nextKeyWordUnMove)) {
+        if(ConditionAndOr.AND.equals(nextKeyWordUnMove)) {
             condition = readRightAndCondition(columnMap, l);
         } else {
             condition = readRightOrCondition(columnMap, l);
@@ -651,7 +658,7 @@ public class SqlParser implements Parser {
         skipSpace();
         String offsetStr = getNextKeyWord();
         Integer offset = null;
-        if("OFFSET".equals(offsetStr)) {
+        if(OFFSET.equals(offsetStr)) {
             skipSpace();
             String offsetNum = getNextKeyWord().trim();
             offset = Integer.valueOf(offsetNum);
@@ -680,7 +687,7 @@ public class SqlParser implements Parser {
             }
 
             String word11 = getNextKeyWordUnMove();
-            if ("WHERE".equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
+            if (WHERE.equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
                     || currIndex >= sqlCharArr.length) {
                 break;
             }
@@ -706,7 +713,7 @@ public class SqlParser implements Parser {
                     columnMap.put(c.getTableAliasColumnName(), c);
                 }
                 // skip keyword ON
-                assertNextKeywordIs("ON");
+                assertNextKeywordIs(ON);
                 // 解析连接条件
                 Expression condition = parseWhereCondition(columnMap);
                 joinTable.setJoinCondition(condition);
@@ -749,14 +756,14 @@ public class SqlParser implements Parser {
         table.setEngineType(tableMeta.getEngineType());
 
         String next = getNextKeyWordUnMove();
-        if("AS".equals(next)) {
+        if(AS.equals(next)) {
             getNextKeyWord();
             String alias = getNextOriginalWord();
             table.setAlias(alias);
             Column.setColumnTableAlias(table.getTableColumns(), table.getAlias());
-        } else if(!"GROUP".equals(next)
-                && !"LIMIT".equals(next)
-                && !"WHERE".equals(next)) {
+        } else if(!GROUP.equals(next)
+                && !LIMIT.equals(next)
+                && !WHERE.equals(next)) {
             String alias;
             if(next == null) {
                 alias = tableName;
@@ -1029,7 +1036,7 @@ public class SqlParser implements Parser {
                 }
 
                 String andOrType = getNextKeyWordUnMove();
-                if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
+                if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
                     getNextKeyWord();
                     Expression right = readCondition(columnMap);
                     left = new ConditionAndOr(andOrType, left, right);
@@ -1052,7 +1059,7 @@ public class SqlParser implements Parser {
         if (sqlCharArr[currIndex] == '(') {
             l = readCondition(columnMap);
             String andOrType = getNextKeyWordUnMove();
-            if ("AND".equals(andOrType) || "OR".equals(andOrType)) {
+            if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
                 getNextKeyWord();
                 Expression right = readCondition(columnMap);
                 l = new ConditionAndOr(andOrType, l, right);
@@ -1069,17 +1076,17 @@ public class SqlParser implements Parser {
 
     public Expression readRightAndCondition(Map<String, Column> columnMap, Expression l) {
         String nextKeyWord = getNextKeyWordUnMove();
-        if(!"AND".equals(nextKeyWord)) {
+        if(!ConditionAndOr.AND.equals(nextKeyWord)) {
             return l;
         }
-        if ("AND".equals(nextKeyWord)) {
+        if (ConditionAndOr.AND.equals(nextKeyWord)) {
             getNextKeyWord();
             Expression right = readCondition(columnMap);
             l = new ConditionAndOr(nextKeyWord, l, right);
         }
 
         String next = getNextKeyWordUnMove();
-        if("OR".equals(next)) {
+        if(ConditionAndOr.OR.equals(next)) {
             l = readRightOrCondition(columnMap, l);
         } else {
             l = readRightAndCondition(columnMap, l);
@@ -1090,17 +1097,17 @@ public class SqlParser implements Parser {
     public Expression readRightOrCondition(Map<String, Column> columnMap, Expression l) {
 
         String nextKeyWord = getNextKeyWordUnMove();
-        if(!"OR".equals(nextKeyWord)) {
+        if(!ConditionAndOr.OR.equals(nextKeyWord)) {
             return l;
         }
-        if ("OR".equals(nextKeyWord)) {
+        if (ConditionAndOr.OR.equals(nextKeyWord)) {
             getNextKeyWord();
             Expression right = readCondition(columnMap);
             l = new ConditionAndOr(nextKeyWord, l, right);
         }
 
         String next = getNextKeyWordUnMove();
-        if("AND".equals(next)) {
+        if(ConditionAndOr.AND.equals(next)) {
             l = readRightAndCondition(columnMap, l);
         } else {
             l = readRightOrCondition(columnMap, l);
@@ -1826,6 +1833,10 @@ public class SqlParser implements Parser {
     }
 
 
+    /**
+     * 获取下一个括号的开始位置和结束位置
+     * @return
+     */
     private StartEndIndex getNextBracketStartEnd() {
         skipSpace();
         boolean firstIsOpen = false;

@@ -10,9 +10,9 @@ import com.moyu.test.store.data.cursor.RowEntity;
  */
 public class ConditionAndOr extends AbstractCondition {
 
-    public final static String TYPE_AND = "AND";
+    public final static String AND = "AND";
 
-    public final static String TYPE_OR = "OR";
+    public final static String OR = "OR";
 
     private String type;
 
@@ -29,7 +29,7 @@ public class ConditionAndOr extends AbstractCondition {
 
 
     public static ConditionAndOr buildAnd(Expression left, Expression right){
-        return new ConditionAndOr(TYPE_AND, left, right);
+        return new ConditionAndOr(AND, left, right);
     }
 
 
@@ -37,7 +37,7 @@ public class ConditionAndOr extends AbstractCondition {
     public Object getValue(RowEntity rowEntity) {
         boolean l = (Boolean) left.getValue(rowEntity);
         boolean r = (Boolean) right.getValue(rowEntity);
-        if (TYPE_AND.equals(type)) {
+        if (AND.equals(type)) {
             return l && r;
         } else {
             return l || r;
@@ -132,13 +132,13 @@ public class ConditionAndOr extends AbstractCondition {
 
 
     private boolean isAnd() {
-        return TYPE_AND.equals(type);
+        return AND.equals(type);
     }
 
 
     @Override
     public void setSelectIndexes(Query query) {
-        if(TYPE_AND.equals(type)) {
+        if(AND.equals(type)) {
             left.setSelectIndexes(query);
             right.setSelectIndexes(query);
         }
