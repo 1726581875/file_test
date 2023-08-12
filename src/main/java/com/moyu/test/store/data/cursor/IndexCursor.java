@@ -1,13 +1,21 @@
 package com.moyu.test.store.data.cursor;
 
-import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.data.tree.BpTreeMap;
+import com.moyu.test.store.data2.BTreeMap;
+import com.moyu.test.store.data2.BTreeStore;
+import com.moyu.test.store.data2.type.ArrayValue;
+import com.moyu.test.store.data2.type.LongValue;
+import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.type.DataType;
+import com.moyu.test.store.type.dbtype.AbstractColumnType;
+import com.moyu.test.store.type.obj.ArrayDataType;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -36,7 +44,7 @@ public class IndexCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public IndexCursor(DataChunkStore dataChunkStore, Column[] columns, Column indexColumn, String indexPath) {
+    public IndexCursor(DataChunkStore dataChunkStore, Column[] columns, Column indexColumn, String indexPath) throws IOException {
         this.dataChunkStore = dataChunkStore;
         this.columns = columns;
         this.indexColumn = indexColumn;
@@ -44,22 +52,21 @@ public class IndexCursor extends AbstractCursor {
         this.nextPosIndex = 0;
         this.currChunkNextRowIndex = 0;
 
-        if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-            BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-            Integer key = Integer.valueOf(String.valueOf(indexColumn.getValue()));
-            this.indexColumn.setValue(key);
-            posArr = bpTreeMap.get(key);
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()){
-            BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-            Long key = Long.valueOf((String) indexColumn.getValue());
-            this.indexColumn.setValue(key);
-            posArr = bpTreeMap.get(Long.valueOf((String) indexColumn.getValue()));
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-            BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-            String key = (String)indexColumn.getValue();
-            this.indexColumn.setValue(key);
-            posArr = bpTreeMap.get(key);
+        DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+        BTreeStore bTreeStore = new BTreeStore(indexPath);
+        BTreeMap<Comparable, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore, true);
+        ArrayValue array = bpTreeMap.get((Comparable) indexColumn.getValue());
+
+        if(array != null && array.getArr() != null) {
+            List<Long> posList = new ArrayList<>();
+            for (Value v : array.getArr()) {
+                posList.add(((LongValue)v).getValue());
+            }
+            posArr = posList.toArray(new Long[0]);
         }
+
+
+
     }
 
 

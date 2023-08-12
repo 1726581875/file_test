@@ -29,7 +29,7 @@ public class BTreeMap<K, V> {
 
 
 
-    public BTreeMap(DataType<K> keyType,DataType<V> valueType,BTreeStore bpTreeStore, boolean isAutoCommit) {
+    public BTreeMap(DataType<K> keyType, DataType<V> valueType, BTreeStore bpTreeStore, boolean isAutoCommit) {
         this.keyType = keyType;
         this.valueType = valueType;
         this.bTreeStore = bpTreeStore;

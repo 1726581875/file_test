@@ -3,7 +3,6 @@ package com.moyu.test.store.operation;
 import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.command.dml.sql.QueryTable;
-import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.cursor.BTreeIndexCursor;
 import com.moyu.test.store.data.cursor.BtreeCursor;
@@ -257,19 +256,11 @@ public class YanEngineOperation extends BasicOperation {
 
                 Column primaryKey = getPrimaryKey(row.getColumns());
                 // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
-                Value value = primaryKey != null ? getPrimaryValue(primaryKey) : new LongValue(row.getRowId());
+                Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
                 DataType valueArrItemType = primaryKey != null
                         ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
-                //
-                if (keyArrayValue == null) {
-                    Value[] values = new Value[1];
-                    values[0] = value;
-                    keyArrayValue = new ArrayValue<>(values, valueArrItemType);
-                } else {
-                    Value[] arr = keyArrayValue.getArr();
-                    Value[] values = BTreeMap.insertValueArray(arr, value);
-                    keyArrayValue = new ArrayValue<>(values, valueArrItemType);
-                }
+                // 把一级索引的键插入叶子节点作为二级索引的值
+                keyArrayValue = insertNodeArray(value, valueArrItemType, keyArrayValue);
                 bTreeIndexMap.putUnSaveDisk(indexColumnValue.getValue(), keyArrayValue);
             }
             bTreeIndexMap.commitSaveDisk();
@@ -294,22 +285,14 @@ public class YanEngineOperation extends BasicOperation {
             DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
             BTreeMap bTreeIndexMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeIndexStore, true);
             // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
-            Value value = primaryKey != null ? getPrimaryValue(primaryKey) : new LongValue(row.getRowId());
+            Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
             DataType valueArrItemType = primaryKey != null
                     ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
 
             Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
             ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
 
-            if (keyArrayValue == null) {
-                Value[] values = new Value[1];
-                values[0] = value;
-                keyArrayValue = new ArrayValue<>(values, valueArrItemType);
-            } else {
-                Value[] arr = keyArrayValue.getArr();
-                Value[] values = BTreeMap.insertValueArray(arr, value);
-                keyArrayValue = new ArrayValue<>(values, valueArrItemType);
-            }
+            keyArrayValue = insertNodeArray(value, valueArrItemType, keyArrayValue);
             bTreeIndexMap.put(indexColumnValue.getValue(), keyArrayValue);
         } catch (Exception e) {
             e.printStackTrace();
@@ -331,7 +314,7 @@ public class YanEngineOperation extends BasicOperation {
             DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
             BTreeMap bTreeIndexMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeIndexStore, true);
             // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
-            Value value = primaryKey != null ? getPrimaryValue(primaryKey) : new LongValue(row.getRowId());
+            Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
             DataType valueArrItemType = primaryKey != null
                     ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
 
@@ -355,22 +338,6 @@ public class YanEngineOperation extends BasicOperation {
             if(bTreeIndexStore != null) {
                 bTreeIndexStore.close();
             }
-        }
-    }
-
-
-
-    private Value getPrimaryValue(Column primaryKey) {
-        switch (primaryKey.getColumnType()) {
-            case DbColumnTypeConstant.INT_4:
-                return new IntegerValue((Integer) primaryKey.getValue());
-            case DbColumnTypeConstant.INT_8:
-                return new LongValue((Long) primaryKey.getValue());
-            case DbColumnTypeConstant.VARCHAR:
-            case DbColumnTypeConstant.CHAR:
-                return new StringValue(String.valueOf(primaryKey.getValue()));
-            default:
-                throw new DbException("不支持数据类型:" + primaryKey.getColumnType());
         }
     }
 

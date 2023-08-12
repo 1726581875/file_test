@@ -3,20 +3,27 @@ package com.moyu.test.store.operation;
 import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.config.CommonConfig;
-import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
 import com.moyu.test.store.data.cursor.*;
-import com.moyu.test.store.data.tree.BpTreeMap;
+import com.moyu.test.store.data2.BTreeMap;
+import com.moyu.test.store.data2.BTreeStore;
+import com.moyu.test.store.data2.type.ArrayValue;
+import com.moyu.test.store.data2.type.LongValue;
+import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.IndexMetadata;
 import com.moyu.test.store.transaction.RowLogRecord;
 import com.moyu.test.store.transaction.Transaction;
 import com.moyu.test.store.transaction.TransactionManager;
+import com.moyu.test.store.type.DataType;
+import com.moyu.test.store.type.dbtype.AbstractColumnType;
+import com.moyu.test.store.type.dbtype.LongColumnType;
+import com.moyu.test.store.type.obj.ArrayDataType;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
 
@@ -116,25 +123,24 @@ public class YuEngineOperation extends BasicOperation {
     }
 
     private void insertIndex(IndexMetadata index, Column indexColumn, Long chunkPos) {
-        String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
-        if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-            insertIndexTree(indexPath, indexColumn, chunkPos, Integer.class);
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-            insertIndexTree(indexPath, indexColumn, chunkPos, Long.class);
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-            insertIndexTree(indexPath, indexColumn, chunkPos, String.class);
-        } else {
-            throw new SqlExecutionException("该字段类型不支持索引，类型:" + indexColumn.getColumnType());
+        // 索引路径
+        String dirPath = PathUtil.getBaseDirPath() + File.separator + this.session.getDatabaseId();
+        String indexPath = dirPath + File.separator + tableName + "_" + index.getIndexName() + ".idx";
+        DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+        BTreeStore bTreeStore = null;
+        try {
+            bTreeStore = new BTreeStore(indexPath);
+            BTreeMap<Comparable, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore, true);
+            ArrayValue array = bpTreeMap.get((Comparable) indexColumn.getValue());
+            ArrayValue arrayValue = insertNodeArray(new LongValue(chunkPos), new LongColumnType(), array);
+            bpTreeMap.put((Comparable) indexColumn.getValue(), arrayValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(bTreeStore != null) {
+                bTreeStore.close();
+            }
         }
-    }
-
-
-    private <T extends Comparable> void insertIndexTree(String indexPath, Column indexColumn, Long startPos, Class<T> clazz) {
-        BpTreeMap<T, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, clazz);
-        T key = (T) indexColumn.getValue();
-        Long[] arr = bpTreeMap.get(key);
-        Long[] valueArr = BpTreeMap.insertValueArray(arr, startPos);
-        bpTreeMap.put(key, valueArr);
     }
 
     @Override
@@ -180,6 +186,8 @@ public class YuEngineOperation extends BasicOperation {
                         RowData newRow = new RowData(rowData.getStartPos(), RowData.toRowByteData(columnData), rowData.getRowId());
                         chunk.updateRow(j, newRow);
                         updateRowNum++;
+
+                        // TODO 更新索引
                     }
                 }
                 // 更新块整个数据块到磁盘
@@ -213,10 +221,7 @@ public class YuEngineOperation extends BasicOperation {
     }
 
     @Override
-    public void createIndex(Integer tableId,
-                            String indexName,
-                            String columnName,
-                            byte indexType) {
+    public void createIndex(Integer tableId, String indexName, String columnName, byte indexType) {
         DataChunkStore dataChunkStore = null;
         IndexMetadataStore indexStore = null;
         try {
@@ -245,19 +250,8 @@ public class YuEngineOperation extends BasicOperation {
             // 操作数据文件，获取数据块数量(后面遍历没一行数据，为每一行数据创建索引)
             dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), this.tableName));
             int dataChunkNum = dataChunkStore.getDataChunkNum();
-
-            Column indexColumn = getIndexColumnByColumnName(columnName, tableColumns);
-            // 根据索引类型构造索引
-            if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, Integer.class);
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, Long.class);
-            } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-                buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore, String.class);
-            } else {
-                throw new SqlExecutionException("该字段类型不支持创建索引，类型:" + indexColumn.getColumnType());
-            }
-
+            // 构造索引树
+            buildIndexTree(indexPath, dataChunkNum,columnName, dataChunkStore);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -267,32 +261,38 @@ public class YuEngineOperation extends BasicOperation {
     }
 
 
-    private <T extends Comparable> void buildIndexTree(String indexPath,
-                                                       Integer dataChunkNum,
-                                                       String columnName,
-                                                       DataChunkStore dataChunkStore,
-                                                       Class<T> clazz) {
-        // 创建一颗b+树
-        BpTreeMap<T, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, false, clazz);
-        // 一行一行遍历数据
-        for (int i = 0; i < dataChunkNum; i++) {
-            DataChunk chunk = dataChunkStore.getChunk(i);
-            for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-                RowData rowData = chunk.getDataRowList().get(j);
-                Column[] columnData = rowData.getColumnData(tableColumns);
-                // 找到对应索引字段
-                Column indexColumnValue = getIndexColumnByColumnName(columnName,columnData);
-                if (indexColumnValue != null) {
-                    // 当前行对应索引字段的值作为b+树的【关键字】，数据块位置作为b+数的【值】
-                    T key = (T) indexColumnValue.getValue();
-                    Long[] arr = bpTreeMap.get(key);
-                    Long[] valueArr = BpTreeMap.insertValueArray(arr, chunk.getStartPos());
-                    bpTreeMap.putUnSaveDisk(key, valueArr);
+    private <T extends Comparable> void buildIndexTree(String indexPath, Integer dataChunkNum, String columnName, DataChunkStore dataChunkStore) {
+        Column indexColumn = getIndexColumnByColumnName(columnName, tableColumns);
+        DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+        BTreeStore bTreeStore = null;
+        try {
+            bTreeStore = new BTreeStore(indexPath);
+            // 创建一颗b+树
+            BTreeMap<T, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore,false);
+            // 一行一行遍历数据
+            for (int i = 0; i < dataChunkNum; i++) {
+                DataChunk chunk = dataChunkStore.getChunk(i);
+                for (int j = 0; j < chunk.getDataRowList().size(); j++) {
+                    RowData rowData = chunk.getDataRowList().get(j);
+                    Column[] columnData = rowData.getColumnData(tableColumns);
+                    // 找到对应索引字段
+                    Column indexColumnValue = getIndexColumnByColumnName(columnName, columnData);
+                    if (indexColumnValue != null) {
+                        ArrayValue array = bpTreeMap.get((T) indexColumnValue.getValue());
+                        ArrayValue arrayValue = insertNodeArray(new LongValue(chunk.getStartPos()),  new LongColumnType(), array);
+                        bpTreeMap.putUnSaveDisk((T) indexColumnValue.getValue(), arrayValue);
+                    }
                 }
             }
+            // 保存到磁盘
+            bpTreeMap.commitSaveDisk();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(bTreeStore != null) {
+                bTreeStore.close();
+            }
         }
-        // 保存到磁盘
-        bpTreeMap.commitSaveDisk();
     }
 
 
@@ -385,7 +385,7 @@ public class YuEngineOperation extends BasicOperation {
                         for (IndexMetadata index : allIndexList) {
                             if (index.getIndexType() == CommonConstant.PRIMARY_KEY) {
                                 Column indexColumn = getIndexColumn(index);
-                                removePrimaryKeyValue(index, indexColumn);
+                                removePrimaryKeyValue(index, indexColumn, chunk.getStartPos());
                             }
                         }
                     }
@@ -411,27 +411,41 @@ public class YuEngineOperation extends BasicOperation {
     }
 
 
-    private void removePrimaryKeyValue(IndexMetadata index, Column indexColumn) {
+    private void removePrimaryKeyValue(IndexMetadata index, Column indexColumn, Long chunkPos) {
 
         if(indexColumn == null || indexColumn.getValue() == null) {
             return;
         }
+        // 索引路径
+        String dirPath = PathUtil.getBaseDirPath() + File.separator + this.session.getDatabaseId();
+        String indexPath = dirPath + File.separator + tableName + "_" + index.getIndexName() + ".idx";
+        DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+        BTreeStore bTreeStore = null;
+        try {
+            bTreeStore = new BTreeStore(indexPath);
+            BTreeMap<Comparable, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore, true);
+            ArrayValue array = bpTreeMap.get((Comparable) indexColumn.getValue());
+            if(array == null || array.getArr() == null) {
+                return;
+            } else {
+                Value[] arr = array.getArr();
+                List<Value> valueList = new ArrayList<>(arr.length);
+                LongValue longValue = new LongValue(chunkPos);
+                for (Value v : arr) {
+                    if(v.compare(longValue) != 0) {
+                        valueList.add(v);
+                    }
+                }
+                ArrayValue<Value> arrayValue = new ArrayValue<>(valueList.toArray(new Value[0]), new LongColumnType());
+                bpTreeMap.put((Comparable) indexColumn.getValue(), arrayValue);
+            }
 
-        String indexPath = PathUtil.getIndexFilePath(session.getDatabaseId(), this.tableName, index.getIndexName());
-        if (indexColumn.getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-            BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-            Integer key = (Integer) indexColumn.getValue();
-            bpTreeMap.remove(key);
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-            BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-            Long key = (Long) indexColumn.getValue();
-            bpTreeMap.remove(key);
-        } else if (indexColumn.getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-            BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-            String key = (String) indexColumn.getValue();
-            bpTreeMap.remove(key);
-        } else {
-            throw new SqlExecutionException("该字段类型不支持索引，类型:" + indexColumn.getColumnType());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(bTreeStore != null) {
+                bTreeStore.close();
+            }
         }
     }
 
