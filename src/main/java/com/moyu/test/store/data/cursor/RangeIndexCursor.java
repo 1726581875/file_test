@@ -1,15 +1,20 @@
 package com.moyu.test.store.data.cursor;
 
 import com.moyu.test.command.dml.expression.Expression;
+import com.moyu.test.command.dml.expression.SingleComparison;
+import com.moyu.test.constant.OperatorConstant;
 import com.moyu.test.exception.DbException;
+import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.data.tree.BpTreeMap;
-import com.moyu.test.store.data.tree.Page;
+import com.moyu.test.store.data2.BTreeMap;
+import com.moyu.test.store.data2.Page;
+import com.moyu.test.store.data2.type.ArrayValue;
+import com.moyu.test.store.data2.type.LongValue;
+import com.moyu.test.store.data2.type.Value;
 import com.moyu.test.store.metadata.obj.Column;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,49 +47,38 @@ public class RangeIndexCursor extends AbstractCursor {
         this.dataChunkStore = dataChunkStore;
         this.columns = columns;
         this.indexPath = indexPath;
-
-/*        if (range.getColumn().getColumnType() == ColumnTypeEnum.INT.getColumnType()) {
-            BpTreeMap<Integer, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Integer.class);
-            init(bpTreeMap, range, ColumnTypeEnum.INT.getColumnType());
-        } else if (range.getColumn().getColumnType() == ColumnTypeEnum.BIGINT.getColumnType()) {
-            BpTreeMap<Long, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, Long.class);
-            init(bpTreeMap, range, ColumnTypeEnum.BIGINT.getColumnType());
-        } else if (range.getColumn().getColumnType() == ColumnTypeEnum.VARCHAR.getColumnType()) {
-            BpTreeMap<String, Long[]> bpTreeMap = BpTreeMap.getBpTreeMap(indexPath, true, String.class);
-            init(bpTreeMap, range, ColumnTypeEnum.VARCHAR.getColumnType());
-        }*/
     }
 
 
 
-/*
-    private <T extends Comparable> void init(BpTreeMap<T, Long[]> bpTreeMap, ConditionRange range, byte columnType){
+    private <T extends Comparable> void init(BTreeMap<T, ArrayValue> bpTreeMap
+            , byte columnType , SingleComparison less, SingleComparison greater){
 
         Long startIndexPos = null;
         Long endIndexPos = null;
 
-        String operator = range.getOperator();
+        String operator = "";
         switch (operator) {
             case OperatorConstant.LESS_THAN:
             case OperatorConstant.LESS_THAN_OR_EQUAL:
                 // B+树左边第一个位置
                 startIndexPos = bpTreeMap.getFirstLeafPage().getStartPos();
                 // 范围查询最大上限
-                T upperLimit1 = (T) TypeConvertUtil.convertValueType(range.getUpperLimit(), columnType);
-                endIndexPos = bpTreeMap.getPage(upperLimit1).getStartPos();
+/*                T upperLimit1 = (T) TypeConvertUtil.convertValueType(range.getUpperLimit(), columnType);
+                endIndexPos = bpTreeMap.getPage(upperLimit1).getStartPos();*/
                 break;
             case OperatorConstant.GREATER_THAN:
             case OperatorConstant.GREATER_THAN_OR_EQUAL:
-                T lowerLimit1 = (T) TypeConvertUtil.convertValueType(range.getLowerLimit(), columnType);
-                startIndexPos =  bpTreeMap.getPage(lowerLimit1).getStartPos();
+/*                T lowerLimit1 = (T) TypeConvertUtil.convertValueType(range.getLowerLimit(), columnType);
+                startIndexPos =  bpTreeMap.getPage(lowerLimit1).getStartPos();*/
                 break;
             case OperatorConstant.BETWEEN:
                 // 下限
-                T lowerLimit2 = (T) TypeConvertUtil.convertValueType(range.getLowerLimit(), columnType);
-                startIndexPos =  bpTreeMap.getPage(lowerLimit2).getStartPos();
+/*                T lowerLimit2 = (T) TypeConvertUtil.convertValueType(range.getLowerLimit(), columnType);
+                startIndexPos =  bpTreeMap.getPage(lowerLimit2).getStartPos();*/
                 // 范围查询最大上限
-                T upperLimit2 = (T) TypeConvertUtil.convertValueType(range.getUpperLimit(), columnType);
-                endIndexPos = bpTreeMap.getPage(upperLimit2).getStartPos();
+/*                T upperLimit2 = (T) TypeConvertUtil.convertValueType(range.getUpperLimit(), columnType);
+                endIndexPos = bpTreeMap.getPage(upperLimit2).getStartPos();*/
                 break;
             default:
                 throw new SqlIllegalException("sql语法有误");
@@ -92,17 +86,21 @@ public class RangeIndexCursor extends AbstractCursor {
 
         initAllDataChunkPos(bpTreeMap, startIndexPos, endIndexPos);
     }
-*/
 
 
-    private <T extends Comparable> void  initAllDataChunkPos(BpTreeMap<T, Long[]> bpTreeMap, Long startIndexPos, Long endIndexPos) {
+    private <T extends Comparable> void  initAllDataChunkPos(BTreeMap<T, ArrayValue> bpTreeMap, Long startIndexPos, Long endIndexPos) {
         Set<Long> posSet = new HashSet<>();
         Long nextIndexPos = startIndexPos;
         while (nextIndexPos != null) {
-            Page<T, Long[]> pageByPos = bpTreeMap.getPageByPos(nextIndexPos);
-            List<Long[]> valueList = pageByPos.getValueList();
-            for (Long[] pos : valueList) {
-                posSet.addAll(Arrays.asList(pos));
+            Page<T, ArrayValue> pageByPos = bpTreeMap.getPageByPos(nextIndexPos);
+            List<ArrayValue> arrayValueList = pageByPos.getValueList();
+            for (ArrayValue arr : arrayValueList) {
+                if(arr != null && arr.getArr() != null) {
+                    for (Value v : arr.getArr()) {
+                        LongValue longValue = (LongValue) v;
+                        posSet.add(longValue.getValue());
+                    }
+                }
             }
             // 到了结束位置
             if(nextIndexPos.equals(endIndexPos)) {

@@ -212,7 +212,7 @@ public class BTreeMap<K, V> {
             int keyCount;
             // 判断b树节点是否要分裂，当结点数大于最大节点树。关键子和值从中间分裂为两个节点，并会把中间关键字提取到父节点
             while ((keyCount = node.getKeywordCount()) > maxNodeNum
-                    || node.getCurrMaxByteLen() > com.moyu.test.store.data.tree.Page.PAGE_SIZE) {
+                    || node.getCurrMaxByteLen() > Page.PAGE_SIZE) {
                 // 相当于除2
                 int at = keyCount >> 1;
                 //获取中间关键字
