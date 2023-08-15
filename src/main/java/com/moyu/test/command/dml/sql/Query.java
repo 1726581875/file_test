@@ -88,11 +88,11 @@ public class Query {
 
     public Cursor getQueryResultCursor() {
         if(queryCursor == null) {
-            Stack<Query> queryStack = new Stack<>();
+            Deque<Query> queryStack = new LinkedList<>();
             Query q = this;
-            queryStack.add(q);
+            queryStack.push(q);
             while ((q = q.getMainTable().getSubQuery()) != null) {
-                queryStack.add(q);
+                queryStack.push(q);
             }
             queryCursor = getResultQueryCursor(queryStack);
         }
@@ -100,7 +100,7 @@ public class Query {
     }
 
 
-    private Cursor getResultQueryCursor(Stack<Query> queryStack) {
+    private Cursor getResultQueryCursor(Deque<Query> queryStack) {
         Cursor mainCursor = null;
 
         while (!queryStack.isEmpty()) {
@@ -295,11 +295,11 @@ public class Query {
         }
 
         // 汇总执行结果
-        for (Column groupByColumn : groupByMap.keySet()) {
-            List<StatFunction> statFunctions = groupByMap.get(groupByColumn);
+        for (Map.Entry<Column, List<StatFunction>> entry : groupByMap.entrySet()) {
+            List<StatFunction> statFunctions = entry.getValue();
             Column[] resultColumns = new Column[statFunctions.size() + 1];
             // 第一列为group by字段
-            resultColumns[0] = groupByColumn;
+            resultColumns[0] = entry.getKey();
             // 其余字段为统计函数
             for (int i = 0; i < statFunctions.size(); i++) {
                 int index = i + 1;
@@ -517,7 +517,9 @@ public class Query {
                         e.printStackTrace();
                         throw new SqlExecutionException("连接查询异常");
                     } finally {
-                        joinCursor.close();
+                        if(joinCursor != null) {
+                            joinCursor.close();
+                        }
                     }
                 }
             }

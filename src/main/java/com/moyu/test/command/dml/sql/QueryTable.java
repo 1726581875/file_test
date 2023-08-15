@@ -150,13 +150,9 @@ public class QueryTable {
     }
 
     public SelectIndex getSelectIndex() {
-
-        if(selectIndex == null) {
-            if(indexList != null && indexList.size() > 0) {
-                return indexList.get(0);
-            }
+        if (selectIndex == null && indexList != null && indexList.size() > 0) {
+            return indexList.get(0);
         }
-
         return selectIndex;
     }
 

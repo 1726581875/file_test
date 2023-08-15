@@ -30,12 +30,18 @@ public class Parameter {
 
     @Override
     public boolean equals(Object o) {
-        Parameter parameter = (Parameter) o;
-        if(this == parameter) {
+        if (o == null) {
+            return false;
+        }
+
+        if (this == o) {
             return true;
         }
-        if(value != null && value.equals(parameter.getValue())) {
-            return true;
+        if (o instanceof Parameter) {
+            Parameter parameter = (Parameter) o;
+            if (value != null && value.equals(parameter.getValue())) {
+                return true;
+            }
         }
         return false;
     }

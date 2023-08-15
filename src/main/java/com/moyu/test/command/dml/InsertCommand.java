@@ -47,7 +47,7 @@ public class InsertCommand extends AbstractCommand {
     }
 
     public String batchWriteList(List<Column[]> columnsList) {
-        List<RowEntity> rowEntityList = columnsList.stream().map(e -> new RowEntity(e)).collect(Collectors.toList());
+        List<RowEntity> rowEntityList = columnsList.stream().map(RowEntity::new).collect(Collectors.toList());
         return batchFastInsert(rowEntityList);
     }
 }

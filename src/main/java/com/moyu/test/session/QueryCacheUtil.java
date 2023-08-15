@@ -11,9 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class QueryCacheUtil {
 
-    private final static int initSize = 16;
+    private final static int INIT_SIZE = 16;
 
-    private static Map<Integer, Map<String, Command>> queryCacheMap = new ConcurrentHashMap<>(initSize);
+    private static Map<Integer, Map<String, Command>> queryCacheMap = new ConcurrentHashMap<>(INIT_SIZE);
 
     public static Command getQueryCache(Integer databaseId, String sql) {
         Map<String, Command> commandMap = queryCacheMap.get(databaseId);
@@ -28,7 +28,7 @@ public class QueryCacheUtil {
     public static void putQueryCache(Integer databaseId, String sql, Command command) {
         Map<String, Command> commandMap = queryCacheMap.get(databaseId);
         if (commandMap == null) {
-            commandMap = new ConcurrentHashMap<>(initSize);
+            commandMap = new ConcurrentHashMap<>(INIT_SIZE);
         }
         commandMap.put(sql, command);
         queryCacheMap.put(databaseId, commandMap);

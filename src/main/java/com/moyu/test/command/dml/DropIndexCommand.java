@@ -45,7 +45,9 @@ public class DropIndexCommand extends AbstractCommand {
             e.printStackTrace();
             return "error";
         } finally {
-            indexStore.close();
+            if(indexStore != null) {
+                indexStore.close();
+            }
         }
         return "ok";
     }

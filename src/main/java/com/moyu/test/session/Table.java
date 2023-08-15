@@ -67,8 +67,12 @@ public class Table {
             e.printStackTrace();
             throw new DbException("获取字段信息发生异常");
         } finally {
-            columnStore.close();
-            tableMetadata.close();
+            if(columnStore != null) {
+                columnStore.close();
+            }
+            if(tableMetadata != null) {
+                tableMetadata.close();
+            }
         }
 
         if(columnMetadataList == null || columnMetadataList.size() == 0) {

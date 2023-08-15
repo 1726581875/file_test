@@ -89,9 +89,6 @@ public class SelectCommand extends AbstractCommand {
         StringBuilder stringBuilder = new StringBuilder();
         // 分界线
         appendLine(stringBuilder);
-
-
-        SelectColumn[] selectColumns = queryResult.getSelectColumns();
         // 表头
         String tableHeaderStr = "";
         for (SelectColumn column : query.getSelectColumns()) {

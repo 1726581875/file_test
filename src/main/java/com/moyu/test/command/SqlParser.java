@@ -181,7 +181,7 @@ public class SqlParser implements Parser {
                 String word12 = getNextOriginalWord();
                 return new DescTableCommand(this.connectSession.getDatabaseId(), word12);
             case TRUNCATE:
-                assertNextKeywordIs("TABLE");
+                assertNextKeywordIs(TABLE);
                 skipSpace();
                 // tableName
                 String word13 = getNextOriginalWord();
@@ -569,7 +569,7 @@ public class SqlParser implements Parser {
             // select * from (select id,count(*) from xmz_yan group by id) t
             if(groupByColumnName.endsWith(")") && groupByColumnName.length() > 1) {
                 groupByColumnName = groupByColumnName.substring(0, groupByColumnName.length() -1);
-            } else if(groupByColumnName == "" || groupByColumnName.equals(")")) {
+            } else if("".equals(groupByColumnName) || ")".equals(groupByColumnName)) {
                 throw new SqlIllegalException("sql语法有误,在group by附近" + groupByColumnName);
             }
 
@@ -687,7 +687,7 @@ public class SqlParser implements Parser {
             }
 
             String word11 = getNextKeyWordUnMove();
-            if (WHERE.equals(word11) || "LIMIT".equals(word11) || "GROUP".equals(word11)
+            if (WHERE.equals(word11) || LIMIT.equals(word11) || GROUP.equals(word11)
                     || currIndex >= sqlCharArr.length) {
                 break;
             }
@@ -808,7 +808,9 @@ public class SqlParser implements Parser {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            metadataStore.close();
+            if(metadataStore != null) {
+                metadataStore.close();
+            }
         }
         return null;
     }
@@ -928,10 +930,8 @@ public class SqlParser implements Parser {
 
     private boolean isFunctionColumn(String functionStr) {
         String upperCase = functionStr.toUpperCase();
-        if (isStartWithFunc(functionStr)) {
-            if (upperCase.endsWith(")")) {
-                return true;
-            }
+        if (isStartWithFunc(functionStr) && upperCase.endsWith(")")) {
+            return true;
         }
         return false;
     }
@@ -1079,14 +1079,13 @@ public class SqlParser implements Parser {
         if(!ConditionAndOr.AND.equals(nextKeyWord)) {
             return l;
         }
-        if (ConditionAndOr.AND.equals(nextKeyWord)) {
-            getNextKeyWord();
-            Expression right = readCondition(columnMap);
-            l = new ConditionAndOr(nextKeyWord, l, right);
-        }
+
+        getNextKeyWord();
+        Expression right = readCondition(columnMap);
+        l = new ConditionAndOr(nextKeyWord, l, right);
 
         String next = getNextKeyWordUnMove();
-        if(ConditionAndOr.OR.equals(next)) {
+        if (ConditionAndOr.OR.equals(next)) {
             l = readRightOrCondition(columnMap, l);
         } else {
             l = readRightAndCondition(columnMap, l);
@@ -1097,17 +1096,16 @@ public class SqlParser implements Parser {
     public Expression readRightOrCondition(Map<String, Column> columnMap, Expression l) {
 
         String nextKeyWord = getNextKeyWordUnMove();
-        if(!ConditionAndOr.OR.equals(nextKeyWord)) {
+        if (!ConditionAndOr.OR.equals(nextKeyWord)) {
             return l;
         }
-        if (ConditionAndOr.OR.equals(nextKeyWord)) {
-            getNextKeyWord();
-            Expression right = readCondition(columnMap);
-            l = new ConditionAndOr(nextKeyWord, l, right);
-        }
+
+        getNextKeyWord();
+        Expression right = readCondition(columnMap);
+        l = new ConditionAndOr(nextKeyWord, l, right);
 
         String next = getNextKeyWordUnMove();
-        if(ConditionAndOr.AND.equals(next)) {
+        if (ConditionAndOr.AND.equals(next)) {
             l = readRightAndCondition(columnMap, l);
         } else {
             l = readRightOrCondition(columnMap, l);
@@ -1256,14 +1254,13 @@ public class SqlParser implements Parser {
         }
 
         // IN
-        if (sqlCharArr[currIndex] == 'I') {
-            if (sqlCharArr[currIndex + 1] == 'N') {
-                operator.append(sqlCharArr[currIndex]);
-                currIndex++;
-                operator.append(sqlCharArr[currIndex]);
-                currIndex++;
-                return operator.toString();
-            }
+        if (sqlCharArr[currIndex] == 'I' && sqlCharArr[currIndex + 1] == 'N') {
+            operator.append(sqlCharArr[currIndex]);
+            currIndex++;
+            operator.append(sqlCharArr[currIndex]);
+            currIndex++;
+            return operator.toString();
+
         }
 
         // 其他，例如IS 、NOT
@@ -1340,16 +1337,6 @@ public class SqlParser implements Parser {
 
 
 
-    private boolean readIf(String str) {
-        String next = getNextKeyWordUnMove();
-        if (str.equals(next)) {
-            getNextKeyWord();
-            return true;
-        }
-        return false;
-    }
-
-
     public boolean isNumericString(String input) {
         try {
             Double.parseDouble(input); // 使用Double类的parseDouble方法尝试将字符串转换为数字
@@ -1365,7 +1352,7 @@ public class SqlParser implements Parser {
         List<Expression> values = new ArrayList<>();
         StartEndIndex startEnd = getNextBracketStartEnd();
         String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-        if (!(inValueStr.startsWith("SELECT") || inValueStr.startsWith("select"))) {
+        if (!(inValueStr.toUpperCase().startsWith(SELECT))) {
             String[] split = inValueStr.split(",");
             for (String v : split) {
                 String value = v.trim();
@@ -1634,8 +1621,12 @@ public class SqlParser implements Parser {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            columnStore.close();
-            tableMetadata.close();
+            if(columnStore != null) {
+                columnStore.close();
+            }
+            if(tableMetadata != null) {
+                tableMetadata.close();
+            }
         }
 
         if(columnMetadataList == null || columnMetadataList.size() == 0) {
@@ -1672,7 +1663,9 @@ public class SqlParser implements Parser {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            tableMetadata.close();
+            if(tableMetadata != null) {
+                tableMetadata.close();
+            }
         }
         throw new SqlExecutionException("表" + tableName + "不存在");
     }

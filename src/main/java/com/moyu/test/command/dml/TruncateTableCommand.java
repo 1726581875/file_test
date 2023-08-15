@@ -28,7 +28,9 @@ public class TruncateTableCommand extends AbstractCommand {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            dataChunkStore.close();
+            if(dataChunkStore != null) {
+                dataChunkStore.close();
+            }
         }
         return "ok";
     }

@@ -36,7 +36,7 @@ public abstract class AbstractCommand implements Command {
      * @param
      * @return
      */
-    abstract public String execute();
+    public abstract String execute();
 
 
     @Override

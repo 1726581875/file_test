@@ -30,34 +30,37 @@ public class TableColumnInfo {
     }
 
     public Column getColumn(String columnName) {
+        // 字段包含”.“, 如 t.id这种可以直接配置tableAliasColumnMap
         if (columnName.contains(".")) {
             Column column = tableAliasColumnMap.get(columnName);
             if (column == null) {
                 throw new DbException("字段" + columnName + "不存在");
             }
             return column;
-        } else {
-            String tableAlias = null;
-            Column column = null;
-            for (String key : allTableColumnMap.keySet()) {
-                Map<String, Column> columnMap = allTableColumnMap.get(key);
-                Column c = columnMap.get(columnName);
-                if(c != null) {
-                    if(column == null) {
-                        tableAlias = key;
-                        column = c;
-                    } else {
-                        throw new DbException("表" + tableAlias + "和" + key +"同时存在字段" + columnName);
-                    }
+        }
+        // 不带表别名的情况
+        String tableAlias = null;
+        Column column = null;
+        // 遍历所有表，逐一匹配字段
+        for (Map.Entry<String, Map<String, Column>> entry : allTableColumnMap.entrySet()) {
+            Map<String, Column> columnMap = entry.getValue();
+            Column c = columnMap.get(columnName);
+            if (c != null) {
+                if (column == null) {
+                    tableAlias = entry.getKey();
+                    column = c;
+                } else {
+                    throw new DbException("表" + tableAlias + "和" + entry.getKey() + "同时存在字段" + columnName);
                 }
             }
-
-            if(column == null) {
-                throw new DbException("字段" + columnName + "不存在");
-            }
-
-            return column;
         }
+
+        if (column == null) {
+            throw new DbException("字段" + columnName + "不存在");
+        }
+
+        return column;
+
     }
 
 
