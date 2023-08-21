@@ -1,6 +1,6 @@
 package com.moyu.test.command.dml.sql;
 
-import com.moyu.test.exception.DbException;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.HashMap;
@@ -34,7 +34,7 @@ public class TableColumnInfo {
         if (columnName.contains(".")) {
             Column column = tableAliasColumnMap.get(columnName);
             if (column == null) {
-                throw new DbException("字段" + columnName + "不存在");
+                ExceptionUtil.throwDbException("字段{}不存在", columnName);
             }
             return column;
         }
@@ -50,13 +50,13 @@ public class TableColumnInfo {
                     tableAlias = entry.getKey();
                     column = c;
                 } else {
-                    throw new DbException("表" + tableAlias + "和" + entry.getKey() + "同时存在字段" + columnName);
+                    ExceptionUtil.throwDbException("表{}和{}同时存在字段{}", tableAlias, entry.getKey(), columnName);
                 }
             }
         }
 
         if (column == null) {
-            throw new DbException("字段" + columnName + "不存在");
+            ExceptionUtil.throwDbException("字段{}不存在", columnName);
         }
 
         return column;

@@ -1,7 +1,6 @@
 package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
-import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 import com.moyu.test.util.DataUtils;
