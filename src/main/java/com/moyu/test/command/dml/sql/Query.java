@@ -64,6 +64,14 @@ public class Query {
      * GROUP BY [groupByColumnName]
      */
     private String groupByColumnName;
+    /**
+     * ORDER BY [orderByColumnName]
+     */
+    private String orderByColumnName;
+    /**
+     *  ORDER BY [orderFields]
+     */
+    private List<OrderField> orderFields;
 
     /**
      * 带distinct关键字
@@ -121,6 +129,10 @@ public class Query {
             } else {
                 mainCursor = getSimpleQueryResult(mainCursor, q);
             }
+            // order by
+            if (useOrderBy(q)) {
+                mainCursor = getOrderByResult(mainCursor, q);
+            }
 
             Column[] columns = mainCursor.getColumns();
             if (isSubQuery(q)) {
@@ -160,6 +172,13 @@ public class Query {
                     throw new SqlIllegalException("sql语法有误");
                 }
             }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean useOrderBy(Query query) {
+        if (query.getOrderFields() != null && query.getOrderFields().size() > 0) {
             return true;
         }
         return false;
@@ -312,6 +331,54 @@ public class Query {
         Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
         return resultCursor;
     }
+
+    private Cursor getOrderByResult(Cursor cursor, Query query) {
+        List<RowEntity> resultRowList = new LinkedList<>();
+        RowEntity row = null;
+        List<OrderField> orderFields = query.getOrderFields();
+        int[] columnIndex = new int[orderFields.size()];
+        Column[] tableColumns = cursor.getColumns();
+        for (int i = 0; i < orderFields.size(); i++) {
+            for (int j = 0; j < tableColumns.length; j++) {
+                if(tableColumns[j].equals(orderFields.get(i).getColumn())) {
+                    columnIndex[i] = j;
+                }
+            }
+        }
+        while ((row = cursor.next()) != null) {
+            if (Expression.isMatch(row, query.getCondition())) {
+                resultRowList.add(row);
+            }
+        }
+
+        //  排序
+        Collections.sort(resultRowList, new Comparator<RowEntity>() {
+            @Override
+            public int compare(RowEntity r1, RowEntity r2) {
+                for (int i = 0; i < columnIndex.length; i++) {
+                    OrderField orderField = orderFields.get(i);
+                    Column c1 = r1.getColumns(columnIndex[i]);
+                    Column c2 = r2.getColumns(columnIndex[i]);
+                    if(!c1.getValue().equals(c2)) {
+                        int r = ((Comparable) c1.getValue()).compareTo(c2.getValue());
+                        if("ASC".equals(orderField.getType())) {
+                            return r;
+                        } else {
+                            return -r;
+                        }
+                    }
+                }
+                return 0;
+            }
+        });
+
+        Column[] columns = SelectColumn.getColumnBySelectColumn(query);
+        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        return resultCursor;
+    }
+
+
+
 
 
     private Cursor getDistinctResult(Cursor cursor, Query query) {
@@ -785,4 +852,19 @@ public class Query {
         return indexList;
     }
 
+    public void setOrderByColumnName(String orderByColumnName) {
+        this.orderByColumnName = orderByColumnName;
+    }
+
+    public String getOrderByColumnName() {
+        return orderByColumnName;
+    }
+
+    public List<OrderField> getOrderFields() {
+        return orderFields;
+    }
+
+    public void setOrderFields(List<OrderField> orderFields) {
+        this.orderFields = orderFields;
+    }
 }

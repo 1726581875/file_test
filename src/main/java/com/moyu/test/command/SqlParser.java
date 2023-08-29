@@ -520,10 +520,26 @@ public class SqlParser implements Parser {
         }
         SelectColumn[] selectColumns = getSelectColumns(selectColumnsStr, allColumns, subQuery, mainTable.getAlias());
 
+
+
+        Map<String, Column> columnMap = new HashMap<>();
+        for (Column c : allColumns) {
+            String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
+            columnMap.put(tableAlias + c.getColumnName(), c);
+        }
+
+        for (Column c : allColumns) {
+            columnMap.put(c.getColumnName(), c);
+        }
+
+
         // 解析条件
         Expression condition = null;
         // GROUP BY
         String groupByColumnName = null;
+        // ORDER BY
+        String orderByColumnName = null;
+        List<OrderField> orderFieldList = new ArrayList<>();
 
         skipSpace();
         String nextKeyWord = getNextKeyWordUnMove();
@@ -532,20 +548,9 @@ public class SqlParser implements Parser {
          * 1、select * from where c = 1;
          * 2、select * from limit 10 offset 0;
          *
-         * 关于group by、order by还不支持
-         *
          */
         if(WHERE.equals(nextKeyWord)) {
             getNextKeyWord();
-            Map<String, Column> columnMap = new HashMap<>();
-            for (Column c : allColumns) {
-                String tableAlias = c.getTableAlias() == null ? "" :  c.getTableAlias() + ".";
-                columnMap.put(tableAlias + c.getColumnName(), c);
-            }
-
-            for (Column c : allColumns) {
-                columnMap.put(c.getColumnName(), c);
-            }
             // 解析where条件
             condition = parseWhereCondition(columnMap);
 
@@ -555,13 +560,42 @@ public class SqlParser implements Parser {
             if(LIMIT.equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
             } else if (ORDER.equals(nextKeyWord2)) {
+                getNextKeyWord();
+                assertNextKeywordIs(BY);
+                skipSpace();
+                String orderByColumn = getNextOriginalWord();
 
+                OrderField orderField = new OrderField();
+                orderField.setColumn(columnMap.get(orderByColumn));
+
+                String sortType = getNextKeyWordUnMove();
+                if("ASC".equals(sortType) || "DESC".equals(sortType)) {
+                    assertNextKeywordIs(sortType);
+                    orderField.setType(sortType);
+                } else {
+                    orderField.setType("ASC");
+                }
+                orderFieldList.add(orderField);
             }
             // table后面直接接limit,如:select * from table limit 10
         } else if(LIMIT.equals(nextKeyWord)) {
             parseOffsetLimit(query);
         } else if (ORDER.equals(nextKeyWord)) {
+            getNextKeyWord();
+            assertNextKeywordIs(BY);
+            skipSpace();
+            String orderByColumn = getNextOriginalWord();
 
+            OrderField orderField = new OrderField();
+            orderField.setColumn(columnMap.get(orderByColumn));
+            String sortType = getNextKeyWordUnMove();
+            if("ASC".equals(sortType) || "DESC".equals(sortType)) {
+                assertNextKeywordIs(sortType);
+                orderField.setType(sortType);
+            } else {
+                orderField.setType("ASC");
+            }
+            orderFieldList.add(orderField);
         } else if(GROUP.equals(nextKeyWord)) {
             getNextKeyWord();
             assertNextKeywordIs(BY);
@@ -573,27 +607,20 @@ public class SqlParser implements Parser {
             } else if("".equals(groupByColumnName) || ")".equals(groupByColumnName)) {
                 ExceptionUtil.throwSqlIllegalException("sql语法有误,在group by附近{}", groupByColumnName);
             }
-
         }
 
         mainTable.setAllColumns(allColumns);
-
 
         query.setMainTable(mainTable);
         query.setSelectColumns(selectColumns);
         query.setCondition(condition);
         query.setGroupByColumnName(groupByColumnName);
+        query.setOrderFields(orderFieldList);
 
 
         // 当前索引列表
         if(mainTable.getSubQuery() == null) {
             List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-            Map<String, Column> columnMap = new HashMap<>();
-            for (Column c : mainTable.getTableColumns()) {
-                String tableAlias = c.getTableAlias() == null ? "" : c.getTableAlias() + ".";
-                columnMap.put(tableAlias + c.getColumnName(), c);
-            }
-
             Map<String, IndexMetadata> indexMap = new HashMap<>();
             if(indexMetadataList != null) {
                 for (IndexMetadata idx : indexMetadataList) {
@@ -764,7 +791,8 @@ public class SqlParser implements Parser {
             Column.setColumnTableAlias(table.getTableColumns(), table.getAlias());
         } else if(!GROUP.equals(next)
                 && !LIMIT.equals(next)
-                && !WHERE.equals(next)) {
+                && !WHERE.equals(next)
+                && !ORDER.equals(next)) {
             String alias;
             if(next == null) {
                 alias = tableName;

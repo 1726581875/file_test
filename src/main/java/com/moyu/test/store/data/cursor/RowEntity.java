@@ -1,9 +1,11 @@
 package com.moyu.test.store.data.cursor;
 
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.obj.Column;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -41,6 +43,14 @@ public class RowEntity {
     public Column[] getColumns() {
         return columns;
     }
+
+    public Column getColumns(int i) {
+        if(i >= columns.length) {
+            ExceptionUtil.throwDbException("获取列字段发生异常，下标超出限制,length:，index:{}",columns.length, i);
+        }
+        return columns[i];
+    }
+
 
     public Column getColumn(String columnName, String tableAlias) {
         for (Column c : columns) {
