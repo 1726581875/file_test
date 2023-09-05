@@ -42,7 +42,9 @@ public class ExceptionUtil {
                     }
                     i += 2;
                 }
-                msgBuilder.append(charArray[i]);
+                if(i < charArray.length) {
+                    msgBuilder.append(charArray[i]);
+                }
             }
         }
         return msgBuilder.toString();

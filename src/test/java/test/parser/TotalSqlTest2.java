@@ -1,7 +1,6 @@
 package test.parser;
 
 import com.moyu.test.command.Command;
-import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.ddl.CreateDatabaseCommand;
 import com.moyu.test.command.ddl.DropDatabaseCommand;
 import com.moyu.test.command.dml.InsertCommand;
@@ -46,10 +45,15 @@ public class TotalSqlTest2 {
 
         //testOptimizeCondition();
 
+        testOrderByQuery();
 
+    }
+
+
+
+    private static void testOrderByQuery(){
         testExecSQL("drop table if exists  xmz_sort_test");
         testExecSQL("create table xmz_sort_test (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
-
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '31', '2023-06-29 11:15:00')");
@@ -57,9 +61,31 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '33', '2023-06-29 13:20:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
-
         testExecSQL("select count(*) from xmz_sort_test");
-        testExecSQL("select * from xmz_sort_test order by id asc");
+        testExecSQL("select * from xmz_sort_test order by id desc, name asc");
+
+
+
+
+        testExecSQL("drop table if exists  xmz_sort_test2");
+        testExecSQL("create table xmz_sort_test2 (id int, name varchar(10), count int) ENGINE=" + engineType);
+
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (1, 'John', 1)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (2, 'Alice', 2)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (3, '31', 1)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (3, '32', 2)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (3, '33', 3)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (6, 'Sophia', 6)");
+        testExecSQL("INSERT INTO xmz_sort_test2 (id, name, count) VALUES (0, 'Daniel', 7)");
+
+        testExecSQL("select count(*) from xmz_sort_test2");
+        testExecSQL("select * from xmz_sort_test2 order by id,count");
+        testExecSQL("select * from xmz_sort_test2 order by id desc,count");
+        testExecSQL("select * from xmz_sort_test2 order by id asc,count desc");
+        testExecSQL("select * from xmz_sort_test2 order by id ,count desc");
+
+        testExecSQL("select * from xmz_sort_test2 order by id desc ,count desc limit 2");
+        testExecSQL("select * from xmz_sort_test2 order by id desc ,count desc");
 
     }
 

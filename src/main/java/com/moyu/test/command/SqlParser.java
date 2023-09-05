@@ -538,7 +538,6 @@ public class SqlParser implements Parser {
         // GROUP BY
         String groupByColumnName = null;
         // ORDER BY
-        String orderByColumnName = null;
         List<OrderField> orderFieldList = new ArrayList<>();
 
         skipSpace();
@@ -555,47 +554,28 @@ public class SqlParser implements Parser {
             condition = parseWhereCondition(columnMap);
 
             // 条件后面再接limit,如select * from table where column1=0 limit 10
-            skipSpace();
             String nextKeyWord2 = getNextKeyWordUnMove();
             if(LIMIT.equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
             } else if (ORDER.equals(nextKeyWord2)) {
-                getNextKeyWord();
-                assertNextKeywordIs(BY);
-                skipSpace();
-                String orderByColumn = getNextOriginalWord();
-
-                OrderField orderField = new OrderField();
-                orderField.setColumn(columnMap.get(orderByColumn));
-
-                String sortType = getNextKeyWordUnMove();
-                if("ASC".equals(sortType) || "DESC".equals(sortType)) {
-                    assertNextKeywordIs(sortType);
-                    orderField.setType(sortType);
-                } else {
-                    orderField.setType("ASC");
+                // 解析order by语句
+                orderFieldList = parseOrderBy(columnMap);
+                String nextKeyWord3 = getNextKeyWordUnMove();
+                if(LIMIT.equals(nextKeyWord3)) {
+                    parseOffsetLimit(query);
                 }
-                orderFieldList.add(orderField);
+
             }
             // table后面直接接limit,如:select * from table limit 10
         } else if(LIMIT.equals(nextKeyWord)) {
             parseOffsetLimit(query);
         } else if (ORDER.equals(nextKeyWord)) {
-            getNextKeyWord();
-            assertNextKeywordIs(BY);
-            skipSpace();
-            String orderByColumn = getNextOriginalWord();
+            orderFieldList = parseOrderBy(columnMap);
 
-            OrderField orderField = new OrderField();
-            orderField.setColumn(columnMap.get(orderByColumn));
-            String sortType = getNextKeyWordUnMove();
-            if("ASC".equals(sortType) || "DESC".equals(sortType)) {
-                assertNextKeywordIs(sortType);
-                orderField.setType(sortType);
-            } else {
-                orderField.setType("ASC");
+            String nextKeyWord2 = getNextKeyWordUnMove();
+            if(LIMIT.equals(nextKeyWord2)) {
+                parseOffsetLimit(query);
             }
-            orderFieldList.add(orderField);
         } else if(GROUP.equals(nextKeyWord)) {
             getNextKeyWord();
             assertNextKeywordIs(BY);
@@ -631,6 +611,98 @@ public class SqlParser implements Parser {
         }
 
         return query;
+    }
+
+    private List<OrderField> parseOrderBy(Map<String, Column> columnMap) {
+        List<OrderField> orderFieldList = new ArrayList<>();
+        assertNextKeywordIs(ORDER);
+        assertNextKeywordIs(BY);
+
+
+        skipSpace();
+        int charStart = currIndex;
+        while (true) {
+            if (currIndex > sqlCharArr.length) {
+                if (orderFieldList.size() == 0) {
+                    ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近：{}", originalSql);
+                }
+                break;
+            }
+            // 排序字段
+            if(currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
+                OrderField currOrderField = new OrderField();
+                String columnName = originalSql.substring(charStart, currIndex);
+                Column column = columnMap.get(columnName);
+                if (column == null) {
+                    ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 字段{}不存在", columnName);
+                }
+                currOrderField.setColumn(column);
+                orderFieldList.add(currOrderField);
+
+                skipSpace();
+                charStart = currIndex;
+                // 排序规则
+                while (true) {
+                    if (currIndex > sqlCharArr.length) {
+                        // 如果没有指定排序规则，使用默认排序方式
+                        if (currOrderField != null && currOrderField.getType() == null) {
+                            currOrderField.setType(OrderField.DEFAULT_RULE);
+                        }
+                        break;
+                    }
+
+                    // 遇到limit结束
+                    if(currIndex < sqlCharArr.length && (sqlCharArr[currIndex] == 'L' || sqlCharArr[currIndex] == 'l')) {
+                        String nextKeyWork = getNextKeyWordUnMove();
+                        if(LIMIT.equals(nextKeyWork)) {
+                            // 如果没有设置排序字段，说明没有指定排序规则，使用默认排序方式
+                            if(currOrderField != null && currOrderField.getType() == null) {
+                                currOrderField.setType(OrderField.RULE_ASC);
+                            }
+                            break;
+                        }
+                    }
+                    // 拿到定义的排序规则
+                    if (currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
+                        if (currIndex > charStart) {
+                            String sortType = originalSql.substring(charStart, currIndex).toUpperCase();
+                            if (!sortType.equals(OrderField.RULE_ASC) && !sortType.equals(OrderField.RULE_DESC)) {
+                                ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 排序规则不合法。{}", sortType);
+                            } else {
+                                currOrderField.setType(sortType);
+                            }
+                        } else {
+                            // 给默认排序方式
+                            currOrderField.setType(OrderField.DEFAULT_RULE);
+                        }
+                        skipSpace();
+                        if(currIndex < sqlCharArr.length && sqlCharArr[currIndex] == ',') {
+                            currIndex++;
+                        }
+                        skipSpace();
+                        charStart = currIndex;
+                        break;
+                    }
+                    currIndex++;
+                }
+            }
+            // 遇到limit结束
+            if(currIndex < sqlCharArr.length && (sqlCharArr[currIndex] == 'L' || sqlCharArr[currIndex] == 'l')) {
+                String nextKeyWork = getNextKeyWordUnMove();
+                if(LIMIT.equals(nextKeyWork)) {
+                    break;
+                }
+            }
+
+
+            currIndex++;
+        }
+
+        if(orderFieldList.size() == 0) {
+            ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近：{}", originalSql);
+        }
+
+        return orderFieldList;
     }
 
 

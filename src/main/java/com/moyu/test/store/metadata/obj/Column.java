@@ -126,6 +126,17 @@ public class Column {
         return value != null && value.equals(c.getValue());
     }
 
+    public boolean metaEquals(Object o) {
+        Column c = (Column) o;
+        if(tableAlias != null) {
+            if(!tableAlias.equals(c.getTableAlias())) {
+                return false;
+            }
+        }
+        return columnName.equals(c.getColumnName());
+    }
+
+
     @Override
     public int hashCode() {
         return (value != null ? value.hashCode() : 0);

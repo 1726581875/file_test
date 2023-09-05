@@ -209,11 +209,13 @@ public class Query {
             rowEntity.setDeleted(row.isDeleted());
 
             boolean matchCondition = Expression.isMatch(rowEntity, query.getCondition());
-            if (matchCondition && query.isMatchLimit(query, currIndex)) {
+            // 只拿符合条件的行
+            // 使用order by后，offset limit条件就先不筛选。等后面排完序再筛选行
+            if (matchCondition && (useOrderBy(query)  || query.isMatchLimit(query, currIndex))) {
                 Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
                 resultRowList.add(new RowEntity(resultColumns));
             }
-            if (query.getLimit() != null && resultRowList.size() >= query.getLimit()) {
+            if ((query.getLimit() != null && resultRowList.size() >= query.getLimit()) && !useOrderBy(query)) {
                 break;
             }
             // 数据量大于10000万，对数据进行物化
@@ -334,17 +336,20 @@ public class Query {
 
     private Cursor getOrderByResult(Cursor cursor, Query query) {
         List<RowEntity> resultRowList = new LinkedList<>();
-        RowEntity row = null;
+
         List<OrderField> orderFields = query.getOrderFields();
-        int[] columnIndex = new int[orderFields.size()];
+        int[] columnIndexMap = new int[orderFields.size()];
         Column[] tableColumns = cursor.getColumns();
+        // 确认排序字段字段下标，方便后面取值比较
         for (int i = 0; i < orderFields.size(); i++) {
             for (int j = 0; j < tableColumns.length; j++) {
-                if(tableColumns[j].equals(orderFields.get(i).getColumn())) {
-                    columnIndex[i] = j;
+                if(tableColumns[j].metaEquals(orderFields.get(i).getColumn())) {
+                    columnIndexMap[i] = j;
                 }
             }
         }
+        // 遍历所有行
+        RowEntity row = null;
         while ((row = cursor.next()) != null) {
             if (Expression.isMatch(row, query.getCondition())) {
                 resultRowList.add(row);
@@ -352,28 +357,42 @@ public class Query {
         }
 
         //  排序
-        Collections.sort(resultRowList, new Comparator<RowEntity>() {
-            @Override
-            public int compare(RowEntity r1, RowEntity r2) {
-                for (int i = 0; i < columnIndex.length; i++) {
-                    OrderField orderField = orderFields.get(i);
-                    Column c1 = r1.getColumns(columnIndex[i]);
-                    Column c2 = r2.getColumns(columnIndex[i]);
-                    if(!c1.getValue().equals(c2)) {
-                        int r = ((Comparable) c1.getValue()).compareTo(c2.getValue());
-                        if("ASC".equals(orderField.getType())) {
-                            return r;
-                        } else {
-                            return -r;
-                        }
+        Collections.sort(resultRowList, (r1, r2) -> {
+            for (int i = 0; i < columnIndexMap.length; i++) {
+                OrderField orderField = orderFields.get(i);
+                Column c1 = r1.getColumns(columnIndexMap[i]);
+                Column c2 = r2.getColumns(columnIndexMap[i]);
+                if(!c1.getValue().equals(c2.getValue())) {
+                    int r = ((Comparable) c1.getValue()).compareTo(c2.getValue());
+                    if(OrderField.RULE_ASC.equals(orderField.getType())) {
+                        return r;
+                    } else {
+                        return -r;
                     }
                 }
-                return 0;
             }
+            return 0;
         });
-
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        Cursor resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+
+        // 如果有limit语句，需要进行筛选
+        if (query.getLimit() != null) {
+            List<RowEntity> rowList = new ArrayList<>(query.getLimit());
+            RowEntity r = null;
+            int i = 0;
+            while ((r = resultCursor.next()) != null) {
+                if (isMatchLimit(query, i)) {
+                    rowList.add(r);
+                }
+                if (query.getLimit() != null && rowList.size() >= query.getLimit()) {
+                    break;
+                }
+                i++;
+            }
+            resultCursor = new MemoryTemTableCursor(rowList, columns);
+        }
+
         return resultCursor;
     }
 

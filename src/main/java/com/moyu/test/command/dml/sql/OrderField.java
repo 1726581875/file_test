@@ -7,6 +7,12 @@ import com.moyu.test.store.metadata.obj.Column;
  * @date 2023/8/22
  */
 public class OrderField {
+
+    public static final String RULE_ASC = "ASC";
+    public static final String RULE_DESC = "DESC";
+
+    public static final String DEFAULT_RULE = RULE_ASC;
+
     /**
      * order by 字段
      */
