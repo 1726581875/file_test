@@ -9,7 +9,7 @@ public interface Command {
 
     String[] exec();
 
-    String execCommand();
+    QueryResult execCommand();
 
     void reUse();
 

@@ -538,7 +538,7 @@ public class SqlParser implements Parser {
         // GROUP BY
         String groupByColumnName = null;
         // ORDER BY
-        List<OrderField> orderFieldList = new ArrayList<>();
+        List<SortField> sortFieldList = new ArrayList<>();
 
         skipSpace();
         String nextKeyWord = getNextKeyWordUnMove();
@@ -559,7 +559,7 @@ public class SqlParser implements Parser {
                 parseOffsetLimit(query);
             } else if (ORDER.equals(nextKeyWord2)) {
                 // 解析order by语句
-                orderFieldList = parseOrderBy(columnMap);
+                sortFieldList = parseOrderBy(columnMap);
                 String nextKeyWord3 = getNextKeyWordUnMove();
                 if(LIMIT.equals(nextKeyWord3)) {
                     parseOffsetLimit(query);
@@ -570,7 +570,7 @@ public class SqlParser implements Parser {
         } else if(LIMIT.equals(nextKeyWord)) {
             parseOffsetLimit(query);
         } else if (ORDER.equals(nextKeyWord)) {
-            orderFieldList = parseOrderBy(columnMap);
+            sortFieldList = parseOrderBy(columnMap);
 
             String nextKeyWord2 = getNextKeyWordUnMove();
             if(LIMIT.equals(nextKeyWord2)) {
@@ -595,7 +595,7 @@ public class SqlParser implements Parser {
         query.setSelectColumns(selectColumns);
         query.setCondition(condition);
         query.setGroupByColumnName(groupByColumnName);
-        query.setOrderFields(orderFieldList);
+        query.setSortFields(sortFieldList);
 
 
         // 当前索引列表
@@ -613,8 +613,8 @@ public class SqlParser implements Parser {
         return query;
     }
 
-    private List<OrderField> parseOrderBy(Map<String, Column> columnMap) {
-        List<OrderField> orderFieldList = new ArrayList<>();
+    private List<SortField> parseOrderBy(Map<String, Column> columnMap) {
+        List<SortField> sortFieldList = new ArrayList<>();
         assertNextKeywordIs(ORDER);
         assertNextKeywordIs(BY);
 
@@ -623,21 +623,21 @@ public class SqlParser implements Parser {
         int charStart = currIndex;
         while (true) {
             if (currIndex > sqlCharArr.length) {
-                if (orderFieldList.size() == 0) {
+                if (sortFieldList.size() == 0) {
                     ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近：{}", originalSql);
                 }
                 break;
             }
             // 排序字段
             if(currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
-                OrderField currOrderField = new OrderField();
+                SortField currSortField = new SortField();
                 String columnName = originalSql.substring(charStart, currIndex);
                 Column column = columnMap.get(columnName);
                 if (column == null) {
                     ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 字段{}不存在", columnName);
                 }
-                currOrderField.setColumn(column);
-                orderFieldList.add(currOrderField);
+                currSortField.setColumn(column);
+                sortFieldList.add(currSortField);
 
                 skipSpace();
                 charStart = currIndex;
@@ -645,8 +645,8 @@ public class SqlParser implements Parser {
                 while (true) {
                     if (currIndex > sqlCharArr.length) {
                         // 如果没有指定排序规则，使用默认排序方式
-                        if (currOrderField != null && currOrderField.getType() == null) {
-                            currOrderField.setType(OrderField.DEFAULT_RULE);
+                        if (currSortField != null && currSortField.getType() == null) {
+                            currSortField.setType(SortField.DEFAULT_RULE);
                         }
                         break;
                     }
@@ -656,8 +656,8 @@ public class SqlParser implements Parser {
                         String nextKeyWork = getNextKeyWordUnMove();
                         if(LIMIT.equals(nextKeyWork)) {
                             // 如果没有设置排序字段，说明没有指定排序规则，使用默认排序方式
-                            if(currOrderField != null && currOrderField.getType() == null) {
-                                currOrderField.setType(OrderField.RULE_ASC);
+                            if(currSortField != null && currSortField.getType() == null) {
+                                currSortField.setType(SortField.RULE_ASC);
                             }
                             break;
                         }
@@ -666,14 +666,14 @@ public class SqlParser implements Parser {
                     if (currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
                         if (currIndex > charStart) {
                             String sortType = originalSql.substring(charStart, currIndex).toUpperCase();
-                            if (!sortType.equals(OrderField.RULE_ASC) && !sortType.equals(OrderField.RULE_DESC)) {
+                            if (!sortType.equals(SortField.RULE_ASC) && !sortType.equals(SortField.RULE_DESC)) {
                                 ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 排序规则不合法。{}", sortType);
                             } else {
-                                currOrderField.setType(sortType);
+                                currSortField.setType(sortType);
                             }
                         } else {
                             // 给默认排序方式
-                            currOrderField.setType(OrderField.DEFAULT_RULE);
+                            currSortField.setType(SortField.DEFAULT_RULE);
                         }
                         skipSpace();
                         if(currIndex < sqlCharArr.length && sqlCharArr[currIndex] == ',') {
@@ -698,11 +698,11 @@ public class SqlParser implements Parser {
             currIndex++;
         }
 
-        if(orderFieldList.size() == 0) {
+        if(sortFieldList.size() == 0) {
             ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近：{}", originalSql);
         }
 
-        return orderFieldList;
+        return sortFieldList;
     }
 
 

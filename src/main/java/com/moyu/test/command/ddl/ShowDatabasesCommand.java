@@ -1,8 +1,11 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
+import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +57,32 @@ public class ShowDatabasesCommand extends AbstractCommand {
         return stringBuilder.toString();
     }
 
+
+    @Override
+    public QueryResult execCommand() {
+        SelectColumn idColumn = new SelectColumn(null, "库id", null, null);
+        SelectColumn nameColumn = new SelectColumn(null, "库名", null, null);
+        QueryResult queryResult = new QueryResult();
+        queryResult.setSelectColumns(new SelectColumn[]{idColumn, nameColumn});
+        DatabaseMetadataStore metadataStore = null;
+        try {
+            metadataStore = new DatabaseMetadataStore();
+            List<DatabaseMetadata> allData = metadataStore.getAllData();
+            resultList = allData;
+            for (int i = 0; i < allData.size(); i++) {
+                DatabaseMetadata metadata = allData.get(i);
+                queryResult.addRow(new Object[]{metadata.getDatabaseId(), metadata.getName()});
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            ExceptionUtil.throwSqlQueryException("查询数据库异常");
+        } finally {
+            if (metadataStore != null) {
+                metadataStore.close();
+            }
+        }
+        return queryResult;
+    }
 
     public List<DatabaseMetadata> getResultList() {
         return resultList;

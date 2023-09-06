@@ -46,6 +46,9 @@ public class CharTest {
         System.out.println(queryStack.pop());
 
 
+        System.out.println("'啊啊啊啊'");
+
+
     }
 
 

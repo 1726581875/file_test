@@ -41,6 +41,14 @@ public class SelectCommand extends AbstractCommand {
     }
 
 
+    @Override
+    public QueryResult execCommand() {
+        // 执行查询
+        Cursor queryResultCursor = this.query.getQueryResultCursor();
+        queryResult = parseQueryResult(queryResultCursor);
+        return queryResult;
+    }
+
     private QueryResult parseQueryResult(Cursor cursor) {
         QueryResult result = new QueryResult();
         result.setSelectColumns(query.getSelectColumns());

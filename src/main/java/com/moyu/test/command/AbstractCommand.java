@@ -2,6 +2,7 @@ package com.moyu.test.command;
 
 import com.moyu.test.command.dml.sql.Parameter;
 import com.moyu.test.exception.DbException;
+import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +26,13 @@ public abstract class AbstractCommand implements Command {
     }
 
     @Override
-    public String execCommand() {
-        String[] exec = exec();
-        return exec[0];
+    public QueryResult execCommand() {
+        String executeResult = execute();
+        SelectColumn selectColumn = new SelectColumn(null, "执行结果", null, null);
+        QueryResult queryResult = new QueryResult();
+        queryResult.setSelectColumns(new SelectColumn[]{selectColumn});
+        queryResult.addRow(new Object[]{executeResult});
+        return queryResult;
     }
 
     /**

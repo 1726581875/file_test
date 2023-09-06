@@ -6,7 +6,7 @@ import com.moyu.test.store.metadata.obj.Column;
  * @author xiaomingzhang
  * @date 2023/8/22
  */
-public class OrderField {
+public class SortField {
 
     public static final String RULE_ASC = "ASC";
     public static final String RULE_DESC = "DESC";

@@ -2,11 +2,11 @@ package com.moyu.test;
 
 import com.moyu.test.command.Command;
 import com.moyu.test.command.Parser;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
-import com.moyu.test.store.metadata.DatabaseMetadataStore;
-import com.moyu.test.store.metadata.obj.DatabaseMetadata;
+import com.moyu.test.util.PrintResultUtil;
 
 import java.util.*;
 
@@ -53,8 +53,8 @@ public class Terminal {
 
             try {
                 Command command = parser.prepareCommand(inputStr.trim());
-                String[] exec = command.exec();
-                Arrays.asList(exec).forEach(System.out::println);
+                QueryResult queryResult = command.execCommand();
+                PrintResultUtil.printResult(queryResult);
             } catch (Exception e) {
                 e.printStackTrace();
             }

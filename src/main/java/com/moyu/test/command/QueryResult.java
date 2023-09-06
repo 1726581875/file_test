@@ -4,6 +4,7 @@ import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -52,5 +53,14 @@ public class QueryResult {
 
     public void setSelectColumns(SelectColumn[] selectColumns) {
         this.selectColumns = selectColumns;
+    }
+
+
+    @Override
+    public String toString() {
+        return "QueryResult{" +
+                "selectColumns=" + Arrays.toString(selectColumns) +
+                ", resultRows=" + resultRows +
+                '}';
     }
 }

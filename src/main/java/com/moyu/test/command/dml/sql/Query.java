@@ -55,7 +55,6 @@ public class Query {
      * 可以选择使用的索引列表
      */
     private List<SelectIndex> indexList = new LinkedList<>();
-
     /**
      * 当前查询最终的结果游标
      */
@@ -65,13 +64,9 @@ public class Query {
      */
     private String groupByColumnName;
     /**
-     * ORDER BY [orderByColumnName]
-     */
-    private String orderByColumnName;
-    /**
      *  ORDER BY [orderFields]
      */
-    private List<OrderField> orderFields;
+    private List<SortField> sortFields;
 
     /**
      * 带distinct关键字
@@ -178,7 +173,7 @@ public class Query {
     }
 
     private boolean useOrderBy(Query query) {
-        if (query.getOrderFields() != null && query.getOrderFields().size() > 0) {
+        if (query.getSortFields() != null && query.getSortFields().size() > 0) {
             return true;
         }
         return false;
@@ -337,13 +332,13 @@ public class Query {
     private Cursor getOrderByResult(Cursor cursor, Query query) {
         List<RowEntity> resultRowList = new LinkedList<>();
 
-        List<OrderField> orderFields = query.getOrderFields();
-        int[] columnIndexMap = new int[orderFields.size()];
+        List<SortField> sortFields = query.getSortFields();
+        int[] columnIndexMap = new int[sortFields.size()];
         Column[] tableColumns = cursor.getColumns();
         // 确认排序字段字段下标，方便后面取值比较
-        for (int i = 0; i < orderFields.size(); i++) {
+        for (int i = 0; i < sortFields.size(); i++) {
             for (int j = 0; j < tableColumns.length; j++) {
-                if(tableColumns[j].metaEquals(orderFields.get(i).getColumn())) {
+                if(tableColumns[j].metaEquals(sortFields.get(i).getColumn())) {
                     columnIndexMap[i] = j;
                 }
             }
@@ -359,12 +354,12 @@ public class Query {
         //  排序
         Collections.sort(resultRowList, (r1, r2) -> {
             for (int i = 0; i < columnIndexMap.length; i++) {
-                OrderField orderField = orderFields.get(i);
+                SortField sortField = sortFields.get(i);
                 Column c1 = r1.getColumns(columnIndexMap[i]);
                 Column c2 = r2.getColumns(columnIndexMap[i]);
                 if(!c1.getValue().equals(c2.getValue())) {
                     int r = ((Comparable) c1.getValue()).compareTo(c2.getValue());
-                    if(OrderField.RULE_ASC.equals(orderField.getType())) {
+                    if(SortField.RULE_ASC.equals(sortField.getType())) {
                         return r;
                     } else {
                         return -r;
@@ -871,19 +866,11 @@ public class Query {
         return indexList;
     }
 
-    public void setOrderByColumnName(String orderByColumnName) {
-        this.orderByColumnName = orderByColumnName;
+    public List<SortField> getSortFields() {
+        return sortFields;
     }
 
-    public String getOrderByColumnName() {
-        return orderByColumnName;
-    }
-
-    public List<OrderField> getOrderFields() {
-        return orderFields;
-    }
-
-    public void setOrderFields(List<OrderField> orderFields) {
-        this.orderFields = orderFields;
+    public void setSortFields(List<SortField> sortFields) {
+        this.sortFields = sortFields;
     }
 }

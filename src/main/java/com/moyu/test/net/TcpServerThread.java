@@ -1,6 +1,7 @@
 package com.moyu.test.net;
 
 import com.moyu.test.command.Command;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
@@ -48,8 +49,9 @@ public class TcpServerThread implements Runnable {
                 ConnectSession connectSession = new ConnectSession("xmz", databaseId);
                 SqlParser sqlParser = new SqlParser(connectSession);
                 Command command = sqlParser.prepareCommand(sql);
-                String resultStr = command.execCommand();
-                OkPacket okPacket = new OkPacket(1, resultStr);
+                QueryResult queryResult = command.execCommand();
+
+                OkPacket okPacket = new OkPacket(1, queryResult.toString());
                 byte[] bytes = okPacket.getBytes();
                 out.writeInt(bytes.length);
                 out.write(OkPacket.PACKET_TYPE_OK);

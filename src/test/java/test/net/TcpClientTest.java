@@ -26,11 +26,11 @@ public class TcpClientTest {
             DataInputStream dataInputStream = new DataInputStream(inputStream);
 
             // 发送数据库id给服务端
-            int dbId = 3;
+            int dbId = 0;
             dataOutputStream.writeInt(dbId);
 
             // 发送sql给服务端
-            String message = "select *1 from xmz_table";
+            String message = "select * from test";
             int length1 = message.length();
             dataOutputStream.writeInt(length1);
             dataOutputStream.writeChars(message);
