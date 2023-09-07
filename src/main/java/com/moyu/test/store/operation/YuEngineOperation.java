@@ -311,7 +311,7 @@ public class YuEngineOperation extends BasicOperation {
         Cursor cursor = null;
         DataChunkStore dataChunkStore = new DataChunkStore(PathUtil.getDataFilePath(this.session.getDatabaseId(), table.getTableName()));
         if (table.getSelectIndex() == null) {
-            System.out.println("不用索引，table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+            System.out.println("不用索引，表:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
             cursor = new DefaultCursor(dataChunkStore, table.getTableColumns());
             // 如果是小表，直接读取整个表的数据到内存
             if(dataChunkStore.getDataChunkNum() * DataChunk.DATA_CHUNK_LEN <= CommonConfig.TABLE_IN_MEMORY_MAX_SIZE) {
@@ -320,12 +320,12 @@ public class YuEngineOperation extends BasicOperation {
 
         } else if(table.getSelectIndex() != null && table.getSelectIndex().isRangeQuery()){
             System.out.println("使用索引查询(范围)，索引:" + table.getSelectIndex().getIndexName()
-                    + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+                    + ",表:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
             cursor = new RangeIndexCursor(dataChunkStore, table.getTableColumns(), table.getSelectIndex().getCondition() , indexPath);
         } else {
             System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName()
-                    + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+                    + ",表:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
             String indexPath = PathUtil.getIndexFilePath(this.session.getDatabaseId(), table.getTableName(), table.getSelectIndex().getIndexName());
             cursor = new IndexCursor(dataChunkStore, table.getTableColumns(), table.getSelectIndex().getIndexColumn(), indexPath);
         }

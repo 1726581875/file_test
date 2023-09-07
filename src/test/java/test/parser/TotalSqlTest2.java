@@ -25,13 +25,13 @@ public class TotalSqlTest2 {
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
     //private static final String engineType = CommonConstant.ENGINE_TYPE_YU;
 
-    private final static String databaseName = "total_test2";
+    private final static String databaseName = "aaa";
 
     private static Database database = null;
 
     static {
-        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execute();
+/*        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
+        dropDatabaseCommand.execute();*/
         CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
         createDatabaseCommand.execute();
         database = Database.getDatabase(databaseName);
@@ -45,7 +45,11 @@ public class TotalSqlTest2 {
 
         //testOptimizeCondition();
 
-        testOrderByQuery();
+        //testOrderByQuery();
+
+
+        fastInsertData2("table_100000", 100000, engineType);
+        fastInsertData2("table_1000000", 1000000, engineType);
 
     }
 

@@ -43,9 +43,14 @@ public class SelectCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
+        long queryStartTime = System.currentTimeMillis();
         // 执行查询
         Cursor queryResultCursor = this.query.getQueryResultCursor();
         queryResult = parseQueryResult(queryResultCursor);
+
+        long queryEndTime = System.currentTimeMillis();
+        String desc = "查询结果行数:" +  queryResult.getResultRows().size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms";
+        queryResult.setDesc(desc);
         return queryResult;
     }
 

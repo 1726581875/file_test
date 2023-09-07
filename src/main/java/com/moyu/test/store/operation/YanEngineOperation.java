@@ -357,11 +357,11 @@ public class YanEngineOperation extends BasicOperation {
         Cursor cursor = null;
         BTreeMap clusteredIndexMap = getBTreeMap();
         if (table.getSelectIndex() == null) {
-            System.out.println("不用索引，table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+            System.out.println("不用索引，表:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
             cursor = new BtreeCursor(table.getTableColumns(), clusteredIndexMap);
         } else {
             System.out.println("使用索引查询，索引:" + table.getSelectIndex().getIndexName()
-                    + ",table:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
+                    + ",表:" + table.getTableName() + ",存储引擎:" + table.getEngineType());
 
             // todo 根据索引类型进行不同操作，如果是主键索引不需要进行回表操作
 

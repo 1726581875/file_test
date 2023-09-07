@@ -20,6 +20,7 @@ public class Terminal {
 
     /**
      * 运行前要配置resource/config.properties文件下数据目录路径和元数据路径
+     *
      * @param args
      */
     public static void main(String[] args) {
@@ -34,24 +35,24 @@ public class Terminal {
                 break;
             }
 
-            if("".equals(inputStr.trim())){
-                continue;
-            }
-
-            // 进入数据库
-            if (inputStr.startsWith("use ")) {
-                String dbName = inputStr.split(" ")[1];
-                Database database = Database.getDatabase(dbName);
-                if(database != null) {
-                    parser = getSqlParser(database);
-                    System.out.println("ok");
-                } else {
-                    System.out.println("数据库不存在");
-                }
+            if ("".equals(inputStr.trim())) {
                 continue;
             }
 
             try {
+                // 进入数据库
+                if (inputStr.startsWith("use ")) {
+                    String dbName = inputStr.split(" ")[1];
+                    Database database = Database.getDatabase(dbName);
+                    if (database != null) {
+                        parser = getSqlParser(database);
+                        System.out.println("ok");
+                    } else {
+                        System.out.println("数据库不存在");
+                    }
+                    continue;
+                }
+                // 执行命令
                 Command command = parser.prepareCommand(inputStr.trim());
                 QueryResult queryResult = command.execCommand();
                 PrintResultUtil.printResult(queryResult);
@@ -70,8 +71,6 @@ public class Terminal {
         ConnectSession connectSession = new ConnectSession(database);
         return new SqlParser(connectSession);
     }
-
-
 
 
 }

@@ -54,6 +54,11 @@ public class PrintResultUtil {
         }
         // 打印表格底部边框
         printHorizontalLine(columnWidths);
+
+        if(queryResult.getDesc() != null) {
+            System.out.println(queryResult.getDesc());
+        }
+        System.out.println();
     }
 
 

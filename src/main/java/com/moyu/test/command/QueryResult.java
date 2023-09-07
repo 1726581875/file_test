@@ -17,6 +17,11 @@ public class QueryResult {
 
     private List<Object[]> resultRows;
 
+    /**
+     * 描述
+     */
+    private String desc;
+
 
     public void addAll(List<Column[]> columnValueList) {
         for (Column[] columns : columnValueList) {
@@ -55,6 +60,13 @@ public class QueryResult {
         this.selectColumns = selectColumns;
     }
 
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
 
     @Override
     public String toString() {
