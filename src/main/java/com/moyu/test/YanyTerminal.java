@@ -15,7 +15,7 @@ import java.util.*;
  * @date 2023/5/19
  * 一个便以测试的假终端
  */
-public class Terminal {
+public class YanyTerminal {
 
 
     /**
