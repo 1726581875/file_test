@@ -42,7 +42,7 @@ public class TcpServer {
 
     private static void printDatabaseMsg() {
         System.out.println("+-------------------------------+");
-        System.out.println("|       YanSQL1.0  (^_^)        |");
+        System.out.println("|       YanySQL1.0  (^_^)        |");
         System.out.println("+-------------------------------+");
         System.out.println("TCP服务启动中，端口为" + port + "。等待连接...");
     }

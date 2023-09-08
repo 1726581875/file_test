@@ -1,20 +1,22 @@
 package com.moyu.test.terminal;
 
+import com.moyu.test.session.Database;
+import com.moyu.test.session.Table;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author xiaomingzhang
  * @date 2023/9/8
+ * 定义JLine按下终端输入时候按下Tab键之后补全规则
  */
 public class TabCompleter implements Completer {
+
+    private Database database;
 
     private static final List<String> firstKeyWords = new LinkedList<>();
 
@@ -26,42 +28,21 @@ public class TabCompleter implements Completer {
         }
     }
 
+    public TabCompleter(Database database) {
+        this.database = database;
+    }
+
     @Override
     public void complete(LineReader lineReader, ParsedLine parsedLine, List<Candidate> candidates) {
         // 获取当前输入行的文本和光标位置
         String buffer = parsedLine.line();
         int cursor = parsedLine.cursor();
 
-
-        String cursorBeforeValue = buffer.substring(0, cursor);
-
-        String[] inputWords = cursorBeforeValue.split("\\s+");
-        List<String> commandCandidates = new ArrayList<>();
-
-        // 补全第一个关键字
-        if (inputWords.length <= 1) {
-            commandCandidates.addAll(firstKeyWords);
-        } else {
-            String lastWork = null;
-            if(cursorBeforeValue.endsWith(" ")) {
-                lastWork = inputWords[inputWords.length - 1];
-            } else {
-                // 取上一个词，预测下一个词的可能值
-                lastWork = inputWords[inputWords.length - 2];
-            }
-            // 根据前面输入的值提示补全输入
-            switch (lastWork.toUpperCase()) {
-                case "CREATE":
-                    commandCandidates.addAll(getKeyWordsAfterCreate());
-                    break;
-                case "SHOW":
-                    commandCandidates.addAll(getKeyWordsAfterShow());
-                    break;
-            }
-        }
+        // 按下tab键当前可以匹配命中的值
+        List<String> optionalValues = getNextOptionalWords(buffer, cursor);
 
         // 将候选项添加到补全列表
-        for (String commandCandidate : commandCandidates) {
+        for (String commandCandidate : optionalValues) {
             candidates.add(new Candidate(
                     // 候选项的显示文本
                     commandCandidate,
@@ -80,6 +61,80 @@ public class TabCompleter implements Completer {
             ));
         }
     }
+
+
+    private List<String> getNextOptionalWords(String buffer, int cursor) {
+
+        List<String> optionalValues = new ArrayList<>();
+
+        String cursorBeforeValue = buffer.substring(0, cursor);
+
+        String[] inputWords = cursorBeforeValue.split("\\s+");
+
+        // 还没选择数据库
+        if (this.database == null) {
+            if (inputWords.length <= 1 && !cursorBeforeValue.endsWith(" ")) {
+                optionalValues.add("SHOW");
+                optionalValues.add("show");
+            } else {
+                // 拿到最后一个完整的关键词
+                String lastWord = null;
+                if (isEndWithSpace(cursorBeforeValue)) {
+                    lastWord = inputWords[inputWords.length - 1];
+                } else {
+                    lastWord = inputWords[inputWords.length - 2];
+                }
+                if (lastWord.toUpperCase().equals("SHOW")) {
+                    optionalValues.add("DATABASES");
+                    optionalValues.add("databases");
+                }
+            }
+        } else /* 选择了数据库 */ {
+
+            if (inputWords.length <= 1 && !isEndWithSpace(cursorBeforeValue)) {
+                // 当正在输入第一个词，返回第一个词可匹配项
+                optionalValues.addAll(firstKeyWords);
+            } else {
+                // 拿到最后一个完整的关键词
+                String lastWord = null;
+                if (isEndWithSpace(cursorBeforeValue)) {
+                    lastWord = inputWords[inputWords.length - 1];
+                } else {
+                    lastWord = inputWords[inputWords.length - 2];
+                }
+                // 根据完整的关键词，预测下一个词补全选项
+                switch (lastWord.toUpperCase()) {
+                    case "CREATE":
+                        optionalValues.addAll(getKeyWordsAfterCreate());
+                        break;
+                    case "SHOW":
+                        optionalValues.addAll(getKeyWordsAfterShow());
+                        break;
+                    case "FROM":
+                        optionalValues.addAll(getKeyWordsAfterForm());
+                        break;
+                }
+            }
+        }
+
+        return optionalValues;
+    }
+
+
+    private boolean isEndWithSpace(String str) {
+        return str.endsWith(" ");
+    }
+
+    private List<String> getKeyWordsAfterForm() {
+        List<String> tableNameList = new ArrayList<>();
+        if (this.database != null) {
+            Map<String, Table> tableMap = this.database.getTableMap();
+            tableNameList.addAll(tableMap.keySet());
+        }
+        tableNameList.stream().sorted();
+        return tableNameList;
+    }
+
 
     private List<String> getKeyWordsAfterCreate() {
         return buildKeyWorkList(Arrays.asList("INDEX", "TABLE", "DATABASE"));

@@ -12,8 +12,6 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
-import java.util.Scanner;
-
 /**
  * @author xiaomingzhang
  * @date 2023/9/8
@@ -24,18 +22,15 @@ public class JlineTerminal {
 
     public static void main(String[] args) {
 
-        Parser parser = getSqlParser(null);
-        Scanner scanner = new Scanner(System.in);
+        printDatabaseMsg();
+
         try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
 
-            LineReader reader = LineReaderBuilder.builder()
-                    .terminal(terminal)
-                    .completer(new TabCompleter())
-                    .build();
+            Parser parser = getSqlParser(null);
+            LineReader reader = buildLineReader(terminal, null);
 
             while (true) {
-
-                String inputStr = reader.readLine("yanySQL>");
+                String inputStr = reader.readLine("yanySQL> ");
                 // 退出命令
                 if ("exit;".equals(inputStr) || "exit".equals(inputStr)) {
                     break;
@@ -52,6 +47,7 @@ public class JlineTerminal {
                         Database database = Database.getDatabase(dbName);
                         if (database != null) {
                             parser = getSqlParser(database);
+                            reader = buildLineReader(terminal, database);
                             System.out.println("ok");
                         } else {
                             System.out.println("数据库不存在");
@@ -74,9 +70,24 @@ public class JlineTerminal {
         System.out.println("结束");
     }
 
+    private static LineReader buildLineReader(Terminal terminal, Database database) {
+        return LineReaderBuilder.builder()
+                .terminal(terminal)
+                .completer(new TabCompleter(database))
+                .build();
+    }
+
     private static Parser getSqlParser(Database database) {
         ConnectSession connectSession = new ConnectSession(database);
         return new SqlParser(connectSession);
     }
+
+    private static void printDatabaseMsg() {
+        System.out.println("+-------------------------------+");
+        System.out.println("|       YanySQL1.0  (^_^)        |");
+        System.out.println("+-------------------------------+");
+        System.out.println("请输入命令...");
+    }
+
 
 }

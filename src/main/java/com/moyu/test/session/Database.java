@@ -22,6 +22,9 @@ public class Database {
 
     private String dbName;
 
+    /**
+     * tableName,tableObj
+     */
     private Map<String, Table> tableMap = new ConcurrentHashMap<>();
 
     static {
@@ -95,5 +98,9 @@ public class Database {
 
     public String getDbName() {
         return dbName;
+    }
+
+    public Map<String, Table> getTableMap() {
+        return tableMap;
     }
 }
