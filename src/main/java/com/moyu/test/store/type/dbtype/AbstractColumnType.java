@@ -75,6 +75,8 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
             case DbColumnTypeConstant.VARCHAR:
             case DbColumnTypeConstant.CHAR:
                 return new StringColumnType();
+            case DbColumnTypeConstant.TIMESTAMP:
+                return new TimeColumnType();
             default:
                 throw new DbException("不支持数据类型:" + columnType);
         }

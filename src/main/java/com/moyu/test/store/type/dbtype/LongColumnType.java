@@ -1,9 +1,7 @@
 package com.moyu.test.store.type.dbtype;
 
 import com.moyu.test.store.WriteBuffer;
-import com.moyu.test.store.type.dbtype.AbstractColumnType;
 import com.moyu.test.util.DataUtils;
-
 import java.nio.ByteBuffer;
 
 /**

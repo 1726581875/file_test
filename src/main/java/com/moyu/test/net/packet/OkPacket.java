@@ -1,16 +1,21 @@
 package com.moyu.test.net.packet;
 
+import com.moyu.test.exception.ExceptionUtil;
+import com.moyu.test.net.constant.CommandTypeConstant;
+import com.moyu.test.net.model.BaseResultDto;
+import com.moyu.test.net.model.terminal.DatabaseInfo;
+import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.store.WriteBuffer;
-import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * @author xiaomingzhang
  * @date 2023/7/7
  */
 public class OkPacket extends Packet {
+
+
 
     /**
      * 操作类型
@@ -25,20 +30,19 @@ public class OkPacket extends Packet {
      * 查询结果行
      */
     private int resRows;
-    /**
-     * TODO 当前测试，所有结果作为一个字符串返回
-     */
-    private String resultStr;
 
-    private SelectColumn[] columns;
+    private byte commandType;
 
-    private List<Object[]> resultRows;
+    private int contentLen;
+
+    private BaseResultDto content;
 
 
-    public OkPacket(int resRows, String resultStr) {
-        super.packetType = 1;
+    public OkPacket(int resRows, BaseResultDto content, byte commandType) {
+        super.packetType = Packet.PACKET_TYPE_OK;
         this.resRows = resRows;
-        this.resultStr = resultStr;
+        this.content = content;
+        this.commandType = commandType;
     }
 
     public OkPacket(ByteBuffer buffer) {
@@ -47,28 +51,41 @@ public class OkPacket extends Packet {
         this.opType = buffer.get();
         this.affRows = buffer.getInt();
         this.resRows = buffer.getInt();
-        int msgLen = buffer.getInt();
-        StringBuilder builder = new StringBuilder();
-        while (msgLen > 0) {
-            builder.append(buffer.getChar());
-            msgLen--;
+        this.commandType = buffer.get();
+        this.contentLen = buffer.getInt();
+        if (this.contentLen > 0) {
+            switch (commandType) {
+                case CommandTypeConstant.DB_INFO:
+                    this.content = new DatabaseInfo(buffer);
+                    break;
+                case CommandTypeConstant.DB_QUERY:
+                    this.content = new QueryResultDto(buffer);
+                    break;
+                default:
+                    ExceptionUtil.throwDbException("内容类型不合法,contentType:{}", commandType);
+
+            }
         }
-        this.resultStr = builder.toString();
     }
 
 
-
-    public byte[] getBytes(){
+    public byte[] getBytes() {
         WriteBuffer writeBuffer = new WriteBuffer(128);
         writeBuffer.put(opType);
         writeBuffer.putInt(affRows);
         writeBuffer.putInt(resRows);
-        writeBuffer.putInt(resultStr.length());
-        int i = 0;
-        char[] charArray = resultStr.toCharArray();
-        while (i < resultStr.length()) {
-            writeBuffer.putChar(charArray[i++]);
+        writeBuffer.put(commandType);
+        // 查询结果序列化
+        if (content == null) {
+            this.contentLen = 0;
+            writeBuffer.putInt(this.contentLen);
+        } else {
+            ByteBuffer bf = content.getByteBuffer();
+            this.contentLen = bf.limit();
+            writeBuffer.putInt(this.contentLen);
+            writeBuffer.put(bf);
         }
+
         ByteBuffer buffer = writeBuffer.getBuffer();
         int packetLength = buffer.position();
         buffer.flip();
@@ -78,7 +95,7 @@ public class OkPacket extends Packet {
     }
 
 
-    public String getResultStr() {
-        return resultStr;
+    public BaseResultDto getContent() {
+        return content;
     }
 }

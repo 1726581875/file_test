@@ -30,7 +30,7 @@ public class TcpClientTest {
             dataOutputStream.writeInt(dbId);
 
             // 发送sql给服务端
-            String message = "select * from test";
+            String message = "select * from table_1";
             int length1 = message.length();
             dataOutputStream.writeInt(length1);
             dataOutputStream.writeChars(message);
@@ -40,7 +40,7 @@ public class TcpClientTest {
             if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
                 OkPacket okPacket = (OkPacket) packet;
                 System.out.println("sql执行成功，结果:");
-                System.out.println(okPacket.getResultStr());
+                System.out.println(okPacket);
             } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
                 ErrPacket errPacket = (ErrPacket) packet;
                 System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());

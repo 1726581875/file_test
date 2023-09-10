@@ -42,7 +42,8 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.moyu.test.terminal.JlineTerminal</mainClass>
+                            <!--<mainClass>com.moyu.test.terminal.JlineTerminal</mainClass>-->
+                            <mainClass>com.moyu.test.net.TcpServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

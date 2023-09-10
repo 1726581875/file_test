@@ -9,8 +9,7 @@ import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.SelectColumn;
-import com.moyu.test.util.PrintResultUtil;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;

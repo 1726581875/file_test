@@ -2,8 +2,10 @@ package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.QueryResult;
+import com.moyu.test.constant.DbColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.metadata.TableMetadataStore;
+import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.store.metadata.obj.TableMetadata;
 
@@ -67,8 +69,9 @@ public class ShowTablesCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
-        SelectColumn idColumn = new SelectColumn(null, "表id", null, null);
-        SelectColumn nameColumn = new SelectColumn(null, "表名", null, null);
+        Column intColumnType = new Column("id", DbColumnTypeConstant.INT_4, 1, 4);
+        SelectColumn idColumn = new SelectColumn(intColumnType, "id", null, null);
+        SelectColumn nameColumn = new SelectColumn(null, "tableName", null, null);
         QueryResult queryResult = new QueryResult();
         queryResult.setSelectColumns(new SelectColumn[]{idColumn, nameColumn});
 

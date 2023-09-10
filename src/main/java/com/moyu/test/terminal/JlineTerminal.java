@@ -4,9 +4,10 @@ import com.moyu.test.command.Command;
 import com.moyu.test.command.Parser;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.net.model.terminal.DatabaseInfo;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
-import com.moyu.test.util.PrintResultUtil;
+import com.moyu.test.terminal.util.PrintResultUtil;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
@@ -73,7 +74,7 @@ public class JlineTerminal {
     private static LineReader buildLineReader(Terminal terminal, Database database) {
         return LineReaderBuilder.builder()
                 .terminal(terminal)
-                .completer(new TabCompleter(database))
+                .completer(new TabCompleter(new DatabaseInfo(database)))
                 .build();
     }
 

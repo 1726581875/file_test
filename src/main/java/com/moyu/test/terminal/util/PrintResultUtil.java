@@ -1,6 +1,10 @@
-package com.moyu.test.util;
+package com.moyu.test.terminal.util;
 
 import com.moyu.test.command.QueryResult;
+import com.moyu.test.net.model.terminal.ColumnDto;
+import com.moyu.test.net.model.terminal.QueryResultDto;
+import com.moyu.test.net.model.terminal.RowValueDto;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -51,6 +55,58 @@ public class PrintResultUtil {
                 rowData[j] = valueStr;
             }
             printRow(rowData, columnWidths);
+        }
+        // 打印表格底部边框
+        printHorizontalLine(columnWidths);
+
+        if(queryResult.getDesc() != null) {
+            System.out.println(queryResult.getDesc());
+        }
+        System.out.println();
+    }
+
+
+    public static void printResult(QueryResultDto queryResult) {
+
+        ColumnDto[] columns = queryResult.getColumns();
+
+        RowValueDto[] rows = queryResult.getRows();
+
+        int columnCount = columns.length;
+        // 计算字段宽度
+        int[] columnWidths = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = columns[i].getColumnName();
+            // 可设置最小宽度
+            columnWidths[i] = Math.max(columnName.length(), 10);
+            // 遍历结果集的所有行，计算该列数据的宽度
+            for (RowValueDto rowValueDto : rows) {
+                Object[] rowValues = rowValueDto.getColumnValues();
+                String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
+                columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
+            }
+        }
+
+        // 打印表格顶部边框
+        printHorizontalLine(columnWidths);
+        // 打印表头
+        String[] tableHeaders = new String[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = columns[i].getColumnName();
+            tableHeaders[i] = columnName;
+        }
+        printRow(tableHeaders, columnWidths);
+        // 打印表头与内容之间的分隔线
+        printHorizontalLine(columnWidths);
+        // 打印表格内容
+        for (int i = 0; i < rows.length; i++) {
+            Object[] row = rows[i].getColumnValues();
+            String[] rowDataStrs = new String[row.length];
+            for (int j = 0; j < columnCount; j++) {
+                String valueStr = (row[j] == null ? "" : valueToString(row[j]));
+                rowDataStrs[j] = valueStr;
+            }
+            printRow(rowDataStrs, columnWidths);
         }
         // 打印表格底部边框
         printHorizontalLine(columnWidths);

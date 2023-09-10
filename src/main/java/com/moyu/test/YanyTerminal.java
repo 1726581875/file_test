@@ -6,7 +6,7 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
-import com.moyu.test.util.PrintResultUtil;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.*;
 

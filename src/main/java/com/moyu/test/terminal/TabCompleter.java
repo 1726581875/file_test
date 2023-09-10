@@ -1,5 +1,6 @@
 package com.moyu.test.terminal;
 
+import com.moyu.test.net.model.terminal.DatabaseInfo;
 import com.moyu.test.session.Database;
 import com.moyu.test.session.Table;
 import org.jline.reader.Candidate;
@@ -16,7 +17,7 @@ import java.util.*;
  */
 public class TabCompleter implements Completer {
 
-    private Database database;
+    private DatabaseInfo database;
 
     private static final List<String> firstKeyWords = new LinkedList<>();
 
@@ -28,7 +29,7 @@ public class TabCompleter implements Completer {
         }
     }
 
-    public TabCompleter(Database database) {
+    public TabCompleter(DatabaseInfo database) {
         this.database = database;
     }
 
@@ -128,8 +129,7 @@ public class TabCompleter implements Completer {
     private List<String> getKeyWordsAfterForm() {
         List<String> tableNameList = new ArrayList<>();
         if (this.database != null) {
-            Map<String, Table> tableMap = this.database.getTableMap();
-            tableNameList.addAll(tableMap.keySet());
+           return this.database.getTableNameList();
         }
         tableNameList.stream().sorted();
         return tableNameList;
