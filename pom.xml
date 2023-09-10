@@ -35,19 +35,58 @@
             </plugin>
 
             <!-- 将main函数打包为一个可执行的jar包 -->
-            <plugin>
+<!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.1.2</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <!--<mainClass>com.moyu.test.terminal.JlineTerminal</mainClass>-->
+                            &lt;!&ndash;<mainClass>com.moyu.test.terminal.JlineTerminal</mainClass>&ndash;&gt;
                             <mainClass>com.moyu.test.net.TcpServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>-->
+
+            <!-- 打成多个jar包，分别是server.jar 和 client.jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>server</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>yany-server-1.0.0</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.moyu.test.net.TcpServer</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>client</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>yany-client-1.0.0</finalName>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.moyu.test.terminal.TcpTerminal</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
+
 
             <!-- 使用 Maven 的插件 maven-shade-plugin 来创建一个可执行的、包含所有依赖项的 JAR 文件 -->
             <plugin>

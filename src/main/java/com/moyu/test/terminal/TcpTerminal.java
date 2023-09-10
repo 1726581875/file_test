@@ -20,6 +20,7 @@ import org.jline.terminal.TerminalBuilder;
  */
 public class TcpTerminal {
 
+    //private static final String ipAddress = "159.75.134.161";
     private static final String ipAddress = "localhost";
 
     private static final int port = 8888;
@@ -31,7 +32,6 @@ public class TcpTerminal {
         TcpDataSender tcpDataSender = new TcpDataSender(ipAddress, port);
 
         try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
-            Parser parser = getSqlParser(null);
             LineReader reader = buildLineReader(terminal, null);
             DatabaseInfo useDatabase = null;
             while (true) {
