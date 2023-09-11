@@ -55,6 +55,12 @@ public class SelectColumn {
         this.args = args;
     }
 
+    public static SelectColumn newColumn(String columnName, Byte columnType) {
+        SelectColumn selectColumn = new SelectColumn(null, columnName, null, null);
+        selectColumn.setColumnType(columnType);
+        return selectColumn;
+    }
+
 
     public String getTableAliasColumnName() {
        return column.getTableAliasColumnName();

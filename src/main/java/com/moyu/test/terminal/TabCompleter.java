@@ -110,6 +110,9 @@ public class TabCompleter implements Completer {
                         optionalValues.addAll(getKeyWordsAfterShow());
                         break;
                     case "FROM":
+                    case "DESC":
+                    case "ON":
+                    case "TABLE":
                         optionalValues.addAll(getKeyWordsAfterForm());
                         break;
                 }

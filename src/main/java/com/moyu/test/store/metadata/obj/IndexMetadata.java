@@ -25,7 +25,7 @@ public class IndexMetadata implements SerializableByte {
      */
     private String columnName;
     /**
-     * 索引类型，1主键索引、2一般索引
+     * 索引类型，1主键索引、2普通索引
      */
     private byte indexType;
 

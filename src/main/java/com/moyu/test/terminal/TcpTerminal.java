@@ -17,6 +17,7 @@ import org.jline.terminal.TerminalBuilder;
 /**
  * @author xiaomingzhang
  * @date 2023/9/10
+ * 通过TCP连接进行查询的终端
  */
 public class TcpTerminal {
 

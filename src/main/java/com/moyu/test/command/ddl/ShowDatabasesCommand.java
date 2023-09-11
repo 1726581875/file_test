@@ -62,9 +62,8 @@ public class ShowDatabasesCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
-        Column intColumnType = new Column("id", ColumnTypeConstant.INT_4, 1, 4);
-        SelectColumn idColumn = new SelectColumn(intColumnType, "id", null, null);
-        SelectColumn nameColumn = new SelectColumn(null, "dbName", null, null);
+        SelectColumn idColumn = SelectColumn.newColumn("id", ColumnTypeConstant.INT_4);
+        SelectColumn nameColumn = SelectColumn.newColumn("dbName", ColumnTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
         queryResult.setSelectColumns(new SelectColumn[]{idColumn, nameColumn});
         DatabaseMetadataStore metadataStore = null;
