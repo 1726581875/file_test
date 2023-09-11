@@ -26,8 +26,14 @@ public class SelectColumn {
      * 字段别名
      */
     private String alias;
-
+    /**
+     * 表别名
+     */
     private String tableAlias;
+    /**
+     * 结果字段类型
+     */
+    private Byte columnType;
 
     /**
      * 函数名
@@ -123,5 +129,13 @@ public class SelectColumn {
 
     public void setTableAlias(String tableAlias) {
         this.tableAlias = tableAlias;
+    }
+
+    public void setColumnType(Byte columnType) {
+        this.columnType = columnType;
+    }
+
+    public Byte getColumnType() {
+        return columnType;
     }
 }

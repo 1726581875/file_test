@@ -1,6 +1,6 @@
 package com.moyu.test.command.dml.function;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.metadata.obj.Column;
 
@@ -22,15 +22,15 @@ public class MinFunction extends StatFunction {
             if (columnName.equals(c.getColumnName()) && c.getValue() != null) {
                 byte columnType = c.getColumnType();
                 switch (columnType) {
-                    case DbColumnTypeConstant.INT_4:
+                    case ColumnTypeConstant.INT_4:
                         Integer v1 = (Integer) c.getValue();
                         value = Long.valueOf(value == null ? v1 : Math.min(value, v1));
                         break;
-                    case DbColumnTypeConstant.INT_8:
+                    case ColumnTypeConstant.INT_8:
                         Long v2 = (Long) c.getValue();
                         value = value == null ? v2 : Math.min(value, v2);
                         break;
-                    case DbColumnTypeConstant.TIMESTAMP:
+                    case ColumnTypeConstant.TIMESTAMP:
                         Date v3 = (Date) c.getValue();
                         value = value == null ? v3.getTime() : Math.min(value, v3.getTime());
                         break;

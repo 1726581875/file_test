@@ -1,6 +1,6 @@
 package com.moyu.test.store.type;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.store.type.dbtype.DateColumnType;
 import com.moyu.test.store.type.dbtype.IntColumnType;
 import com.moyu.test.store.type.dbtype.LongColumnType;
@@ -19,11 +19,11 @@ public class ColumnTypeFactory {
     private static final Map<Byte, DataType> columnTypeMap = new HashMap<>();
 
     static {
-        columnTypeMap.put(DbColumnTypeConstant.INT_4, new IntColumnType());
-        columnTypeMap.put(DbColumnTypeConstant.INT_8, new LongColumnType());
-        columnTypeMap.put(DbColumnTypeConstant.VARCHAR, new StringColumnType());
-        columnTypeMap.put(DbColumnTypeConstant.CHAR, new StringColumnType());
-        columnTypeMap.put(DbColumnTypeConstant.TIMESTAMP, new DateColumnType());
+        columnTypeMap.put(ColumnTypeConstant.INT_4, new IntColumnType());
+        columnTypeMap.put(ColumnTypeConstant.INT_8, new LongColumnType());
+        columnTypeMap.put(ColumnTypeConstant.VARCHAR, new StringColumnType());
+        columnTypeMap.put(ColumnTypeConstant.CHAR, new StringColumnType());
+        columnTypeMap.put(ColumnTypeConstant.TIMESTAMP, new DateColumnType());
     }
 
     public static DataType getColumnType(Byte type) {

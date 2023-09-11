@@ -1063,6 +1063,8 @@ public class SqlParser implements Parser {
         }
         String functionName = functionStr.substring(0, i).toUpperCase();
 
+
+        Byte resultType = null;
         switch (functionName) {
             case FunctionConstant.FUNC_COUNT:
                 args = new String[1];
@@ -1080,11 +1082,13 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("sql不合法，字段{}不存在", cName);
                 }
                 args[0] = columnName0;
+                resultType = ColumnTypeConstant.INT_8;
                 break;
             case FunctionConstant.FUNC_MAX:
             case FunctionConstant.FUNC_MIN:
             case FunctionConstant.FUNC_SUM:
             case FunctionConstant.FUNC_AVG:
+                resultType = FunctionConstant.FUNC_AVG.equals(functionName) ? ColumnTypeConstant.DOUBLE : ColumnTypeConstant.INT_8;
                 args = new String[1];
                 String columnName = getFunctionArg(functionStr);
                 column = columnInfo.getColumn(columnName);
@@ -1098,6 +1102,7 @@ public class SqlParser implements Parser {
         }
 
         SelectColumn selectColumn = new SelectColumn(column, selectColumnName, functionName, args);
+        selectColumn.setColumnType(resultType);
         return selectColumn;
     }
 
@@ -1647,14 +1652,14 @@ public class SqlParser implements Parser {
         }
 
         switch (column.getColumnType()) {
-            case DbColumnTypeConstant.INT_4:
+            case ColumnTypeConstant.INT_4:
                 Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
                 column.setValue(intValue);
                 break;
-            case DbColumnTypeConstant.INT_8:
+            case ColumnTypeConstant.INT_8:
                 column.setValue(Long.valueOf(value));
                 break;
-            case DbColumnTypeConstant.VARCHAR:
+            case ColumnTypeConstant.VARCHAR:
                 if (value.startsWith("'") && value.endsWith("'")) {
                     column.setValue(value.substring(1, value.length() - 1));
                 } else if(isNullValue(value)) {
@@ -1663,7 +1668,7 @@ public class SqlParser implements Parser {
                     throw new SqlIllegalException("sql不合法，" + value);
                 }
                 break;
-            case DbColumnTypeConstant.TIMESTAMP:
+            case ColumnTypeConstant.TIMESTAMP:
                 if (value.startsWith("'") && value.endsWith("'")) {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String dateStr = value.substring(1, value.length() - 1);
@@ -1897,10 +1902,10 @@ public class SqlParser implements Parser {
 
         // 如果没有指定字段长度像int、bigint等，要自动给长度
         if(columnLength == -1) {
-            if(DbColumnTypeConstant.INT_4 == type) {
+            if(ColumnTypeConstant.INT_4 == type) {
                 columnLength = 4;
             }
-            if(DbColumnTypeConstant.INT_8 == type) {
+            if(ColumnTypeConstant.INT_8 == type) {
                 columnLength = 8;
             }
         }

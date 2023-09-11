@@ -1,10 +1,8 @@
 package com.moyu.test.command.dml.function;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.metadata.obj.Column;
-
-import java.util.Date;
 
 /**
  * @author xiaomingzhang
@@ -22,15 +20,15 @@ public class SumFunction extends StatFunction{
             if (columnName.equals(c.getColumnName()) && c.getValue() != null) {
                 byte columnType = c.getColumnType();
                 switch (columnType) {
-                    case DbColumnTypeConstant.INT_4:
+                    case ColumnTypeConstant.INT_4:
                         Integer v1 = (Integer) c.getValue();
                         value = Long.valueOf(value == null ? v1 : value + v1);
                         break;
-                    case DbColumnTypeConstant.INT_8:
+                    case ColumnTypeConstant.INT_8:
                         Long v2 = (Long) c.getValue();
                         value = value == null ? v2 : value + v2;
                         break;
-                    case DbColumnTypeConstant.TIMESTAMP:
+                    case ColumnTypeConstant.TIMESTAMP:
                         throw new SqlExecutionException("sum函数计算错误，不支持日期类型");
                     default:
                         throw new SqlExecutionException("sum函数计算错误，类型不正确,type:" + columnType);

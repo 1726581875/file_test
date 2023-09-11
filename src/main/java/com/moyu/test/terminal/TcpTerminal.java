@@ -81,9 +81,7 @@ public class TcpTerminal {
                     }
 
                     QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(useDatabase.getDatabaseId(), inputStr);
-                    if(queryResultDto == null) {
-                        throw new DbException("发生异常，结果为空");
-                    } else {
+                    if(queryResultDto != null) {
                         PrintResultUtil.printResult(queryResultDto);
                     }
                 } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.util.DataUtils;
 
 import java.nio.ByteBuffer;
@@ -36,7 +37,7 @@ public class ColumnMetadata {
     private String columnName;
     /**
      * 字段类型，
-     * @see com.moyu.test.constant.DbColumnTypeConstant
+     * @see ColumnTypeConstant
      */
     private byte columnType;
     /**

@@ -8,7 +8,7 @@ import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
 import com.moyu.test.config.CommonConfig;
 import com.moyu.test.constant.CommonConstant;
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.constant.FunctionConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.SqlExecutionException;
@@ -484,19 +484,19 @@ public class Query {
 
             // 日期类型
             if (!FunctionConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
-                    && c != null && c.getColumnType() == DbColumnTypeConstant.TIMESTAMP) {
-                resultColumn = new Column(columnName, DbColumnTypeConstant.TIMESTAMP, columnIndex, 8);
+                    && c != null && c.getColumnType() == ColumnTypeConstant.TIMESTAMP) {
+                resultColumn = new Column(columnName, ColumnTypeConstant.TIMESTAMP, columnIndex, 8);
                 resultColumn.setValue(statResult == null ? null : new Date(statResult));
             } else {
                 // 数字类型
-                resultColumn = new Column(columnName, DbColumnTypeConstant.INT_8, columnIndex, 8);
+                resultColumn = new Column(columnName, ColumnTypeConstant.INT_8, columnIndex, 8);
                 resultColumn.setValue(statResult);
             }
         } else if (AvgFunction.class.equals(fClass)) {
             AvgFunction avgFunction = (AvgFunction) statFunction;
             Double avgValue = avgFunction.getAvgValue();
             // TODO 应当为Double类型
-            resultColumn = new Column(columnName, DbColumnTypeConstant.INT_8, columnIndex, 8);
+            resultColumn = new Column(columnName, ColumnTypeConstant.INT_8, columnIndex, 8);
             resultColumn.setValue(avgValue);
         } else {
             throw new SqlIllegalException("sql语法错误，不支持该函数" + statFunction);

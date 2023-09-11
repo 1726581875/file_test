@@ -1,8 +1,6 @@
 package com.moyu.test.terminal;
 
 import com.moyu.test.net.model.terminal.DatabaseInfo;
-import com.moyu.test.session.Database;
-import com.moyu.test.session.Table;
 import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;

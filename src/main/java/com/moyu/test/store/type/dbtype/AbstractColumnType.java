@@ -1,6 +1,6 @@
 package com.moyu.test.store.type.dbtype;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.store.type.DataType;
@@ -50,8 +50,8 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
 
     @Override
     public int compare(T a, T b) {
-        if(a instanceof Comparable && b instanceof Comparable) {
-            return ((Comparable)a).compareTo(((Comparable)b));
+        if (a instanceof Comparable && b instanceof Comparable) {
+            return ((Comparable) a).compareTo(((Comparable) b));
         } else {
             throw new UnsupportedOperationException("不支持compare方法");
         }
@@ -59,6 +59,7 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
 
     /**
      * 把值写入ByteBuffer
+     *
      * @return
      */
     protected abstract T readValue(ByteBuffer byteBuffer);
@@ -68,15 +69,17 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
 
     public static DataType getDataType(byte columnType) {
         switch (columnType) {
-            case DbColumnTypeConstant.INT_4:
+            case ColumnTypeConstant.INT_4:
                 return new IntColumnType();
-            case DbColumnTypeConstant.INT_8:
+            case ColumnTypeConstant.INT_8:
                 return new LongColumnType();
-            case DbColumnTypeConstant.VARCHAR:
-            case DbColumnTypeConstant.CHAR:
+            case ColumnTypeConstant.VARCHAR:
+            case ColumnTypeConstant.CHAR:
                 return new StringColumnType();
-            case DbColumnTypeConstant.TIMESTAMP:
+            case ColumnTypeConstant.TIMESTAMP:
                 return new TimeColumnType();
+            case ColumnTypeConstant.DOUBLE:
+                return new DoubleColumnType();
             default:
                 throw new DbException("不支持数据类型:" + columnType);
         }

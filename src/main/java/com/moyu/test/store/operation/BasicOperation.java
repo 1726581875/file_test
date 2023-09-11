@@ -3,7 +3,7 @@ package com.moyu.test.store.operation;
 import com.moyu.test.command.dml.expression.Expression;
 import com.moyu.test.command.dml.sql.QueryTable;
 import com.moyu.test.constant.CommonConstant;
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.data.cursor.Cursor;
@@ -77,12 +77,12 @@ public abstract class BasicOperation {
 
     protected Value getIndexValueObject(Column column) {
         switch (column.getColumnType()) {
-            case DbColumnTypeConstant.INT_4:
+            case ColumnTypeConstant.INT_4:
                 return new IntegerValue((Integer) column.getValue());
-            case DbColumnTypeConstant.INT_8:
+            case ColumnTypeConstant.INT_8:
                 return new LongValue((Long) column.getValue());
-            case DbColumnTypeConstant.VARCHAR:
-            case DbColumnTypeConstant.CHAR:
+            case ColumnTypeConstant.VARCHAR:
+            case ColumnTypeConstant.CHAR:
                 return new StringValue(String.valueOf(column.getValue()));
             default:
                 throw new DbException("不支持数据类型:" + column.getColumnType());

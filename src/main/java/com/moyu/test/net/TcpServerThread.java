@@ -3,7 +3,7 @@ package com.moyu.test.net;
 import com.moyu.test.command.Command;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.net.constant.CommandTypeConstant;
 import com.moyu.test.net.model.BaseResultDto;
@@ -22,7 +22,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -139,10 +138,14 @@ public class TcpServerThread implements Runnable {
             byte columnType;
             Column column = selectColumns[i].getColumn();
             // 如果没有指数据库字段对象，默认为字符类型
-            if (column == null) {
-                columnType = DbColumnTypeConstant.VARCHAR;
+            if(selectColumns[i].getColumnType() == null) {
+                if (column == null) {
+                    columnType = ColumnTypeConstant.VARCHAR;
+                } else {
+                    columnType = column.getColumnType();
+                }
             } else {
-                columnType = column.getColumnType();
+                columnType = selectColumns[i].getColumnType();
             }
             columnDtos[i] = new ColumnDto(columnName, alias, tableAlias, columnType);
         }

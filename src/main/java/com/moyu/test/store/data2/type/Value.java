@@ -1,6 +1,6 @@
 package com.moyu.test.store.data2.type;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.SerializableByte;
 import com.moyu.test.store.type.dbtype.IntColumnType;
@@ -42,14 +42,14 @@ public abstract class Value implements SerializableByte {
 
     public static int getValueTypeByColumnType(byte columnType) {
         switch (columnType) {
-            case DbColumnTypeConstant.INT_4:
+            case ColumnTypeConstant.INT_4:
                 return TYPE_INT;
-            case DbColumnTypeConstant.INT_8:
+            case ColumnTypeConstant.INT_8:
                 return TYPE_LONG;
-            case DbColumnTypeConstant.CHAR:
-            case DbColumnTypeConstant.VARCHAR:
+            case ColumnTypeConstant.CHAR:
+            case ColumnTypeConstant.VARCHAR:
                 return TYPE_STRING;
-            case DbColumnTypeConstant.TIMESTAMP:
+            case ColumnTypeConstant.TIMESTAMP:
                 return TYPE_LONG;
             default:
                 throw new DbException("不支持读取类型:" + columnType);

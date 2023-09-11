@@ -4,6 +4,7 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.net.model.terminal.ColumnDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.net.model.terminal.RowValueDto;
+import com.moyu.test.util.StringUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -76,7 +77,7 @@ public class PrintResultUtil {
         // 计算字段宽度
         int[] columnWidths = new int[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            String columnName = columns[i].getColumnName();
+            String columnName = getPrintColumnName(columns[i]);
             // 可设置最小宽度
             columnWidths[i] = Math.max(columnName.length(), 10);
             // 遍历结果集的所有行，计算该列数据的宽度
@@ -92,7 +93,7 @@ public class PrintResultUtil {
         // 打印表头
         String[] tableHeaders = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            String columnName = columns[i].getColumnName();
+            String columnName = getPrintColumnName(columns[i]);
             tableHeaders[i] = columnName;
         }
         printRow(tableHeaders, columnWidths);
@@ -115,6 +116,16 @@ public class PrintResultUtil {
             System.out.println(queryResult.getDesc());
         }
         System.out.println();
+    }
+
+    private static String getPrintColumnName(ColumnDto columnDto) {
+        if(columnDto.getAlias() != null) {
+            return columnDto.getAlias();
+        }
+        if(StringUtils.isNotEmpty(columnDto.getTableAlias()) && !columnDto.getColumnName().contains(".")) {
+            return columnDto.getTableAlias() + "." + columnDto.getColumnName();
+        }
+        return columnDto.getColumnName();
     }
 
 

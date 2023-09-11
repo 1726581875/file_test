@@ -1,6 +1,6 @@
 package test.store.data;
 
-import com.moyu.test.constant.DbColumnTypeConstant;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.store.data.DataChunk;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.store.data.RowData;
@@ -39,9 +39,9 @@ public class DataChunkStoreTest {
             List<Column> columnList2 = new ArrayList<>();
 
             // 字段信息有值，用于写
-            Column column0 = new Column("a", DbColumnTypeConstant.INT_4, 0, 4);
+            Column column0 = new Column("a", ColumnTypeConstant.INT_4, 0, 4);
             column0.setValue(99);
-            Column column1 = new Column("b", DbColumnTypeConstant.VARCHAR, 1, 10);
+            Column column1 = new Column("b", ColumnTypeConstant.VARCHAR, 1, 10);
             column1.setValue("520");
 
             columnList.add(column0);
@@ -49,8 +49,8 @@ public class DataChunkStoreTest {
 
 
             // 字段信息没有值，用于查询
-            Column column3 = new Column("a", DbColumnTypeConstant.INT_4, 0, 4);
-            Column column4 = new Column("b", DbColumnTypeConstant.VARCHAR, 1, 10);
+            Column column3 = new Column("a", ColumnTypeConstant.INT_4, 0, 4);
+            Column column4 = new Column("b", ColumnTypeConstant.VARCHAR, 1, 10);
             columnList2.add(column3);
             columnList2.add(column4);
 
