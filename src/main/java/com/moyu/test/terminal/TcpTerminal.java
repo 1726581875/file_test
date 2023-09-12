@@ -21,8 +21,8 @@ import org.jline.terminal.TerminalBuilder;
  */
 public class TcpTerminal {
 
-    //private static final String ipAddress = "159.75.134.161";
-    private static final String ipAddress = "localhost";
+    private static final String ipAddress = "159.75.134.161";
+    //private static final String ipAddress = "localhost";
 
     private static final int port = 8888;
 
@@ -36,7 +36,18 @@ public class TcpTerminal {
             LineReader reader = buildLineReader(terminal, null);
             DatabaseInfo useDatabase = null;
             while (true) {
-                String inputStr = reader.readLine("yanySQL> ");
+                // 输入sql
+                String input = reader.readLine("yanySQL> ");
+                if (!input.contains(";") && !input.toUpperCase().startsWith("USE ")) {
+                    String line = null;
+                    while ((line = reader.readLine("       > ")) != null) {
+                        input = input + " " + line;
+                        if (input.contains(";")) {
+                            break;
+                        }
+                    }
+                }
+                String inputStr = input;
                 // 退出命令
                 if ("exit;".equals(inputStr) || "exit".equals(inputStr)) {
                     break;
@@ -51,6 +62,9 @@ public class TcpTerminal {
                     String[] split = inputStr.trim().split("\\s+");
                     if (split.length >= 2 && "USE".equals(split[0].toUpperCase())) {
                         String dbName = inputStr.split("\\s+")[1];
+                        if(dbName.indexOf(";") != -1) {
+                            dbName = dbName.substring(dbName.indexOf(";"));
+                        }
                         useDatabase = tcpDataSender.getDatabaseInfo(dbName);
                         if (useDatabase != null) {
                             System.out.println("ok");
@@ -62,15 +76,16 @@ public class TcpTerminal {
                     }
 
 
+                    System.out.println(input);
                     // show databases命令
-                    if(useDatabase == null) {
+                    if (useDatabase == null) {
                         String sql = inputStr.trim();
-                        String[] sqlSplit = inputStr.split("\\s+");
-                        if(split.length >= 2
+                        String[] sqlSplit = sql.split("\\s+");
+                        if (split.length >= 2
                                 && "SHOW".equals(sqlSplit[0].toUpperCase())
-                                &&  "DATABASES".equals(sqlSplit[1].toUpperCase())) {
+                                && ("DATABASES".equals(sqlSplit[1].toUpperCase())) || "DATABASES;".equals(sqlSplit[1].toUpperCase())) {
                             QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(-1, inputStr);
-                            if(queryResultDto == null) {
+                            if (queryResultDto == null) {
                                 throw new DbException("发生异常，结果为空");
                             } else {
                                 PrintResultUtil.printResult(queryResultDto);
@@ -82,7 +97,7 @@ public class TcpTerminal {
                     }
 
                     QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(useDatabase.getDatabaseId(), inputStr);
-                    if(queryResultDto != null) {
+                    if (queryResultDto != null) {
                         PrintResultUtil.printResult(queryResultDto);
                     }
                 } catch (Exception e) {
@@ -115,7 +130,6 @@ public class TcpTerminal {
         System.out.println("+-------------------------------+");
         System.out.println("请输入命令...");
     }
-
 
 
 }
