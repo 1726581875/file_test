@@ -69,6 +69,8 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
 
     public static DataType getDataType(byte columnType) {
         switch (columnType) {
+            case ColumnTypeConstant.TINY_INT:
+                return new TinyIntColumnType();
             case ColumnTypeConstant.INT_4:
                 return new IntColumnType();
             case ColumnTypeConstant.INT_8:

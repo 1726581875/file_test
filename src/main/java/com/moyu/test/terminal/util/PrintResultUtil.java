@@ -1,6 +1,7 @@
 package com.moyu.test.terminal.util;
 
 import com.moyu.test.command.QueryResult;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.net.model.terminal.ColumnDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.net.model.terminal.RowValueDto;
@@ -68,7 +69,10 @@ public class PrintResultUtil {
 
 
     public static void printResult(QueryResultDto queryResult) {
-
+        if (queryResult == null) {
+            //throw new DbException("发生异常，结果为空");
+            System.out.println("发生异常，结果为空");
+        }
         ColumnDto[] columns = queryResult.getColumns();
 
         RowValueDto[] rows = queryResult.getRows();

@@ -1652,6 +1652,10 @@ public class SqlParser implements Parser {
         }
 
         switch (column.getColumnType()) {
+            case ColumnTypeConstant.TINY_INT:
+                Byte byteValue = isNullValue(value) ? null : Byte.valueOf(value);
+                column.setValue(byteValue);
+                break;
             case ColumnTypeConstant.INT_4:
                 Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
                 column.setValue(intValue);

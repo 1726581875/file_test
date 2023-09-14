@@ -18,6 +18,8 @@ public interface ColumnTypeConstant {
 
     byte DOUBLE = 13;
 
+    byte TINY_INT = 14;
+
 
 
 }

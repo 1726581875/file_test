@@ -9,12 +9,14 @@ import java.util.Date;
  * @date 2023/5/16
  */
 public enum ColumnTypeEnum {
+    TINY_INT("tinyint", ColumnTypeConstant.TINY_INT),
     INT("int", ColumnTypeConstant.INT_4),
     INT_4("int4", ColumnTypeConstant.INT_4),
     BIGINT("bigint", ColumnTypeConstant.INT_8),
     CHAR("char", ColumnTypeConstant.CHAR),
     VARCHAR("varchar", ColumnTypeConstant.VARCHAR),
-    TIMESTAMP("timestamp", ColumnTypeConstant.TIMESTAMP)
+    TIMESTAMP("timestamp", ColumnTypeConstant.TIMESTAMP),
+    DATETIME("datetime", ColumnTypeConstant.TIMESTAMP)
     ;
     private String typeName;
 

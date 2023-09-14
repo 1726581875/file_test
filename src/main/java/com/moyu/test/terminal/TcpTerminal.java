@@ -14,6 +14,9 @@ import org.jline.reader.LineReaderBuilder;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author xiaomingzhang
  * @date 2023/9/10
@@ -25,6 +28,8 @@ public class TcpTerminal {
     //private static final String ipAddress = "localhost";
 
     private static final int port = 8888;
+
+    private static final String END_CHAR = ";";
 
     public static void main(String[] args) {
 
@@ -38,11 +43,11 @@ public class TcpTerminal {
             while (true) {
                 // 输入sql
                 String input = reader.readLine("yanySQL> ");
-                if (!input.contains(";") && !input.toUpperCase().startsWith("USE ")) {
+                if (!input.contains(END_CHAR) && !input.toUpperCase().startsWith("USE ")) {
                     String line = null;
                     while ((line = reader.readLine("       > ")) != null) {
                         input = input + " " + line;
-                        if (input.contains(";")) {
+                        if (input.contains(END_CHAR)) {
                             break;
                         }
                     }
@@ -58,13 +63,10 @@ public class TcpTerminal {
                 }
 
                 try {
-                    // 进入数据库
-                    String[] split = inputStr.trim().split("\\s+");
+                    // 使用数据库,命令: use dbName
+                    String[] split = getWords(inputStr);
                     if (split.length >= 2 && "USE".equals(split[0].toUpperCase())) {
-                        String dbName = inputStr.split("\\s+")[1];
-                        if(dbName.indexOf(";") != -1) {
-                            dbName = dbName.substring(dbName.indexOf(";"));
-                        }
+                        String dbName = split[1];
                         useDatabase = tcpDataSender.getDatabaseInfo(dbName);
                         if (useDatabase != null) {
                             System.out.println("ok");
@@ -75,32 +77,25 @@ public class TcpTerminal {
                         continue;
                     }
 
-
-                    System.out.println(input);
-                    // show databases命令
+                    // 如果还没使用数据库，只能执行show databases命令
                     if (useDatabase == null) {
-                        String sql = inputStr.trim();
-                        String[] sqlSplit = sql.split("\\s+");
+                        String[] sqlSplit = getWords(inputStr);
                         if (split.length >= 2
                                 && "SHOW".equals(sqlSplit[0].toUpperCase())
                                 && ("DATABASES".equals(sqlSplit[1].toUpperCase())) || "DATABASES;".equals(sqlSplit[1].toUpperCase())) {
                             QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(-1, inputStr);
-                            if (queryResultDto == null) {
-                                throw new DbException("发生异常，结果为空");
-                            } else {
-                                PrintResultUtil.printResult(queryResultDto);
-                                continue;
-                            }
+                            PrintResultUtil.printResult(queryResultDto);
+                        } else {
+                            System.out.println("请先使用use命令选择数据库..");
                         }
-                        System.out.println("请先使用use命令选择数据库..");
-                        continue;
-                    }
-
-                    QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(useDatabase.getDatabaseId(), inputStr);
-                    if (queryResultDto != null) {
+                    } else {
+                        // 其他命令
+                        QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(useDatabase.getDatabaseId(), inputStr);
                         PrintResultUtil.printResult(queryResultDto);
                     }
+
                 } catch (Exception e) {
+                    //System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -119,10 +114,38 @@ public class TcpTerminal {
                 .build();
     }
 
-    private static Parser getSqlParser(Database database) {
-        ConnectSession connectSession = new ConnectSession(database);
-        return new SqlParser(connectSession);
+    private static String[] getWords(String str) {
+        List<String> workList = new ArrayList<>();
+        char[] charArray = str.toCharArray();
+
+        int start = 0;
+        int end = 0;
+        while (end < charArray.length) {
+            if (charArray[end] == ' ' || charArray[end] == ';') {
+                if (end > start) {
+                    String word = str.substring(start, end).trim();
+                    if (word.length() > 0) {
+                        workList.add(word);
+                    }
+                    start = end + 1;
+                }
+                if(charArray[end] == ';') {
+                    return workList.toArray(new String[0]);
+                }
+            }
+            end++;
+        }
+
+        if(start < charArray.length) {
+            String word = str.substring(start, charArray.length).trim();
+            if (word.length() > 0) {
+                workList.add(word);
+            }
+        }
+
+        return workList.toArray(new String[0]);
     }
+
 
     private static void printDatabaseMsg() {
         System.out.println("+-------------------------------+");
