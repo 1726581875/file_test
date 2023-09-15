@@ -72,6 +72,7 @@ public class PrintResultUtil {
         if (queryResult == null) {
             //throw new DbException("发生异常，结果为空");
             System.out.println("发生异常，结果为空");
+            return;
         }
         ColumnDto[] columns = queryResult.getColumns();
 

@@ -1,9 +1,11 @@
 package com.moyu.test.net.util;
 
 import com.moyu.test.store.WriteBuffer;
-import com.moyu.test.util.DataUtils;
-
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  * @author xiaomingzhang
@@ -15,10 +17,12 @@ public class ReadWriteUtil {
         if (str == null) {
             writeBuffer.putInt(-1);
         } else if (str.length() == 0) {
-            writeBuffer.putInt(str.length());
+            byte[] bytes = str.getBytes();
+            writeBuffer.putInt(bytes.length);
         } else {
-            writeBuffer.putInt(str.length());
-            writeBuffer.putStringData(str, str.length());
+            byte[] bytes = str.getBytes();
+            writeBuffer.putInt(bytes.length);
+            writeBuffer.put(bytes);
         }
     }
 
@@ -30,8 +34,27 @@ public class ReadWriteUtil {
         } else if (len == 0) {
             return "";
         } else {
-            return DataUtils.readString(byteBuffer, len);
+            byte[] bytes = new byte[len];
+            byteBuffer.get(bytes);
+            return new String(bytes);
         }
+    }
+
+
+    public static String readString(DataInputStream in) throws IOException {
+        Integer byteLen = in.readInt();
+        byte[] bytes = new byte[byteLen];
+        for (int i = 0; i < byteLen; i++) {
+            bytes[i] = in.readByte();
+        }
+        return new String(bytes);
+    }
+
+    public static String writeString(DataOutputStream out, String str) throws IOException {
+        byte[] bytes = str.getBytes();
+        out.writeInt(bytes.length);
+        out.write(bytes);
+        return new String(bytes);
     }
 
 

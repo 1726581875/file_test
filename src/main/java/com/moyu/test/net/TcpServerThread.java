@@ -13,6 +13,7 @@ import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.net.model.terminal.RowValueDto;
 import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
+import com.moyu.test.net.util.ReadWriteUtil;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
@@ -53,7 +54,7 @@ public class TcpServerThread implements Runnable {
                 switch (commandType) {
                     case CommandTypeConstant.DB_INFO:
                         // 获取数据库名称
-                        String databaseName = readString(in);
+                        String databaseName = ReadWriteUtil.readString(in);
                         System.out.println("获取数据库信息，数据库名称:" + databaseName);
                         Database database = Database.getDatabase(databaseName);
                         resultDto = new DatabaseInfo(database);
@@ -67,7 +68,7 @@ public class TcpServerThread implements Runnable {
                             dbObj = Database.getDatabase(databaseId);
                         }
                         // 获取待执行sql
-                        String sql = readString(in);
+                        String sql = ReadWriteUtil.readString(in);
                         System.out.println("数据库id:" + databaseId + "接收到SQL:" + sql);
                         ConnectSession connectSession = new ConnectSession(dbObj);
                         // sql解析
@@ -79,7 +80,7 @@ public class TcpServerThread implements Runnable {
                         resultDto = queryResultDto;
                         break;
                     default:
-                        ExceptionUtil.throwDbException("内容类型不合法,contentType:{}", commandType);
+                        ExceptionUtil.throwDbException("内容类型不合法,commandType:{}", commandType);
                 }
                 // 发送结果包
                 OkPacket okPacket = new OkPacket(1, resultDto, commandType);
@@ -116,15 +117,6 @@ public class TcpServerThread implements Runnable {
                 ioException.printStackTrace();
             }
         }
-    }
-
-    private String readString(DataInputStream in) throws IOException {
-        Integer sqlCharLen = in.readInt();
-        char[] sqlChars = new char[sqlCharLen];
-        for (int i = 0; i < sqlCharLen; i++) {
-            sqlChars[i] = in.readChar();
-        }
-        return new String(sqlChars);
     }
 
     private QueryResultDto queryResultToDTO(QueryResult queryResult) {

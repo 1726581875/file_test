@@ -8,6 +8,7 @@ import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.packet.Packet;
 import com.moyu.test.net.model.terminal.DatabaseInfo;
+import com.moyu.test.net.util.ReadWriteUtil;
 
 import java.io.*;
 import java.net.Socket;
@@ -40,8 +41,7 @@ public class TcpDataSender {
             // 命令类型
             dataOutputStream.writeByte(CommandTypeConstant.DB_INFO);
             // 数据库名称
-            dataOutputStream.writeInt(databaseName.length());
-            dataOutputStream.writeChars(databaseName);
+            ReadWriteUtil.writeString(dataOutputStream, databaseName);
             // 获取结果
             Packet packet = readPacket(dataInputStream);
             if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
@@ -73,8 +73,9 @@ public class TcpDataSender {
             // 数据库id
             dataOutputStream.writeInt(databaseId);
             // SQL
-            dataOutputStream.writeInt(sql.length());
-            dataOutputStream.writeChars(sql);
+            ReadWriteUtil.writeString(dataOutputStream, sql);
+/*            dataOutputStream.writeInt(sql.length());
+            dataOutputStream.writeChars(sql);*/
             // 获取结果
             Packet packet = readPacket(dataInputStream);
             if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
