@@ -178,4 +178,87 @@ public class PrintResultUtil {
         }
     }
 
+
+    public static String getFormatResult(QueryResultDto queryResult) {
+        StringBuilder stringBuilder = new StringBuilder("");
+        if (queryResult == null) {
+            stringBuilder.append("发生异常，结果为空");
+            return stringBuilder.toString();
+        }
+
+        ColumnDto[] columns = queryResult.getColumns();
+        RowValueDto[] rows = queryResult.getRows();
+
+        int columnCount = columns.length;
+        // 计算字段宽度
+        int[] columnWidths = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = getPrintColumnName(columns[i]);
+            // 可设置最小宽度
+            columnWidths[i] = Math.max(columnName.length(), 10);
+            // 遍历结果集的所有行，计算该列数据的宽度
+            for (RowValueDto rowValueDto : rows) {
+                Object[] rowValues = rowValueDto.getColumnValues();
+                String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
+                columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
+            }
+        }
+
+        // 打印表格顶部边框
+        appendHorizontalLine(columnWidths, stringBuilder);
+        // 打印表头
+        String[] tableHeaders = new String[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = getPrintColumnName(columns[i]);
+            tableHeaders[i] = columnName;
+        }
+        appendRow(tableHeaders, columnWidths, stringBuilder);
+        // 打印表头与内容之间的分隔线
+        appendHorizontalLine(columnWidths, stringBuilder);
+        // 打印表格内容
+        for (int i = 0; i < rows.length; i++) {
+            Object[] row = rows[i].getColumnValues();
+            String[] rowDataStrs = new String[row.length];
+            for (int j = 0; j < columnCount; j++) {
+                String valueStr = (row[j] == null ? "" : valueToString(row[j]));
+                rowDataStrs[j] = valueStr;
+            }
+            appendRow(rowDataStrs, columnWidths, stringBuilder);
+        }
+        // 打印表格底部边框
+        appendHorizontalLine(columnWidths, stringBuilder);
+
+        if(queryResult.getDesc() != null) {
+            stringBuilder.append(queryResult.getDesc() + "\n");
+        }
+        stringBuilder.append("\n");
+        return stringBuilder.toString();
+    }
+
+
+    private static void appendHorizontalLine(int[] columnWidths, StringBuilder stringBuilder) {
+        for (int width : columnWidths) {
+            String line = "+" + repeat("-", width + 2);
+            stringBuilder.append(line);
+        }
+        stringBuilder.append("+\n");
+    }
+
+
+    private static void appendRow(String[] rowData, int[] columnWidths, StringBuilder stringBuilder) {
+        for (int i = 0; i < rowData.length; i++) {
+            int width = columnWidths[i];
+            String value = rowData[i];
+            stringBuilder.append("| ");
+            // 输出值
+            stringBuilder.append(value);
+            // 需要填充的空格数量
+            int spaceNum = width - value.length();
+            // 打印对应数量的空格
+            stringBuilder.append(repeat(" ",  spaceNum) + " ");
+        }
+        stringBuilder.append("|\n");
+    }
+
+
 }

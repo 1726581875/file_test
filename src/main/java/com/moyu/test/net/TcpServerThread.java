@@ -7,10 +7,7 @@ import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.net.constant.CommandTypeConstant;
 import com.moyu.test.net.model.BaseResultDto;
-import com.moyu.test.net.model.terminal.ColumnDto;
-import com.moyu.test.net.model.terminal.DatabaseInfo;
-import com.moyu.test.net.model.terminal.QueryResultDto;
-import com.moyu.test.net.model.terminal.RowValueDto;
+import com.moyu.test.net.model.terminal.*;
 import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.util.ReadWriteUtil;
@@ -18,6 +15,7 @@ import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -60,8 +58,8 @@ public class TcpServerThread implements Runnable {
                         resultDto = new DatabaseInfo(database);
                         break;
                     case CommandTypeConstant.DB_QUERY:
-                    case CommandTypeConstant.SHOW_DATABASE:
-                        Integer databaseId = in.readInt();;
+                    case CommandTypeConstant.DB_QUERY_RES_STR:
+                        Integer databaseId = in.readInt();
                         Database dbObj = null;
                         // 数据库id为-1时候，执行不需要数据库的命令。例如show databases
                         if(!new Integer(-1).equals(databaseId)) {
@@ -77,7 +75,13 @@ public class TcpServerThread implements Runnable {
                         // 执行sql并且获取执行结果
                         QueryResult queryResult = command.execCommand();
                         QueryResultDto queryResultDto = queryResultToDTO(queryResult);
-                        resultDto = queryResultDto;
+                        if(commandType == CommandTypeConstant.DB_QUERY_RES_STR) {
+                            String formatResult = PrintResultUtil.getFormatResult(queryResultDto);
+                            System.out.println(formatResult);
+                            resultDto = new QueryResultStrDto(formatResult);
+                        } else {
+                            resultDto = queryResultDto;
+                        }
                         break;
                     default:
                         ExceptionUtil.throwDbException("内容类型不合法,commandType:{}", commandType);

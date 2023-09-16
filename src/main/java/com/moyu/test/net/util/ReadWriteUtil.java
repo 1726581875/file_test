@@ -20,7 +20,7 @@ public class ReadWriteUtil {
             byte[] bytes = str.getBytes();
             writeBuffer.putInt(bytes.length);
         } else {
-            byte[] bytes = str.getBytes();
+            byte[] bytes = str.getBytes(Charset.forName("UTF-8"));
             writeBuffer.putInt(bytes.length);
             writeBuffer.put(bytes);
         }
@@ -36,7 +36,7 @@ public class ReadWriteUtil {
         } else {
             byte[] bytes = new byte[len];
             byteBuffer.get(bytes);
-            return new String(bytes);
+            return new String(bytes, Charset.forName("UTF-8"));
         }
     }
 
@@ -47,14 +47,14 @@ public class ReadWriteUtil {
         for (int i = 0; i < byteLen; i++) {
             bytes[i] = in.readByte();
         }
-        return new String(bytes);
+        return new String(bytes, Charset.forName("UTF-8"));
     }
 
     public static String writeString(DataOutputStream out, String str) throws IOException {
-        byte[] bytes = str.getBytes();
+        byte[] bytes = str.getBytes(Charset.forName("UTF-8"));
         out.writeInt(bytes.length);
         out.write(bytes);
-        return new String(bytes);
+        return new String(bytes, Charset.forName("UTF-8"));
     }
 
 

@@ -1,9 +1,8 @@
 package com.moyu.test.net.packet;
 
+import com.moyu.test.net.util.ReadWriteUtil;
 import com.moyu.test.store.WriteBuffer;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -27,35 +26,14 @@ public class ErrPacket extends Packet {
         super.packetLen = buffer.limit();
         super.packetType = Packet.PACKET_TYPE_ERR;
         this.errCode = buffer.getInt();
-        int msgLen = buffer.getInt();
-        StringBuilder builder = new StringBuilder();
-        while (msgLen > 0) {
-            builder.append(buffer.getChar());
-            msgLen--;
-        }
-        this.errMsg = builder.toString();
-    }
-
-
-    public void write(DataOutputStream outputStream) throws IOException {
-        outputStream.writeInt(super.packetLen);
-        outputStream.writeByte(super.packetType);
-        outputStream.writeInt(errCode);
-        outputStream.writeInt(errMsg.length());
-        outputStream.writeChars(errMsg);
+        this.errMsg = ReadWriteUtil.readString(buffer);
     }
 
 
     public byte[] getBytes() {
         WriteBuffer writeBuffer = new WriteBuffer(128);
         writeBuffer.putInt(errCode);
-        writeBuffer.putInt(errMsg.length());
-
-        int i = 0;
-        char[] charArray = errMsg.toCharArray();
-        while (i < errMsg.length()) {
-            writeBuffer.putChar(charArray[i++]);
-        }
+        ReadWriteUtil.writeString(writeBuffer, errMsg);
         ByteBuffer buffer = writeBuffer.getBuffer();
         int packetLength = buffer.position();
         buffer.flip();

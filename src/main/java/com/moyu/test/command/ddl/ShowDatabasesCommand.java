@@ -5,7 +5,6 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
-import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 
@@ -62,6 +61,9 @@ public class ShowDatabasesCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
+
+        long queryStartTime = System.currentTimeMillis();
+
         SelectColumn idColumn = SelectColumn.newColumn("id", ColumnTypeConstant.INT_4);
         SelectColumn nameColumn = SelectColumn.newColumn("dbName", ColumnTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
@@ -83,6 +85,11 @@ public class ShowDatabasesCommand extends AbstractCommand {
                 metadataStore.close();
             }
         }
+
+        long queryEndTime = System.currentTimeMillis();
+        String desc = "查询结果行数:" +  queryResult.getResultRows().size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms";
+        queryResult.setDesc(desc);
+
         return queryResult;
     }
 

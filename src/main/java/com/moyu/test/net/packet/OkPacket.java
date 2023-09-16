@@ -5,6 +5,7 @@ import com.moyu.test.net.constant.CommandTypeConstant;
 import com.moyu.test.net.model.BaseResultDto;
 import com.moyu.test.net.model.terminal.DatabaseInfo;
 import com.moyu.test.net.model.terminal.QueryResultDto;
+import com.moyu.test.net.model.terminal.QueryResultStrDto;
 import com.moyu.test.store.WriteBuffer;
 
 import java.nio.ByteBuffer;
@@ -14,8 +15,6 @@ import java.nio.ByteBuffer;
  * @date 2023/7/7
  */
 public class OkPacket extends Packet {
-
-
 
     /**
      * 操作类型
@@ -60,6 +59,9 @@ public class OkPacket extends Packet {
                     break;
                 case CommandTypeConstant.DB_QUERY:
                     this.content = new QueryResultDto(buffer);
+                    break;
+                case CommandTypeConstant.DB_QUERY_RES_STR:
+                    this.content = new QueryResultStrDto(buffer);
                     break;
                 default:
                     ExceptionUtil.throwDbException("内容类型不合法,contentType:{}", commandType);
