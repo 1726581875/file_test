@@ -5,7 +5,8 @@ import traceback
 
 
 # 定义要连接的主机和端口
-host = 'localhost'
+#host = 'localhost'
+host = '159.75.134.161'
 port = 8888
 
 
@@ -91,6 +92,11 @@ database_id = -1
 
 while True:
 
+    # 创建socket对象
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # 连接服务器
+    client_socket.connect((host, port))
+
     # 接收用户输入
     user_input = input("yanySQL> ")
 
@@ -113,10 +119,6 @@ while True:
         print("请先使用use databaseName命令确认当前数据库，再执行查询语句..")
         continue
 
-    # 创建socket对象
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # 连接服务器
-    client_socket.connect((host, port))
     # 命令类型：2-执行查询命令，获取格式化查询结果
     command_type = 2
     try:
