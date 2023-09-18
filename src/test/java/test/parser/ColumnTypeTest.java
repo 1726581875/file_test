@@ -34,7 +34,7 @@ public class ColumnTypeTest {
         // 测试tinyint类型
         testExecSQL("drop table if exists column_test_1");
         testExecSQL("create table column_test_1 (id int, name varchar(10), time timestamp, state tinyint)");
-        testExecSQL("insert into column_test_1 (id, name, time, state) values (1, 'sanji', '2023-09-14 10:43:00', 1)");
+        testExecSQL("insert into column_test_1 (`id`, `name`, `time`, `state`) values (1, 'sanji', '2023-09-14 10:43:00', 1)");
         testExecSQL("insert into column_test_1 values (2, 'zr', '2023-09-14 10:43:00', 0)");
         testExecSQL("select * from column_test_1");
 

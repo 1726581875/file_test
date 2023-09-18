@@ -21,6 +21,7 @@ import com.moyu.test.util.TypeConvertUtil;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaomingzhang
@@ -76,6 +77,9 @@ public class SqlParser implements Parser {
     private static final String BY = "BY";
     private static final String AS = "AS";
     private static final String ON = "ON";
+
+    private static final String VALUE = "VALUE";
+    private static final String VALUES = "VALUES";
 
 
     public SqlParser(ConnectSession connectSession) {
@@ -1591,16 +1595,39 @@ public class SqlParser implements Parser {
         // 解析tableName
         String tableName = parseTableNameOrIndexName();
 
-        // ==== 读取字段 ====
-        StartEndIndex columnBracket = getNextBracketStartEnd();
-        String columnStr = originalSql.substring(columnBracket.getStart() + 1, columnBracket.getEnd());
-        String[] columnNameList = columnStr.split(",");
-        currIndex =  columnBracket.getEnd() + 1;
+        Column[] tableColumns = getColumns(tableName);
 
-        // ==== 读字段值 ===
+        String[] columnNames = null;
+        if(nextKeywordIs(VALUE) || nextKeywordIs(VALUES)) {
+            columnNames = new String[tableColumns.length];
+            for (int i = 0; i < tableColumns.length; i++) {
+                columnNames[i] = tableColumns[i].getColumnName();
+            }
+        } else {
+            Set<String> existsColumnNameSet = Arrays.stream(tableColumns).map(Column::getColumnName).collect(Collectors.toSet());
+            // 读取字段
+            StartEndIndex columnBracket = getNextBracketStartEnd();
+            String columnStr = originalSql.substring(columnBracket.getStart() + 1, columnBracket.getEnd());
+            columnNames = columnStr.split(",");
+
+            for (int i = 0; i < columnNames.length; i++) {
+                String columnName = columnNames[i].trim();
+                if((columnName.startsWith("`") && columnName.endsWith("`"))
+                        || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
+                    columnName = columnName.substring(1, columnName.length() - 1);
+                }
+                if(!existsColumnNameSet.contains(columnName)) {
+                    ExceptionUtil.throwSqlIllegalException("表{}不存在字段{}", tableName, columnName);
+                }
+                columnNames[i] = columnName;
+            }
+            currIndex = columnBracket.getEnd() + 1;
+        }
+
+        // 读字段值
         skipSpace();
         String valueKeyWord = getNextKeyWord();
-        if (!"VALUE".equals(valueKeyWord) && !"VALUES".equals(valueKeyWord)) {
+        if (!VALUE.equals(valueKeyWord) && !VALUES.equals(valueKeyWord)) {
             throw new SqlIllegalException("sql语法有误," + valueKeyWord);
         }
         // value
@@ -1609,16 +1636,17 @@ public class SqlParser implements Parser {
         String[] valueList = valueStr.split(",");
 
 
-        if (columnNameList.length != valueList.length) {
+        if (columnNames.length != valueList.length) {
             throw new SqlIllegalException("sql语法有误");
         }
+
         Map<String, String> columnValueMap = new HashMap<>();
-        for (int j = 0; j < columnNameList.length; j++) {
-            columnValueMap.put(columnNameList[j].trim(), valueList[j].trim());
+        for (int j = 0; j < columnNames.length; j++) {
+            columnValueMap.put(columnNames[j].trim(), valueList[j].trim());
         }
 
         // 插入字段赋值
-        Column[] columns = getColumns(tableName);
+        Column[] columns = tableColumns;
         Column[] dataColumns = new Column[columns.length];
 
         for (int i = 0; i < columns.length; i++) {
@@ -1634,8 +1662,6 @@ public class SqlParser implements Parser {
             }
             dataColumns[i] = column;
         }
-
-
 
         OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, null);
         InsertCommand insertCommand = new InsertCommand(tableInfo, dataColumns);
@@ -1989,6 +2015,9 @@ public class SqlParser implements Parser {
             if (sqlCharArr[i] == ';') {
                 break;
             }
+            if (sqlCharArr[i] == '(') {
+                break;
+            }
             i++;
         }
         String word = new String(sqlCharArr, currIndex, i - currIndex);
@@ -2047,6 +2076,32 @@ public class SqlParser implements Parser {
         }
         String word = originalSql.substring(currIndex, i);
         return word;
+    }
+
+    private boolean nextKeywordIs(String keyword) {
+        skipSpace();
+        int i = currIndex;
+        while (i < sqlCharArr.length) {
+            if (sqlCharArr[i] == ' ') {
+                break;
+            }
+            if (sqlCharArr[i] == ';') {
+                break;
+            }
+            if (sqlCharArr[i] == '(') {
+                break;
+            }
+            if (sqlCharArr[i] == ')') {
+                break;
+            }
+            i++;
+        }
+        String word = new String(sqlCharArr, currIndex, i - currIndex);
+        if(keyword.equals(word)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
