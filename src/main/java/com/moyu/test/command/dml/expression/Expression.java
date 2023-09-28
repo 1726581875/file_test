@@ -13,6 +13,11 @@ public abstract class Expression {
     public abstract Object getValue(RowEntity rowEntity);
 
     public static boolean isMatch(RowEntity row, Expression condition) {
+
+        if(row.isDeleted()) {
+            return false;
+        }
+
         if (condition == null || (boolean) condition.getValue(row)) {
             return true;
         }

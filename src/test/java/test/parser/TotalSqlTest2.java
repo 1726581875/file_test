@@ -39,18 +39,39 @@ public class TotalSqlTest2 {
 
 
     public static void main(String[] args) {
-/*        yanStoreEngineTest();
-        testCreateIndexCommand();
-        fastInsertData2("abc_1", 10000, engineType);*/
+        //yanStoreEngineTest();
+        //testCreateIndexCommand();
+
+
+        //fastInsertData2("abc_1", 10000, engineType);
 
         //testOptimizeCondition();
 
         //testOrderByQuery();
 
 
-        fastInsertData2("table_100000", 100000, engineType);
-        fastInsertData2("table_1000000", 1000000, engineType);
+/*        fastInsertData2("table_100000", 100000, engineType);
+        fastInsertData2("table_1000000", 1000000, engineType);*/
 
+        deleteSqlTest();
+    }
+
+
+    private static void deleteSqlTest() {
+        testExecSQL("drop table if exists  xmz_d_t");
+        testExecSQL("create table xmz_d_t (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (3, '31', '2023-06-29 11:15:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (3, '32', '2023-06-29 12:00:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (3, '33', '2023-06-29 13:20:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
+        testExecSQL("INSERT INTO xmz_d_t (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
+        testExecSQL("select * from xmz_d_t");
+
+        testExecSQL("delete from xmz_d_t where id = 6");
+
+        testExecSQL("select * from xmz_d_t");
     }
 
 
@@ -67,8 +88,6 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
         testExecSQL("select count(*) from xmz_sort_test");
         testExecSQL("select * from xmz_sort_test order by id desc, name asc");
-
-
 
 
         testExecSQL("drop table if exists  xmz_sort_test2");

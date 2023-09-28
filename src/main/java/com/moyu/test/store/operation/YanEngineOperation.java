@@ -179,7 +179,7 @@ public class YanEngineOperation extends BasicOperation {
                     RowValue rowValue = valueList.get(i);
                     RowEntity rowEntity = rowValue.getRowEntity(tableColumns);
                     if (Expression.isMatch(rowEntity, condition)) {
-                        rowValue.setIsDeleted((byte) 0);
+                        rowValue.setIsDeleted((byte) 1);
                         deleteNum++;
 
                         // 删除索引项
@@ -195,7 +195,6 @@ public class YanEngineOperation extends BasicOperation {
                     }
                     i++;
                 }
-
                 page.commit();
 
                 Long rightPos = page.getRightPos();
