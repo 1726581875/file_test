@@ -10,7 +10,7 @@ host = '159.75.134.161'
 port = 8888
 
 
-# 接收网络传输固定长度字节数组方法
+# 函数：接收网络传输固定长度字节数组
 def recv_data(sock, length):
     # 用于接收所有数据的缓冲区
     buffer = b''
@@ -28,6 +28,7 @@ def recv_data(sock, length):
 
     return buffer
 
+# 函数：获取成功包体内容对象
 def get_success_packet_content(client_socket, packet_len):
     """
      成功会返回一项格式包内容
@@ -54,6 +55,16 @@ def get_success_packet_content(client_socket, packet_len):
     content_obj_arr = packet_all[content_start:content_start + content_len]
     return content_obj_arr
 
+# 函数：打印输出错误结果，并且返回错误信息
+def parse_print_err_msg(client_socket, packet_len):
+    packet_content = recv_data(client_socket, packet_len)
+    err_code = struct.unpack('>i', packet_content[:4])[0]
+    msg_len = struct.unpack('>i', packet_content[4:8])[0]
+    err_msg = struct.unpack('>{}s'.format(msg_len), packet_content[8:])[0].decode("utf-8")
+    print('错误。err_code:' + str(err_code) + ', err_msg:' + err_msg)
+    return err_msg
+
+# 函数：获取数据库id函数
 def get_database_id(sock, database_name):
     # 0-查询数据库信息
     command_type = 0
@@ -64,7 +75,7 @@ def get_database_id(sock, database_name):
     # 发送数据
     client_socket.send(packed_data)
 
-    # 获取返回结果
+    # 获取返回结果包长度
     packet_len = int.from_bytes(recv_data(client_socket, 4), byteorder='big')
     # 包类型 0:错误 1:成功
     packet_type = recv_data(client_socket, 1)[0]
@@ -76,11 +87,7 @@ def get_database_id(sock, database_name):
         # 获取数据库id
         database_id = struct.unpack('>i', content_arr[4:8])[0]
     elif packet_type == 0:
-        packet_content = recv_data(client_socket, packet_len)
-        err_code = struct.unpack('>i', packet_content[:4])[0]
-        msg_len = struct.unpack('>i', packet_content[4:8])[0]
-        err_msg = struct.unpack('>{}s'.format(msg_len), packet_content[8:])[0].decode("utf-8")
-        print('错误。err_code:' + str(err_code) + ', err_msg:' + err_msg)
+        parse_print_err_msg(client_socket, packet_len)
     else:
         print('接收到未知包类型。packet_type:' + str(packet_type))
 
@@ -91,17 +98,14 @@ def get_database_id(sock, database_name):
 database_id = -1
 
 while True:
-
     # 创建socket对象
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 连接服务器
     client_socket.connect((host, port))
-
     # 接收用户输入
     user_input = input("yanySQL> ")
-
-    # 检查用户输入是否为 'exit'
-    if user_input.lower() == 'exit':
+    # 检查用户输入是否为 'exit', exit则结束程序
+    if user_input.lower() == 'exit' or user_input.lower() == 'exit;':
         print("程序结束！")
         break
     # 判断是否是use databaseName命令
@@ -136,11 +140,10 @@ while True:
 
         # 包类型 0:错误 1:成功
         packet_type = recv_data(client_socket, 1)[0]
-
         # 解析结果
         if packet_type == 1:
             """
-             成功会返回一项格式包内容
+             成功会返回以下格式包内容
              {
                byte opType  --操作类型
                int affRows -- 受影响的行数
@@ -160,14 +163,8 @@ while True:
             result_str = struct.unpack('>{}s'.format(result_str_Len), content_obj_arr[8:])[0].decode("utf-8")
             print("查询结果")
             print(result_str)
-
         elif packet_type == 0:
-            packet_content = recv_data(client_socket, packet_len)
-            err_code = struct.unpack('>i', packet_content[:4])[0]
-            msg_len = struct.unpack('>i', packet_content[4:8])[0]
-            err_msg = struct.unpack('>{}s'.format(msg_len), packet_content[8:])[0].decode("utf-8")
-            print('错误。err_code:' + str(err_code) + ', err_msg:' + err_msg)
-
+            parse_print_err_msg(client_socket, packet_len)
         else:
             print('接收到未知包类型。packet_type:' + str(packet_type))
 
@@ -177,6 +174,3 @@ while True:
     finally:
         # 关闭套接字连接
         client_socket.close()
-
-
-
