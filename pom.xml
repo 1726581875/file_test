@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.example</groupId>
-    <artifactId>simple_database_test</artifactId>
+    <artifactId>simple-database</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -82,6 +82,19 @@
                                     <mainClass>com.moyu.test.terminal.TcpTerminal</mainClass>
                                 </manifest>
                             </archive>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>yanysql-connector-java</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>yanysql-connector-java-1.0.0</finalName>
+                            <includes>
+                                <include>com/moyu/test/**</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>
