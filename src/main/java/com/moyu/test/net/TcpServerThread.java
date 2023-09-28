@@ -62,12 +62,16 @@ public class TcpServerThread implements Runnable {
                         Integer databaseId = in.readInt();
                         Database dbObj = null;
                         // 数据库id为-1时候，执行不需要数据库的命令。例如show databases
-                        if(!new Integer(-1).equals(databaseId)) {
+                        if (!new Integer(-1).equals(databaseId)) {
                             dbObj = Database.getDatabase(databaseId);
+                        } else if (!new Integer(-2).equals(databaseId)) {
+                            // 如果数据库id传-2则表示要通过数据库名称来确认是哪个数据库
+                            String dbName = ReadWriteUtil.readString(in);
+                            dbObj = Database.getDatabase(dbName);
                         }
                         // 获取待执行sql
                         String sql = ReadWriteUtil.readString(in);
-                        System.out.println("数据库id:" + databaseId + "接收到SQL:" + sql);
+                        System.out.println("数据库id:" + databaseId + "数据库:" + dbObj.getDbName() +"接收到SQL:" + sql);
                         ConnectSession connectSession = new ConnectSession(dbObj);
                         // sql解析
                         SqlParser sqlParser = new SqlParser(connectSession);

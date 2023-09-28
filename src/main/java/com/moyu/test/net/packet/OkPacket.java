@@ -96,6 +96,9 @@ public class OkPacket extends Packet {
         return bytes;
     }
 
+    public int getAffRows() {
+        return affRows;
+    }
 
     public BaseResultDto getContent() {
         return content;

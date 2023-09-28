@@ -88,8 +88,12 @@ public class SqlParser implements Parser {
 
     @Override
     public Command prepareCommand(String sql) {
-        this.originalSql = sql;
-        this.upperCaseSql = sql.toUpperCase();
+
+        // 预先处理sql，去掉特殊符号
+        String preprocessSql = preprocessSql(sql);
+
+        this.originalSql = preprocessSql;
+        this.upperCaseSql = preprocessSql.toUpperCase();
         this.sqlCharArr = this.upperCaseSql.toCharArray();
         this.currIndex = 0;
 
@@ -195,6 +199,26 @@ public class SqlParser implements Parser {
                 throw new SqlIllegalException("sql语法有误" + firstKeyWord);
         }
     }
+
+    /**
+     * 预先处理sql
+     * 换行符替换为空格
+     * @return
+     */
+    private String preprocessSql(String sql) {
+        StringBuilder stringBuilder = new StringBuilder();
+        char[] charArray = sql.toCharArray();
+        for (int i = 0; i < charArray.length; i++) {
+            if (charArray[i] == '\n') {
+                stringBuilder.append(" ");
+            } else {
+                stringBuilder.append(charArray[i]);
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+
 
     private String parseTableNameOrIndexName() {
         skipSpace();
@@ -1826,9 +1850,14 @@ public class SqlParser implements Parser {
         String[] columnStrArr = allColumnStr.split(",");
         int columnIndex = 0;
         for (String columnStr : columnStrArr) {
-            String trimColumn = columnStr.trim();
-            Column column = parseCreateTableColumn(columnIndex++, trimColumn);
-            columnList.add(column);
+            String trimStr = columnStr.trim();
+            // TODO 创建表时候指定主键，当前暂时先不处理这种语法
+            if(trimStr.startsWith("PRIMARY") || trimStr.startsWith("UNIQUE")) {
+                continue;
+            } else {
+                Column column = parseCreateTableColumn(columnIndex++, trimStr);
+                columnList.add(column);
+            }
         }
 
         currIndex = bracketStartEnd.getEnd() + 1;

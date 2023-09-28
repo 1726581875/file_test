@@ -20,6 +20,4 @@ public interface ColumnTypeConstant {
 
     byte TINY_INT = 14;
 
-
-
 }

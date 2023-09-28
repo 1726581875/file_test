@@ -1,5 +1,16 @@
 package com.moyu.test.jdbc;
 
+import com.moyu.test.exception.DbException;
+import com.moyu.test.jdbc.util.ReadPacketUtil;
+import com.moyu.test.net.constant.CommandTypeConstant;
+import com.moyu.test.net.model.terminal.DatabaseInfo;
+import com.moyu.test.net.packet.ErrPacket;
+import com.moyu.test.net.packet.OkPacket;
+import com.moyu.test.net.packet.Packet;
+import com.moyu.test.net.util.ReadWriteUtil;
+
+import java.io.*;
+import java.net.Socket;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
@@ -11,14 +22,72 @@ import java.util.concurrent.Executor;
  */
 public class ConnectionImpl implements Connection {
 
+    private String ipAddress;
+
+    private Integer port;
+
+    private String dbName;
+
+    private DatabaseInfo databaseInfo;
+
+    public ConnectionImpl(String url) {
+        String[] split = url.split(":");
+        this.ipAddress = split[0];
+        this.port = Integer.valueOf(split[1]);
+        this.dbName = split[2];
+    }
+
+    public DatabaseInfo getDatabaseInfo() {
+        if (databaseInfo != null) {
+            return databaseInfo;
+        }
+        this.databaseInfo = getDatabaseInfo(dbName);
+        return databaseInfo;
+    }
+
+
+    public DatabaseInfo getDatabaseInfo(String databaseName) {
+        // 创建Socket对象，并指定服务端IP地址和端口号
+        try (Socket socket = new Socket(ipAddress, port);
+             // 获取输入流和输出流
+             InputStream inputStream = socket.getInputStream();
+             OutputStream outputStream = socket.getOutputStream();
+             DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+             DataInputStream dataInputStream = new DataInputStream(inputStream)) {
+            // 命令类型
+            dataOutputStream.writeByte(CommandTypeConstant.DB_INFO);
+            // 数据库名称
+            ReadWriteUtil.writeString(dataOutputStream, databaseName);
+            // 获取结果
+            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+                OkPacket okPacket = (OkPacket) packet;
+                return (DatabaseInfo) okPacket.getContent();
+            } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+                ErrPacket errPacket = (ErrPacket) packet;
+                System.out.println("获取数据库信息失败, 错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+            } else {
+                System.out.println("不支持的packet type" + packet.getPacketType());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        throw new DbException("获取数据库信息失败");
+    }
+
+    public Socket getSocket() throws IOException {
+        return new Socket(ipAddress, port);
+    }
+
+
     @Override
     public Statement createStatement() throws SQLException {
-        return null;
+        return new StatementImpl(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return null;
+        return new PreparedStatementImpl();
     }
 
     @Override

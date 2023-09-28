@@ -1,5 +1,16 @@
 package com.moyu.test.jdbc;
 
+import com.moyu.test.exception.DbException;
+import com.moyu.test.jdbc.util.ReadPacketUtil;
+import com.moyu.test.net.constant.CommandTypeConstant;
+import com.moyu.test.net.model.BaseResultDto;
+import com.moyu.test.net.model.terminal.QueryResultDto;
+import com.moyu.test.net.packet.ErrPacket;
+import com.moyu.test.net.packet.OkPacket;
+import com.moyu.test.net.packet.Packet;
+import com.moyu.test.net.util.ReadWriteUtil;
+import java.io.*;
+import java.net.Socket;
 import java.sql.*;
 
 /**
@@ -7,13 +18,78 @@ import java.sql.*;
  * @date 2023/9/18
  */
 public class StatementImpl implements Statement {
-    @Override
-    public ResultSet executeQuery(String sql) throws SQLException {
-        return null;
+
+    private ConnectionImpl conn;
+
+    public StatementImpl(ConnectionImpl conn) {
+        this.conn = conn;
     }
 
     @Override
+    public ResultSet executeQuery(String sql) throws SQLException {
+        Integer databaseId = conn.getDatabaseInfo().getDatabaseId();
+        QueryResultDto queryResultDto = execQueryGetResult(databaseId, sql);
+        if(queryResultDto == null) {
+            throw new DbException("执行查询失败");
+        }
+        return new ResultSetImpl(queryResultDto);
+    }
+
+
+    public QueryResultDto execQueryGetResult(Integer databaseId, String sql) {
+        // 获取结果
+        Packet packet = execQueryGetPacket(databaseId, sql);
+        if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+            OkPacket okPacket = (OkPacket) packet;
+            BaseResultDto content = okPacket.getContent();
+            return (QueryResultDto) content;
+        } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+            ErrPacket errPacket = (ErrPacket) packet;
+            System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+        } else {
+            System.out.println("不支持的packet type" + packet.getPacketType());
+        }
+        return null;
+    }
+
+    public Packet execQueryGetPacket(Integer databaseId, String sql) {
+        // 创建Socket对象，并指定服务端IP地址和端口号
+        try (Socket socket = conn.getSocket();
+             // 获取输入流和输出流
+             InputStream inputStream = socket.getInputStream();
+             OutputStream outputStream = socket.getOutputStream();
+             DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+             DataInputStream dataInputStream = new DataInputStream(inputStream)) {
+            // 命令类型
+            dataOutputStream.writeByte(CommandTypeConstant.DB_QUERY);
+            // 数据库id
+            dataOutputStream.writeInt(databaseId);
+            // SQL
+            ReadWriteUtil.writeString(dataOutputStream, sql);
+            // 获取结果
+            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            return packet;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+
+    @Override
     public int executeUpdate(String sql) throws SQLException {
+        Integer databaseId = conn.getDatabaseInfo().getDatabaseId();
+        Packet packet = execQueryGetPacket(databaseId, sql);
+        if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+            OkPacket okPacket = (OkPacket) packet;
+            return okPacket.getAffRows();
+        } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+            ErrPacket errPacket = (ErrPacket) packet;
+            System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+        } else {
+            System.out.println("不支持的packet type" + packet.getPacketType());
+        }
         return 0;
     }
 
@@ -79,6 +155,18 @@ public class StatementImpl implements Statement {
 
     @Override
     public boolean execute(String sql) throws SQLException {
+        Integer databaseId = conn.getDatabaseInfo().getDatabaseId();
+        // 获取结果
+        Packet packet = execQueryGetPacket(databaseId, sql);
+        if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+            OkPacket okPacket = (OkPacket) packet;
+            return true;
+        } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+            ErrPacket errPacket = (ErrPacket) packet;
+            System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+        } else {
+            System.out.println("不支持的packet type" + packet.getPacketType());
+        }
         return false;
     }
 

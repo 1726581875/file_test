@@ -143,9 +143,14 @@ public class TcpTerminal {
 
 
     private static void printDatabaseMsg() {
-        System.out.println("+-------------------------------+");
-        System.out.println("|       YanySQL1.0  (^_^)        |");
-        System.out.println("+-------------------------------+");
+        System.out.println("  __     __                    _____   ____   _\n" +
+                "  \\ \\   / /                   / ____| / __ \\ | |\n" +
+                "   \\ \\_/ /__ _  _ __   _   _ | (___  | |  | || |\n" +
+                "    \\   // _` || '_ \\ | | | | \\___ \\ | |  | || |\n" +
+                "     | || (_| || | | || |_| | ____) || |__| || |____\n" +
+                "     |_| \\__,_||_| |_| \\__, ||_____/  \\___\\_\\|______|\n" +
+                "                        __/ |  yanySQL 1.0\n" +
+                "                       |___/   author: 摸鱼大师");
         System.out.println("请输入命令...");
     }
 

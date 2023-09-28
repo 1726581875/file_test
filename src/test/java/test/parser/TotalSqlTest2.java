@@ -53,7 +53,22 @@ public class TotalSqlTest2 {
 /*        fastInsertData2("table_100000", 100000, engineType);
         fastInsertData2("table_1000000", 1000000, engineType);*/
 
-        deleteSqlTest();
+        // deleteSqlTest();
+
+
+        testExecSQL("CREATE TABLE `sys_user` (\n" +
+                "  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',\n" +
+                "  `tenantId` varchar(36) NOT NULL COMMENT '租户id',\n" +
+                "  `name` varchar(40) NOT NULL COMMENT '用户名称',\n" +
+                "  `account` varchar(20) NOT NULL COMMENT '登录账号',\n" +
+                "  `password` varchar(1048) NOT NULL COMMENT '登录密码',\n" +
+                "  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '用户状态| 1正常，2禁用，3已删除',\n" +
+                "  `login_time` datetime DEFAULT NULL COMMENT '最近登录时间',\n" +
+                "  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n" +
+                "  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',\n" +
+                "  PRIMARY KEY (`id`),\n" +
+                "  UNIQUE KEY `uk_account` (`account`)\n" +
+                ") ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COMMENT='用户表';");
     }
 
 

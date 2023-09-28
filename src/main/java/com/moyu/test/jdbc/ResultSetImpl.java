@@ -1,5 +1,10 @@
 package com.moyu.test.jdbc;
 
+import com.moyu.test.exception.DbException;
+import com.moyu.test.net.model.terminal.ColumnDto;
+import com.moyu.test.net.model.terminal.QueryResultDto;
+import com.moyu.test.net.model.terminal.RowValueDto;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -14,9 +19,45 @@ import java.util.Map;
  */
 public class ResultSetImpl implements ResultSet {
 
+    private int columnSize;
+
+    private int rowSize;
+
+    private ColumnDto[] columns;
+
+    private RowValueDto[] rows;
+
+    private QueryResultDto queryResultDto;
+    /**
+     * 当前行
+     */
+    private RowValueDto currRow;
+    /**
+     * 下一行位置
+     */
+    private int nextRowIndex;
+
+
+
+    public ResultSetImpl(QueryResultDto queryResultDto) {
+        this.queryResultDto = queryResultDto;
+        this.columnSize = queryResultDto.getColumnsLen();
+        this.rowSize = queryResultDto.getRowsLen();
+        this.columns = queryResultDto.getColumns();
+        this.rows = queryResultDto.getRows();
+        this.currRow = null;
+        this.nextRowIndex = 0;
+    }
+
     @Override
     public boolean next() throws SQLException {
-        return false;
+        if(this.nextRowIndex >= rows.length) {
+            this.currRow = null;
+            return false;
+        }
+        this.currRow = rows[this.nextRowIndex];
+        this.nextRowIndex++;
+        return true;
     }
 
     @Override
@@ -31,67 +72,83 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public String getString(int columnIndex) throws SQLException {
-        return null;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (String) columnValue;
     }
 
     @Override
     public boolean getBoolean(int columnIndex) throws SQLException {
-        return false;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Boolean) columnValue;
     }
 
     @Override
     public byte getByte(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Byte) columnValue;
     }
 
     @Override
     public short getShort(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Short) columnValue;
     }
 
     @Override
     public int getInt(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Integer) columnValue;
     }
 
     @Override
     public long getLong(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Long) columnValue;
     }
 
     @Override
     public float getFloat(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Float) columnValue;
     }
 
     @Override
     public double getDouble(int columnIndex) throws SQLException {
-        return 0;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Double) columnValue;
     }
 
     @Override
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
-        return null;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (BigDecimal) columnValue;
     }
 
     @Override
     public byte[] getBytes(int columnIndex) throws SQLException {
-        return new byte[0];
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (byte[]) columnValue;
     }
 
     @Override
     public Date getDate(int columnIndex) throws SQLException {
-        return null;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        if(columnValue instanceof java.util.Date) {
+            return new Date(((java.util.Date)columnValue).getTime());
+        }
+        return (Date) columnValue;
     }
 
     @Override
     public Time getTime(int columnIndex) throws SQLException {
-        return null;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Time) columnValue;
     }
 
     @Override
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-        return null;
+        Object columnValue = this.currRow.getColumnValues()[columnIndex - 1];
+        return (Timestamp) columnValue;
     }
 
     @Override
@@ -111,67 +168,97 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public String getString(String columnLabel) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (String) this.currRow.getColumnValues()[columnIndex];
     }
+
+    private int getColumnIndex(String columnLabel) {
+        for (int i = 0; i < columns.length; i++) {
+            if(columns[i].getAlias() != null && columns[i].getAlias().equals(columnLabel)) {
+                return i;
+            }
+            if(columns[i].getColumnName() != null && columns[i].getColumnName().equals(columnLabel)) {
+                return i;
+            }
+        }
+        throw new DbException("找不到字段" + columnLabel);
+    }
+
 
     @Override
     public boolean getBoolean(String columnLabel) throws SQLException {
-        return false;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Boolean) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public byte getByte(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Byte) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public short getShort(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Short) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public int getInt(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Integer) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public long getLong(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Long) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public float getFloat(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Float) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public double getDouble(String columnLabel) throws SQLException {
-        return 0;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Double) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (BigDecimal) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public byte[] getBytes(String columnLabel) throws SQLException {
-        return new byte[0];
+        int columnIndex = getColumnIndex(columnLabel);
+        return (byte[]) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public Date getDate(String columnLabel) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        Object columnValue = this.currRow.getColumnValues()[columnIndex];
+        if(columnValue instanceof java.util.Date) {
+            return new Date(((java.util.Date)columnValue).getTime());
+        }
+        return (Date) columnValue;
     }
 
     @Override
     public Time getTime(String columnLabel) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Time) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        return (Timestamp) this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
@@ -211,12 +298,13 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public Object getObject(int columnIndex) throws SQLException {
-        return null;
+        return this.currRow.getColumnValues()[columnIndex - 1];
     }
 
     @Override
     public Object getObject(String columnLabel) throws SQLException {
-        return null;
+        int columnIndex = getColumnIndex(columnLabel);
+        return this.currRow.getColumnValues()[columnIndex];
     }
 
     @Override
@@ -256,11 +344,17 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public boolean isFirst() throws SQLException {
+        if(this.nextRowIndex == 1) {
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean isLast() throws SQLException {
+        if(this.nextRowIndex >= rowSize) {
+            return true;
+        }
         return false;
     }
 

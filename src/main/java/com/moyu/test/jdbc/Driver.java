@@ -23,7 +23,7 @@ public class Driver implements java.sql.Driver {
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
-        return null;
+        return new ConnectionImpl(url);
     }
 
     @Override

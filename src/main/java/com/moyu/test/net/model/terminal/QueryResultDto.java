@@ -102,6 +102,14 @@ public class QueryResultDto implements BaseResultDto {
         return desc;
     }
 
+    public int getColumnsLen() {
+        return columnsLen;
+    }
+
+    public int getRowsLen() {
+        return rowsLen;
+    }
+
     @Override
     public String toString() {
         return "QueryResultDto{" +
