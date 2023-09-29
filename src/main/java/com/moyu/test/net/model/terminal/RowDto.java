@@ -11,17 +11,17 @@ import java.util.Arrays;
  * @author xiaomingzhang
  * @date 2023/9/10
  */
-public class RowValueDto {
+public class RowDto {
 
     private int totalByteLen;
 
     private Object[] columnValues;
 
-    public RowValueDto(Object[] columnValues) {
+    public RowDto(Object[] columnValues) {
         this.columnValues = columnValues;
     }
 
-    public RowValueDto(ByteBuffer byteBuffer, ColumnDto[] columns) {
+    public RowDto(ByteBuffer byteBuffer, ColumnMetaDto[] columns) {
         this.totalByteLen = byteBuffer.getInt();
         this.columnValues = new Object[columns.length];
         this.columnValues = new Object[columns.length];
@@ -33,7 +33,7 @@ public class RowValueDto {
     }
 
 
-    public ByteBuffer getByteBuffer(ColumnDto[] columns) {
+    public ByteBuffer getByteBuffer(ColumnMetaDto[] columns) {
         WriteBuffer writeBuffer = new WriteBuffer(128);
         writeBuffer.putInt(this.totalByteLen);
         for (int i = 0; i < columns.length; i++) {

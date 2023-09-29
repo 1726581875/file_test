@@ -18,4 +18,9 @@ public class CommandTypeConstant {
      */
     public static final byte DB_QUERY_RES_STR = 2;
 
+    /**
+     * 预编译语句的查询
+     */
+    public static final byte DB_PREPARED_QUERY = 3;
+
 }

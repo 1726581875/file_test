@@ -58,6 +58,7 @@ public class OkPacket extends Packet {
                     this.content = new DatabaseInfo(buffer);
                     break;
                 case CommandTypeConstant.DB_QUERY:
+                case CommandTypeConstant.DB_PREPARED_QUERY:
                     this.content = new QueryResultDto(buffer);
                     break;
                 case CommandTypeConstant.DB_QUERY_RES_STR:

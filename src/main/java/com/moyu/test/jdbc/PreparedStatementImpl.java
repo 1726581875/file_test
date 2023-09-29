@@ -1,21 +1,146 @@
 package com.moyu.test.jdbc;
 
-import java.io.InputStream;
-import java.io.Reader;
+import com.moyu.test.command.dml.sql.Parameter;
+import com.moyu.test.constant.ColumnTypeConstant;
+import com.moyu.test.exception.ExceptionUtil;
+import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.jdbc.util.ReadPacketUtil;
+import com.moyu.test.net.constant.CommandTypeConstant;
+import com.moyu.test.net.model.BaseResultDto;
+import com.moyu.test.net.model.jdbc.PreparedParamDto;
+import com.moyu.test.net.model.terminal.QueryResultDto;
+import com.moyu.test.net.packet.ErrPacket;
+import com.moyu.test.net.packet.OkPacket;
+import com.moyu.test.net.packet.Packet;
+import com.moyu.test.net.util.ReadWriteUtil;
+import com.moyu.test.util.TypeConvertUtil;
+
+import java.io.*;
 import java.math.BigDecimal;
+import java.net.Socket;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.sql.*;
-import java.util.Calendar;
+import java.sql.Date;
+import java.util.*;
 
 /**
  * @author xiaomingzhang
  * @date 2023/9/18
  */
 public class PreparedStatementImpl implements PreparedStatement {
+
+    private String sql;
+
+    private ConnectionImpl conn;
+    /**
+     * 参数位置,参数值
+     */
+    private Map<Integer, Parameter> parameterMap = new HashMap<>();
+    /**
+     * 参数位置，参数类型
+     */
+    private Map<Integer, Byte> parameterType = new HashMap<>();
+
+    public PreparedStatementImpl(String sql, ConnectionImpl conn) {
+        this.sql = sql;
+        this.conn = conn;
+    }
+
     @Override
     public ResultSet executeQuery() throws SQLException {
+        QueryResultDto queryResultDto = execQueryGetResult(sql);
+        if(queryResultDto == null) {
+            throw new SqlExecutionException("查询结果为空");
+        }
+        return new ResultSetImpl(queryResultDto);
+    }
+
+
+    public QueryResultDto execQueryGetResult(String sql) {
+        // 获取结果
+        Packet packet = execQueryGetPacket(conn.getDbName(), sql);
+        if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+            OkPacket okPacket = (OkPacket) packet;
+            BaseResultDto content = okPacket.getContent();
+            return (QueryResultDto) content;
+        } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+            ErrPacket errPacket = (ErrPacket) packet;
+            System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+        } else {
+            System.out.println("不支持的packet type" + packet.getPacketType());
+        }
         return null;
     }
+
+    public Packet execQueryGetPacket(String databaseName, String sql) {
+        // 创建Socket对象，并指定服务端IP地址和端口号
+        try (Socket socket = conn.getSocket();
+             // 获取输入流和输出流
+             InputStream inputStream = socket.getInputStream();
+             OutputStream outputStream = socket.getOutputStream();
+             DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+             DataInputStream dataInputStream = new DataInputStream(inputStream)) {
+            // 命令类型
+            dataOutputStream.writeByte(CommandTypeConstant.DB_PREPARED_QUERY);
+            // 数据库名称
+            ReadWriteUtil.writeString(dataOutputStream, databaseName);
+            // SQL
+            ReadWriteUtil.writeString(dataOutputStream, sql);
+            // 参数
+            byte[] paramTypes = new byte[parameterMap.size()];
+            Object[] paramValues = new Object[parameterMap.size()];
+            for (int i = 0; i < parameterMap.size(); i++) {
+                int index = i + 1;
+                Parameter parameter = parameterMap.get(index);
+                if(parameter == null) {
+                    ExceptionUtil.throwSqlQueryException("缺少第{}位参数", index);
+                }
+                if(parameterType.get(index) != null) {
+                    paramTypes[i] = parameterType.get(index);
+                } else {
+                    paramTypes[i] = getValueType(parameter.getValue());
+                }
+                paramValues[i] = parameter.getValue();
+            }
+            PreparedParamDto paramDto = new PreparedParamDto(paramTypes, paramValues);
+            ByteBuffer byteBuffer = paramDto.getByteBuffer();
+            // 参数总字节长度
+            dataOutputStream.writeInt(byteBuffer.limit());
+            while (byteBuffer.remaining() > 0) {
+                dataOutputStream.write(byteBuffer.get());
+            }
+            // 获取结果
+            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            return packet;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    private byte getValueType(Object value) {
+
+        if (value == null) {
+            return -1;
+        }
+        if (value instanceof Integer) {
+            return ColumnTypeConstant.INT_4;
+        } else if (value instanceof Long) {
+            return ColumnTypeConstant.INT_8;
+        } else if (value instanceof String) {
+            return ColumnTypeConstant.VARCHAR;
+        } else if (value instanceof Date) {
+            return ColumnTypeConstant.TIMESTAMP;
+        } else if (value instanceof Byte) {
+            return ColumnTypeConstant.TINY_INT;
+        } else {
+            throw new IllegalArgumentException("不支持类型" + value.getClass().getName());
+        }
+    }
+
+
 
     @Override
     public int executeUpdate() throws SQLException {
@@ -119,7 +244,7 @@ public class PreparedStatementImpl implements PreparedStatement {
 
     @Override
     public void setObject(int parameterIndex, Object x) throws SQLException {
-
+        parameterMap.put(parameterIndex, new Parameter(parameterIndex, x));
     }
 
     @Override

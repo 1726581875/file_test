@@ -1,10 +1,9 @@
 package com.moyu.test.terminal.util;
 
 import com.moyu.test.command.QueryResult;
-import com.moyu.test.exception.DbException;
-import com.moyu.test.net.model.terminal.ColumnDto;
+import com.moyu.test.net.model.terminal.ColumnMetaDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
-import com.moyu.test.net.model.terminal.RowValueDto;
+import com.moyu.test.net.model.terminal.RowDto;
 import com.moyu.test.util.StringUtils;
 
 import java.text.SimpleDateFormat;
@@ -74,9 +73,9 @@ public class PrintResultUtil {
             System.out.println("发生异常，结果为空");
             return;
         }
-        ColumnDto[] columns = queryResult.getColumns();
+        ColumnMetaDto[] columns = queryResult.getColumns();
 
-        RowValueDto[] rows = queryResult.getRows();
+        RowDto[] rows = queryResult.getRows();
 
         int columnCount = columns.length;
         // 计算字段宽度
@@ -86,7 +85,7 @@ public class PrintResultUtil {
             // 可设置最小宽度
             columnWidths[i] = Math.max(columnName.length(), 10);
             // 遍历结果集的所有行，计算该列数据的宽度
-            for (RowValueDto rowValueDto : rows) {
+            for (RowDto rowValueDto : rows) {
                 Object[] rowValues = rowValueDto.getColumnValues();
                 String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
                 columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
@@ -123,7 +122,7 @@ public class PrintResultUtil {
         System.out.println();
     }
 
-    private static String getPrintColumnName(ColumnDto columnDto) {
+    private static String getPrintColumnName(ColumnMetaDto columnDto) {
         if(columnDto.getAlias() != null) {
             return columnDto.getAlias();
         }
@@ -186,8 +185,8 @@ public class PrintResultUtil {
             return stringBuilder.toString();
         }
 
-        ColumnDto[] columns = queryResult.getColumns();
-        RowValueDto[] rows = queryResult.getRows();
+        ColumnMetaDto[] columns = queryResult.getColumns();
+        RowDto[] rows = queryResult.getRows();
 
         int columnCount = columns.length;
         // 计算字段宽度
@@ -197,7 +196,7 @@ public class PrintResultUtil {
             // 可设置最小宽度
             columnWidths[i] = Math.max(columnName.length(), 10);
             // 遍历结果集的所有行，计算该列数据的宽度
-            for (RowValueDto rowValueDto : rows) {
+            for (RowDto rowValueDto : rows) {
                 Object[] rowValues = rowValueDto.getColumnValues();
                 String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
                 columnWidths[i] = Math.max(columnWidths[i], valueStr.length());

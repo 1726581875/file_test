@@ -1,9 +1,9 @@
 package com.moyu.test.jdbc;
 
 import com.moyu.test.exception.DbException;
-import com.moyu.test.net.model.terminal.ColumnDto;
+import com.moyu.test.net.model.terminal.ColumnMetaDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
-import com.moyu.test.net.model.terminal.RowValueDto;
+import com.moyu.test.net.model.terminal.RowDto;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -23,15 +23,15 @@ public class ResultSetImpl implements ResultSet {
 
     private int rowSize;
 
-    private ColumnDto[] columns;
+    private ColumnMetaDto[] columns;
 
-    private RowValueDto[] rows;
+    private RowDto[] rows;
 
     private QueryResultDto queryResultDto;
     /**
      * 当前行
      */
-    private RowValueDto currRow;
+    private RowDto currRow;
     /**
      * 下一行位置
      */

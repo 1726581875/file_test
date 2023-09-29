@@ -9,11 +9,30 @@ import java.sql.*;
 public class JdbcTest {
 
     private static final String driver = "com.moyu.test.jdbc.Driver";
-    private static final String url = "localhost:8888:aaa";
+    private static final String url = "localhost:8888:ddd";
 
 
 
     public static void main(String[] args) {
+        try {
+            Class.forName(driver);
+            Connection conn = DriverManager.getConnection(url, null, null);
+            PreparedStatement statement = conn.prepareStatement("select * from test where id = ?;");
+            statement.setObject(1, 1);
+            ResultSet resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                Integer id = resultSet.getInt(1);
+                String name = resultSet.getString(2);
+                System.out.println(id + "," + name);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    private static void simpleTest(){
         try {
             Class.forName(driver);
             Connection conn = DriverManager.getConnection(url, null, null);

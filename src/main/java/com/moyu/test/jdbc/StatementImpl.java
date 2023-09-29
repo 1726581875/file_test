@@ -159,7 +159,6 @@ public class StatementImpl implements Statement {
         // 获取结果
         Packet packet = execQueryGetPacket(databaseId, sql);
         if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
-            OkPacket okPacket = (OkPacket) packet;
             return true;
         } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
             ErrPacket errPacket = (ErrPacket) packet;

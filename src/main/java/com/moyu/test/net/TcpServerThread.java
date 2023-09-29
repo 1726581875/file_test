@@ -1,12 +1,15 @@
 package com.moyu.test.net;
 
+import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.Command;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.dml.sql.Parameter;
 import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.net.constant.CommandTypeConstant;
 import com.moyu.test.net.model.BaseResultDto;
+import com.moyu.test.net.model.jdbc.PreparedParamDto;
 import com.moyu.test.net.model.terminal.*;
 import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
@@ -21,6 +24,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -87,6 +93,9 @@ public class TcpServerThread implements Runnable {
                             resultDto = queryResultDto;
                         }
                         break;
+                    case CommandTypeConstant.DB_PREPARED_QUERY:
+                        resultDto = preparedQuery();
+                        break;
                     default:
                         ExceptionUtil.throwDbException("内容类型不合法,commandType:{}", commandType);
                 }
@@ -127,10 +136,44 @@ public class TcpServerThread implements Runnable {
         }
     }
 
+
+    /**
+     * 预编译查询
+     * @return
+     * @throws IOException
+     */
+    private QueryResultDto preparedQuery() throws IOException {
+        String dbName = ReadWriteUtil.readString(in);
+        Database dbObj = Database.getDatabase(dbName);
+        // 获取待执行sql
+        String sql = ReadWriteUtil.readString(in);
+        System.out.println("数据库id:" + dbObj.getDatabaseId() + "数据库:" + dbObj.getDbName() + "接收到SQL:" + sql);
+        ConnectSession connectSession = new ConnectSession(dbObj);
+        // 获取查询参数
+        int paramPackLen = in.readInt();
+        byte[] bytes = new byte[paramPackLen];
+        in.readFully(bytes);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+        PreparedParamDto paramDto = new PreparedParamDto(byteBuffer);
+        // 转换为预编译参数
+        List<Parameter> queryParams = new ArrayList<>();
+        if(paramDto.getSize() > 0) {
+            for (int i = 0; i < paramDto.getSize(); i++) {
+                queryParams.add(new Parameter(i + 1, paramDto.getValueArr()[i]));
+            }
+        }
+        AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
+        command.setParameterValues(queryParams);
+        QueryResult queryResult = command.execCommand();
+        QueryResultDto queryResultDto = queryResultToDTO(queryResult);
+        return queryResultDto;
+    }
+
+
     private QueryResultDto queryResultToDTO(QueryResult queryResult) {
         SelectColumn[] selectColumns = queryResult.getSelectColumns();
         // 字段信息转换
-        ColumnDto[] columnDtos = new ColumnDto[selectColumns.length];
+        ColumnMetaDto[] columnDtos = new ColumnMetaDto[selectColumns.length];
         for (int i = 0; i < columnDtos.length; i++) {
             String columnName = selectColumns[i].getSelectColumnName();
             String alias = selectColumns[i].getAlias();
@@ -147,16 +190,16 @@ public class TcpServerThread implements Runnable {
             } else {
                 columnType = selectColumns[i].getColumnType();
             }
-            columnDtos[i] = new ColumnDto(columnName, alias, tableAlias, columnType);
+            columnDtos[i] = new ColumnMetaDto(columnName, alias, tableAlias, columnType);
         }
 
         // 查询结果行转换
-        RowValueDto[] rowValueDtos = null;
+        RowDto[] rowValueDtos = null;
         List<Object[]> resultRows = queryResult.getResultRows();
         if (resultRows != null && resultRows.size() > 0) {
-            rowValueDtos = new RowValueDto[resultRows.size()];
+            rowValueDtos = new RowDto[resultRows.size()];
             for (int i = 0; i < resultRows.size(); i++) {
-                rowValueDtos[i] = new RowValueDto(resultRows.get(i));
+                rowValueDtos[i] = new RowDto(resultRows.get(i));
             }
         }
         return new QueryResultDto(columnDtos, rowValueDtos, queryResult.getDesc());

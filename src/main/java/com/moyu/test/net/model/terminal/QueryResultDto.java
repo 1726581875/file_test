@@ -17,9 +17,9 @@ public class QueryResultDto implements BaseResultDto {
 
     private int rowsLen;
 
-    private ColumnDto[] columns;
+    private ColumnMetaDto[] columns;
 
-    private RowValueDto[] rows;
+    private RowDto[] rows;
 
     /**
      * 描述
@@ -28,7 +28,7 @@ public class QueryResultDto implements BaseResultDto {
 
 
 
-    public QueryResultDto(ColumnDto[] columns, RowValueDto[] rows, String desc) {
+    public QueryResultDto(ColumnMetaDto[] columns, RowDto[] rows, String desc) {
         this.totalByteLen = 0;
         this.columnsLen = columns.length;
         this.columns = columns;
@@ -45,13 +45,13 @@ public class QueryResultDto implements BaseResultDto {
         this.totalByteLen = byteBuffer.getInt();
         this.columnsLen = byteBuffer.getInt();
         this.rowsLen = byteBuffer.getInt();
-        this.columns = new ColumnDto[columnsLen];
+        this.columns = new ColumnMetaDto[columnsLen];
         for (int i = 0; i < columnsLen; i++) {
-            this.columns[i] = new ColumnDto(byteBuffer);
+            this.columns[i] = new ColumnMetaDto(byteBuffer);
         }
-        this.rows = new RowValueDto[rowsLen];
+        this.rows = new RowDto[rowsLen];
         for (int i = 0; i < rowsLen; i++) {
-            this.rows[i] = new RowValueDto(byteBuffer, this.columns);
+            this.rows[i] = new RowDto(byteBuffer, this.columns);
         }
         this.desc = ReadWriteUtil.readString(byteBuffer);
     }
@@ -63,11 +63,11 @@ public class QueryResultDto implements BaseResultDto {
         writeBuffer.putInt(totalByteLen);
         writeBuffer.putInt(columnsLen);
         writeBuffer.putInt(rowsLen);
-        for (ColumnDto columnDto : columns) {
+        for (ColumnMetaDto columnDto : columns) {
             writeBuffer.put(columnDto.getByteBuffer());
         }
         if (rowsLen > 0) {
-            for (RowValueDto rowValueDto : rows) {
+            for (RowDto rowValueDto : rows) {
                 writeBuffer.put(rowValueDto.getByteBuffer(columns));
             }
         }
@@ -80,7 +80,7 @@ public class QueryResultDto implements BaseResultDto {
     }
 
 
-    public QueryResultDto(int totalByteLen, int columnsLen, int rowsLen, ColumnDto[] columns, RowValueDto[] rows, String desc) {
+    public QueryResultDto(int totalByteLen, int columnsLen, int rowsLen, ColumnMetaDto[] columns, RowDto[] rows, String desc) {
         this.totalByteLen = totalByteLen;
         this.columnsLen = columnsLen;
         this.rowsLen = rowsLen;
@@ -90,11 +90,11 @@ public class QueryResultDto implements BaseResultDto {
     }
 
 
-    public ColumnDto[] getColumns() {
+    public ColumnMetaDto[] getColumns() {
         return columns;
     }
 
-    public RowValueDto[] getRows() {
+    public RowDto[] getRows() {
         return rows;
     }
 

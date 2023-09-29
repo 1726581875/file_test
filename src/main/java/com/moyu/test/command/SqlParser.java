@@ -1714,6 +1714,7 @@ public class SqlParser implements Parser {
                 column.setValue(Long.valueOf(value));
                 break;
             case ColumnTypeConstant.VARCHAR:
+            case ColumnTypeConstant.CHAR:
                 if (value.startsWith("'") && value.endsWith("'")) {
                     column.setValue(value.substring(1, value.length() - 1));
                 } else if(isNullValue(value)) {
@@ -1739,10 +1740,9 @@ public class SqlParser implements Parser {
                 }else {
                     throw new SqlIllegalException("sql不合法，" + value);
                 }
-
                 break;
             default:
-                throw new SqlIllegalException("不支持该类型");
+                throw new SqlIllegalException("不支持该类型:" + column.getColumnType());
         }
     }
 

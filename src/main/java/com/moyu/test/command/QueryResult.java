@@ -15,7 +15,7 @@ public class QueryResult {
 
     private SelectColumn[] selectColumns;
 
-    private List<Object[]> resultRows;
+    private List<Object[]> resultRows = new ArrayList<>();
 
     /**
      * 描述

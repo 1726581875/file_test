@@ -7,7 +7,9 @@ package com.moyu.test.command.dml.sql;
 public class Parameter {
 
     private Object value;
-
+    /**
+     * 从1开始
+     */
     private int index;
 
     public Parameter(int index, Object value) {

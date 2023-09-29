@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/9/10
  */
-public class ColumnDto {
+public class ColumnMetaDto {
 
     private int totalByteLen;
 
@@ -22,7 +22,7 @@ public class ColumnDto {
     private byte columnType;
 
 
-    public ColumnDto(String columnName, String alias, String tableAlias, byte columnType) {
+    public ColumnMetaDto(String columnName, String alias, String tableAlias, byte columnType) {
         this.totalByteLen = 0;
         this.columnName = columnName;
         this.alias = alias;
@@ -30,7 +30,7 @@ public class ColumnDto {
         this.columnType = columnType;
     }
 
-    public  ColumnDto(ByteBuffer byteBuffer) {
+    public ColumnMetaDto(ByteBuffer byteBuffer) {
         this.totalByteLen = byteBuffer.getInt();
         this.columnName = ReadWriteUtil.readString(byteBuffer);
         this.alias = ReadWriteUtil.readString(byteBuffer);

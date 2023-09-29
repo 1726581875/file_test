@@ -87,7 +87,7 @@ public class ConnectionImpl implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String sql) throws SQLException {
-        return new PreparedStatementImpl();
+        return new PreparedStatementImpl(sql, this);
     }
 
     @Override
@@ -348,5 +348,9 @@ public class ConnectionImpl implements Connection {
     @Override
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         return false;
+    }
+
+    public String getDbName() {
+        return dbName;
     }
 }
