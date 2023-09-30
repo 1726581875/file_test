@@ -144,6 +144,17 @@ public class PreparedStatementImpl implements PreparedStatement {
 
     @Override
     public int executeUpdate() throws SQLException {
+        // 获取结果
+        Packet packet = execQueryGetPacket(conn.getDbName(), sql);
+        if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
+            OkPacket okPacket = (OkPacket) packet;
+            return okPacket.getAffRows();
+        } else if (packet.getPacketType() == Packet.PACKET_TYPE_ERR) {
+            ErrPacket errPacket = (ErrPacket) packet;
+            System.out.println("sql执行失败,错误码: " + errPacket.getErrCode() + "，错误信息: " + errPacket.getErrMsg());
+        } else {
+            System.out.println("不支持的packet type" + packet.getPacketType());
+        }
         return 0;
     }
 

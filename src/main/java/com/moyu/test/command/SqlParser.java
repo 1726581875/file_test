@@ -16,6 +16,7 @@ import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
 import com.moyu.test.store.operation.OperateTableInfo;
 import com.moyu.test.util.AssertUtil;
+import com.moyu.test.util.SqlParserUtil;
 import com.moyu.test.util.TypeConvertUtil;
 
 import java.text.ParseException;
@@ -502,7 +503,7 @@ public class SqlParser implements Parser {
             }
 
             endIndex = currIndex;
-            String word = getNextKeyWord();
+            String word = getNextWord();
             // 解析form后面 至 where前面这段语句。可能会有join操作
             if(FROM.equals(word) && sqlCharArr[endIndex - 1] == ' ' && sqlCharArr[currIndex] == ' ') {
                 String nextWord = getNextKeyWordUnMove();
@@ -1617,7 +1618,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析tableName
-        String tableName = parseTableNameOrIndexName();
+        String tableName = SqlParserUtil.getUnquotedStr(parseTableNameOrIndexName());
 
         Column[] tableColumns = getColumns(tableName);
 
@@ -1698,33 +1699,36 @@ public class SqlParser implements Parser {
 
         // TODO 默认空值，以后判断字段是否非空做校验
         if(value == null) {
-            value = "null";
+            //value = "null";
         }
 
         switch (column.getColumnType()) {
             case ColumnTypeConstant.TINY_INT:
-                Byte byteValue = isNullValue(value) ? null : Byte.valueOf(value);
+                Byte byteValue = value == null ? null : Byte.valueOf(value);
                 column.setValue(byteValue);
                 break;
             case ColumnTypeConstant.INT_4:
-                Integer intValue = isNullValue(value) ? null : Integer.valueOf(value);
+                Integer intValue = value == null ? null : Integer.valueOf(value);
                 column.setValue(intValue);
                 break;
             case ColumnTypeConstant.INT_8:
-                column.setValue(Long.valueOf(value));
+                Long longValue = value == null ? null : Long.valueOf(value);
+                column.setValue(longValue);
                 break;
             case ColumnTypeConstant.VARCHAR:
             case ColumnTypeConstant.CHAR:
-                if (value.startsWith("'") && value.endsWith("'")) {
-                    column.setValue(value.substring(1, value.length() - 1));
-                } else if(isNullValue(value)) {
+                if(value == null) {
                     column.setValue(null);
-                }else {
+                } else if (value.startsWith("'") && value.endsWith("'")) {
+                    column.setValue(value.substring(1, value.length() - 1));
+                } else {
                     throw new SqlIllegalException("sql不合法，" + value);
                 }
                 break;
             case ColumnTypeConstant.TIMESTAMP:
-                if (value.startsWith("'") && value.endsWith("'")) {
+                if (value == null) {
+                    column.setValue(null);
+                } else if (value.startsWith("'") && value.endsWith("'")) {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     String dateStr = value.substring(1, value.length() - 1);
                     try {
@@ -1735,9 +1739,7 @@ public class SqlParser implements Parser {
                         throw new SqlIllegalException("日期格式不正确，格式必须是:yyyy-MM-dd HH:mm:ss。当前值:" + dateStr);
                     }
 
-                } else if(isNullValue(value)) {
-                    column.setValue(null);
-                }else {
+                } else {
                     throw new SqlIllegalException("sql不合法，" + value);
                 }
                 break;
@@ -1838,8 +1840,8 @@ public class SqlParser implements Parser {
      */
     private CreateTableCommand getCreateTableCommand() {
         // 解析tableName
-        skipSpace();
         String tableName = parseTableNameOrIndexName();
+        tableName = SqlParserUtil.getUnquotedStr(tableName);
 
         // 解析建表字段
         skipSpace();
@@ -1924,7 +1926,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析字段
-        String columnName = columnKeyWord[0];
+        String columnName = SqlParserUtil.getUnquotedStr(columnKeyWord[0]);
         if((columnName.startsWith("`") && columnName.endsWith("`"))
                 || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
             columnName = columnStr.substring(1, columnName.length() - 1);
@@ -2053,6 +2055,25 @@ public class SqlParser implements Parser {
         currIndex = i;
         return word;
     }
+
+
+    private String getNextWord() {
+        skipSpace();
+        int i = currIndex;
+        while (i < sqlCharArr.length) {
+            if (sqlCharArr[i] == ' ' || sqlCharArr[i] == ';' || sqlCharArr[i] == '(') {
+                if(currIndex == i) {
+                    i++;
+                }
+                break;
+            }
+            i++;
+        }
+        String word = new String(sqlCharArr, currIndex, i - currIndex);
+        currIndex = i;
+        return word;
+    }
+
 
     private String getNextKeyWordUnMove() {
         skipSpace();

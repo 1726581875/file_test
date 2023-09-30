@@ -162,7 +162,7 @@ public class TableMetadataStore {
                     init();
                     for (TableMetadata m : tableMetadataList) {
                         if (tableName.equals(m.getTableName()) && databaseId.equals(m.getDatabaseId())) {
-                            System.out.println("###############表" + m.getTableName() + "已存在");
+                            System.out.println("表" + m.getTableName() + "已存在");
                         }
                     }
                 } catch (IOException e) {
