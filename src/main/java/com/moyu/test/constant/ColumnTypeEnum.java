@@ -16,7 +16,8 @@ public enum ColumnTypeEnum {
     CHAR("char", ColumnTypeConstant.CHAR),
     VARCHAR("varchar", ColumnTypeConstant.VARCHAR),
     TIMESTAMP("timestamp", ColumnTypeConstant.TIMESTAMP),
-    DATETIME("datetime", ColumnTypeConstant.TIMESTAMP)
+    DATETIME("datetime", ColumnTypeConstant.TIMESTAMP),
+    TEXT("text", ColumnTypeConstant.VARCHAR)
     ;
     private String typeName;
 

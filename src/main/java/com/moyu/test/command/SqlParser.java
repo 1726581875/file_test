@@ -1096,6 +1096,7 @@ public class SqlParser implements Parser {
         Byte resultType = null;
         switch (functionName) {
             case FunctionConstant.FUNC_COUNT:
+                resultType = ColumnTypeConstant.INT_8;
                 args = new String[1];
                 String arg = getFunctionArg(functionStr);
                 if ("*".equals(arg)) {
@@ -1111,7 +1112,6 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("sql不合法，字段{}不存在", cName);
                 }
                 args[0] = columnName0;
-                resultType = ColumnTypeConstant.INT_8;
                 break;
             case FunctionConstant.FUNC_MAX:
             case FunctionConstant.FUNC_MIN:

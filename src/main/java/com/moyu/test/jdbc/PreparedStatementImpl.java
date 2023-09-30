@@ -131,7 +131,7 @@ public class PreparedStatementImpl implements PreparedStatement {
             return ColumnTypeConstant.INT_8;
         } else if (value instanceof String) {
             return ColumnTypeConstant.VARCHAR;
-        } else if (value instanceof Date) {
+        } else if (value instanceof java.util.Date) {
             return ColumnTypeConstant.TIMESTAMP;
         } else if (value instanceof Byte) {
             return ColumnTypeConstant.TINY_INT;

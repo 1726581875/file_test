@@ -84,19 +84,6 @@
                             </archive>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>yanysql-connector-java</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>yanysql-connector-java-1.0.0</finalName>
-                            <includes>
-                                <include>com/moyu/test/**</include>
-                            </includes>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
 

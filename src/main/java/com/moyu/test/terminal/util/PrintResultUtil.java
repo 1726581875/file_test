@@ -137,9 +137,9 @@ public class PrintResultUtil {
         for (int i = 0; i < rowData.length; i++) {
             int width = columnWidths[i];
             String value = rowData[i];
-            System.out.printf("| ");
+            System.out.print("| ");
             // 输出值
-            System.out.printf(value);
+            System.out.print(value);
             // 需要填充的空格数量
             int spaceNum = width - value.length();
             // 打印对应数量的空格

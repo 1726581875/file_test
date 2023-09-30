@@ -49,7 +49,10 @@ public class TcpTerminal {
                 }
                 String inputStr = input;
                 // 退出命令
-                if ("exit;".equals(inputStr) || "exit".equals(inputStr)) {
+                String[] inputWords = getWords(inputStr);
+                if (inputWords.length > 0
+                        && "EXIT".equals(inputWords[0].toUpperCase())
+                        || "QUIT".equals(inputWords[0].toUpperCase())) {
                     break;
                 }
 
@@ -59,9 +62,8 @@ public class TcpTerminal {
 
                 try {
                     // 使用数据库,命令: use dbName
-                    String[] split = getWords(inputStr);
-                    if (split.length >= 2 && "USE".equals(split[0].toUpperCase())) {
-                        String dbName = split[1];
+                    if (inputWords.length >= 2 && "USE".equals(inputWords[0].toUpperCase())) {
+                        String dbName = inputWords[1];
                         useDatabase = tcpDataSender.getDatabaseInfo(dbName);
                         if (useDatabase != null) {
                             System.out.println("ok");
@@ -74,10 +76,8 @@ public class TcpTerminal {
 
                     // 如果还没使用数据库，只能执行show databases命令
                     if (useDatabase == null) {
-                        String[] sqlSplit = getWords(inputStr);
-                        if (split.length >= 2
-                                && "SHOW".equals(sqlSplit[0].toUpperCase())
-                                && ("DATABASES".equals(sqlSplit[1].toUpperCase())) || "DATABASES;".equals(sqlSplit[1].toUpperCase())) {
+                        if (inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase())
+                                && "DATABASES".equals(inputWords[1].toUpperCase()))) {
                             QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(-1, inputStr);
                             PrintResultUtil.printResult(queryResultDto);
                         } else {
@@ -111,6 +111,7 @@ public class TcpTerminal {
 
     private static String[] getWords(String str) {
         List<String> workList = new ArrayList<>();
+        str = str.trim();
         char[] charArray = str.toCharArray();
 
         int start = 0;
