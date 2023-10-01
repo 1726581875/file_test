@@ -16,6 +16,7 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/9/10
  * 通过TCP连接进行查询的终端
+ * 本地运行先启动TcpServer，再运行该类
  */
 public class TcpTerminal {
 

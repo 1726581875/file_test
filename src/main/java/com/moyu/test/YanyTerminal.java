@@ -14,6 +14,8 @@ import java.util.*;
  * @author xiaomingzhang
  * @date 2023/5/19
  * 一个便以测试的假终端
+ * TODO 该类已经被TcpTerminal类取代
+ *
  */
 public class YanyTerminal {
 

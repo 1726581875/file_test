@@ -564,11 +564,6 @@ public class SqlParser implements Parser {
 
         // 解析条件
         Expression condition = null;
-        // GROUP BY
-        String groupByColumnName = null;
-        // ORDER BY
-        List<SortField> sortFieldList = new ArrayList<>();
-
         skipSpace();
         String nextKeyWord = getNextKeyWordUnMove();
         /**
@@ -581,41 +576,23 @@ public class SqlParser implements Parser {
             getNextKeyWord();
             // 解析where条件
             condition = parseWhereCondition(columnMap);
-
             // 条件后面再接limit,如select * from table where column1=0 limit 10
             String nextKeyWord2 = getNextKeyWordUnMove();
             if(LIMIT.equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
             } else if (ORDER.equals(nextKeyWord2)) {
                 // 解析order by语句
-                sortFieldList = parseOrderBy(columnMap);
-                String nextKeyWord3 = getNextKeyWordUnMove();
-                if(LIMIT.equals(nextKeyWord3)) {
-                    parseOffsetLimit(query);
-                }
-
+                parseOrderBy(columnMap, query);
+            } else if(GROUP.equals(nextKeyWord)) {
+                parseGroupBy(columnMap, query);
             }
             // table后面直接接limit,如:select * from table limit 10
         } else if(LIMIT.equals(nextKeyWord)) {
             parseOffsetLimit(query);
         } else if (ORDER.equals(nextKeyWord)) {
-            sortFieldList = parseOrderBy(columnMap);
-
-            String nextKeyWord2 = getNextKeyWordUnMove();
-            if(LIMIT.equals(nextKeyWord2)) {
-                parseOffsetLimit(query);
-            }
+            parseOrderBy(columnMap, query);
         } else if(GROUP.equals(nextKeyWord)) {
-            getNextKeyWord();
-            assertNextKeywordIs(BY);
-            skipSpace();
-            groupByColumnName = getNextOriginalWord();
-            // select * from (select id,count(*) from xmz_yan group by id) t
-            if(groupByColumnName.endsWith(")") && groupByColumnName.length() > 1) {
-                groupByColumnName = groupByColumnName.substring(0, groupByColumnName.length() -1);
-            } else if("".equals(groupByColumnName) || ")".equals(groupByColumnName)) {
-                ExceptionUtil.throwSqlIllegalException("sql语法有误,在group by附近{}", groupByColumnName);
-            }
+            parseGroupBy(columnMap, query);
         }
 
         mainTable.setAllColumns(allColumns);
@@ -623,9 +600,6 @@ public class SqlParser implements Parser {
         query.setMainTable(mainTable);
         query.setSelectColumns(selectColumns);
         query.setCondition(condition);
-        query.setGroupByColumnName(groupByColumnName);
-        query.setSortFields(sortFieldList);
-
 
         // 当前索引列表
         if(mainTable.getSubQuery() == null) {
@@ -642,7 +616,54 @@ public class SqlParser implements Parser {
         return query;
     }
 
-    private List<SortField> parseOrderBy(Map<String, Column> columnMap) {
+
+    private void parseGroupBy(Map<String, Column> columnMap, Query query) {
+        List<GroupField> groupFields = new ArrayList<>();
+        assertNextKeywordIs(GROUP);
+        assertNextKeywordIs(BY);
+
+        skipSpace();
+        int charStart = currIndex;
+        int charEnd= currIndex;
+        while (true) {
+            if (currIndex >= sqlCharArr.length) {
+                charEnd = sqlCharArr.length;
+                break;
+            }
+            // 遇到limit结束
+            if (nextKeywordIs(ORDER) || nextKeywordIs(LIMIT)) {
+                charEnd = currIndex;
+                break;
+            }
+            currIndex++;
+        }
+
+        if(charEnd > charStart) {
+            String groupByStr = originalSql.substring(charStart, charEnd);
+            String[] split = groupByStr.split(",");
+            for (String columnName : split) {
+                Column column = columnMap.get(columnName.trim());
+                if(column == null) {
+                    ExceptionUtil.throwSqlIllegalException("SQL语法有误，在GROUP BY附近, 字段{}不存在", columnName.trim());
+                }
+                groupFields.add(new GroupField(column));
+            }
+        }
+
+        if(groupFields.size() == 0) {
+            ExceptionUtil.throwSqlIllegalException("SQL语法有误，在GROUP BY附近：{}", originalSql);
+        }
+
+        query.setGroupFields(groupFields);
+
+        if (nextKeywordIs(LIMIT)) {
+            parseOffsetLimit(query);
+        } else if (nextKeywordIs(ORDER)) {
+            parseOrderBy(columnMap, query);
+        }
+    }
+
+    private void parseOrderBy(Map<String, Column> columnMap, Query query) {
         List<SortField> sortFieldList = new ArrayList<>();
         assertNextKeywordIs(ORDER);
         assertNextKeywordIs(BY);
@@ -681,7 +702,7 @@ public class SqlParser implements Parser {
                     }
 
                     // 遇到limit结束
-                    if(currIndex < sqlCharArr.length && (sqlCharArr[currIndex] == 'L' || sqlCharArr[currIndex] == 'l')) {
+                    if(nextKeywordIs(LIMIT)) {
                         String nextKeyWork = getNextKeyWordUnMove();
                         if(LIMIT.equals(nextKeyWork)) {
                             // 如果没有设置排序字段，说明没有指定排序规则，使用默认排序方式
@@ -694,7 +715,7 @@ public class SqlParser implements Parser {
                     // 拿到定义的排序规则
                     if (currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
                         if (currIndex > charStart) {
-                            String sortType = originalSql.substring(charStart, currIndex).toUpperCase();
+                            String sortType = originalSql.substring(charStart, currIndex).toUpperCase().trim();
                             if (!sortType.equals(SortField.RULE_ASC) && !sortType.equals(SortField.RULE_DESC)) {
                                 ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 排序规则不合法。{}", sortType);
                             } else {
@@ -716,11 +737,8 @@ public class SqlParser implements Parser {
                 }
             }
             // 遇到limit结束
-            if(currIndex < sqlCharArr.length && (sqlCharArr[currIndex] == 'L' || sqlCharArr[currIndex] == 'l')) {
-                String nextKeyWork = getNextKeyWordUnMove();
-                if(LIMIT.equals(nextKeyWork)) {
-                    break;
-                }
+            if (nextKeywordIs(LIMIT)) {
+                break;
             }
 
 
@@ -731,7 +749,13 @@ public class SqlParser implements Parser {
             ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近：{}", originalSql);
         }
 
-        return sortFieldList;
+        query.setSortFields(sortFieldList);
+
+        // 如果下一个关键字为limit, 解析limit
+        String nextKeyWord3 = getNextKeyWordUnMove();
+        if(LIMIT.equals(nextKeyWord3)) {
+            parseOffsetLimit(query);
+        }
     }
 
 
@@ -2129,7 +2153,19 @@ public class SqlParser implements Parser {
     }
 
     private boolean nextKeywordIs(String keyword) {
-        skipSpace();
+
+        if(currIndex >= sqlCharArr.length) {
+            return false;
+        }
+
+        if(sqlCharArr[currIndex] == ' ') {
+            skipSpace();
+        } else {
+            // 关键字前一个必须为空格
+            if(currIndex > 0 && sqlCharArr[currIndex - 1] != ' ') {
+                return false;
+            }
+        }
         int i = currIndex;
         while (i < sqlCharArr.length) {
             if (sqlCharArr[i] == ' ') {
@@ -2147,11 +2183,7 @@ public class SqlParser implements Parser {
             i++;
         }
         String word = new String(sqlCharArr, currIndex, i - currIndex);
-        if(keyword.equals(word)) {
-            return true;
-        } else {
-            return false;
-        }
+        return keyword.equals(word);
     }
 
 

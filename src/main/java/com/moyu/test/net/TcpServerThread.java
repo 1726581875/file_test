@@ -64,7 +64,6 @@ public class TcpServerThread implements Runnable {
                         resultDto = new DatabaseInfo(database);
                         break;
                     case CommandTypeConstant.DB_QUERY:
-                    case CommandTypeConstant.DB_QUERY_RES_STR:
                         Integer databaseId = in.readInt();
                         Database dbObj = null;
                         String dbName = null;
@@ -81,14 +80,8 @@ public class TcpServerThread implements Runnable {
                         }
                         // 获取待执行sql
                         String sql = ReadWriteUtil.readString(in);
-                        System.out.println("数据库id:" + databaseId + "数据库:" + dbName + "接收到SQL:" + sql);
-                        ConnectSession connectSession = new ConnectSession(dbObj);
-                        // sql解析
-                        SqlParser sqlParser = new SqlParser(connectSession);
-                        Command command = sqlParser.prepareCommand(sql);
-                        // 执行sql并且获取执行结果
-                        QueryResult queryResult = command.execCommand();
-                        QueryResultDto queryResultDto = queryResultToDTO(queryResult);
+                        // 执行sql并获取结果
+                        QueryResultDto queryResultDto = execSqlGetResult(sql, dbObj);
                         if(commandType == CommandTypeConstant.DB_QUERY_RES_STR) {
                             String formatResult = PrintResultUtil.getFormatResult(queryResultDto);
                             System.out.println(formatResult);
@@ -138,6 +131,22 @@ public class TcpServerThread implements Runnable {
                 ioException.printStackTrace();
             }
         }
+    }
+
+    private QueryResultDto execSqlGetResult(String sql, Database dbObj) {
+        if(dbObj != null) {
+            System.out.println("数据库id:" + dbObj.getDatabaseId() + "数据库:" + dbObj.getDbName() + "接收到SQL:" + sql);
+        } else {
+            System.out.println("接收到SQL:" + sql);
+        }
+        ConnectSession connectSession = new ConnectSession(dbObj);
+        // sql解析
+        SqlParser sqlParser = new SqlParser(connectSession);
+        Command command = sqlParser.prepareCommand(sql);
+        // 执行sql并且获取执行结果
+        QueryResult queryResult = command.execCommand();
+        QueryResultDto queryResultDto = queryResultToDTO(queryResult);
+        return queryResultDto;
     }
 
 

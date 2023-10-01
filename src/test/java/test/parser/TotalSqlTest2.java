@@ -30,8 +30,8 @@ public class TotalSqlTest2 {
     private static Database database = null;
 
     static {
-/*        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execute();*/
+        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
+        dropDatabaseCommand.execute();
         CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
         createDatabaseCommand.execute();
         database = Database.getDatabase(databaseName);
@@ -39,23 +39,43 @@ public class TotalSqlTest2 {
 
 
     public static void main(String[] args) {
-        //yanStoreEngineTest();
-        //testCreateIndexCommand();
 
-
-        //fastInsertData2("abc_1", 10000, engineType);
-
-        //testOptimizeCondition();
-
-        //testOrderByQuery();
-
-
-/*        fastInsertData2("table_100000", 100000, engineType);
+        /*        fastInsertData2("table_100000", 100000, engineType);
         fastInsertData2("table_1000000", 1000000, engineType);*/
 
-        // deleteSqlTest();
+        //yanStoreEngineTest();
+        //testCreateIndexCommand();
+        //fastInsertData2("abc_1", 10000, engineType);
+        //testOptimizeCondition();
+        //testOrderByQuery();
+        //deleteSqlTest();
+        //testCreateTable();
+
+        testGroupBy();
+
+    }
 
 
+    private static void testGroupBy() {
+        testExecSQL("drop table if exists  groupby_test");
+        testExecSQL("create table groupby_test (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (4, 'John', '2023-06-29 11:15:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (5, 'John', '2023-06-29 12:00:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 13:20:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
+        testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
+        testExecSQL("select * from groupby_test");
+        testExecSQL("select id,name,count(*) from groupby_test group by id,name");
+        testExecSQL("select name,id,count(*) from groupby_test group by name,id");
+        testExecSQL("select name,id,count(*) from groupby_test group by name,id limit 2");
+    }
+
+
+
+
+    private static void testCreateTable() {
         testExecSQL("CREATE TABLE `sys_user` (\n" +
                 "  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',\n" +
                 "  `tenantId` varchar(36) NOT NULL COMMENT '租户id',\n" +

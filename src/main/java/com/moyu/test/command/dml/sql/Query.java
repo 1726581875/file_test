@@ -60,9 +60,9 @@ public class Query {
      */
     private Cursor queryCursor;
     /**
-     * GROUP BY [groupByColumnName]
+     * GROUP BY [groupFields]
      */
-    private String groupByColumnName;
+    private List<GroupField> groupFields;
     /**
      *  ORDER BY [orderFields]
      */
@@ -157,11 +157,11 @@ public class Query {
     }
 
     private boolean useGroupBy(Query query) {
-        if(query.getGroupByColumnName() != null) {
+        if(query.getGroupFields() != null && query.getGroupFields().size() > 0) {
             if (query.getSelectColumns().length == 1) {
                 return true;
             }
-            for (int i = 1; i < query.getSelectColumns().length; i++) {
+            for (int i = query.getGroupFields().size(); i < query.getSelectColumns().length; i++) {
                 SelectColumn c = query.getSelectColumns()[i];
                 if (c.getFunctionName() == null) {
                     throw new SqlIllegalException("sql语法有误");
@@ -295,34 +295,53 @@ public class Query {
     private Cursor getGroupByResult(Cursor cursor, Query query) {
 
         List<RowEntity> resultRowList = new ArrayList<>();
-        Map<Column, List<StatFunction>> groupByMap = new HashMap<>();
-
+        List<GroupField> groupFields = query.getGroupFields();
+        Map<GroupMapKey, List<StatFunction>> groupByMap = new HashMap<>();
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
             if (Expression.isMatch(row, query.getCondition())) {
-                Column column = getColumn(row.getColumns(), query.getGroupByColumnName());
-                List<StatFunction> statFunctions = groupByMap.getOrDefault(column, getFunctionList(query));
+                List<Column> groupByColumns = new LinkedList<>();
+                for (GroupField groupField : groupFields) {
+                    Column groupByColumn = groupField.getColumn().copy();
+                    Column column = getColumn(row.getColumns(), groupByColumn.getColumnName());
+                    groupByColumn.setValue(column.getValue());
+                    groupByColumns.add(groupByColumn);
+                }
+                GroupMapKey groupMapKey = new GroupMapKey(groupByColumns);
+
+                List<StatFunction> statFunctions = groupByMap.getOrDefault(groupMapKey, getFunctionList(query));
                 // 进入计算函数
                 for (StatFunction statFunction : statFunctions) {
                     statFunction.stat(row.getColumns());
                 }
-                groupByMap.put(column, statFunctions);
+                groupByMap.put(groupMapKey, statFunctions);
             }
         }
 
         // 汇总执行结果
-        for (Map.Entry<Column, List<StatFunction>> entry : groupByMap.entrySet()) {
+        int rowIndex = 0;
+        for (Map.Entry<GroupMapKey, List<StatFunction>> entry : groupByMap.entrySet()) {
+            List<Column> groupByColumns = entry.getKey().getColumnList();
             List<StatFunction> statFunctions = entry.getValue();
-            Column[] resultColumns = new Column[statFunctions.size() + 1];
-            // 第一列为group by字段
-            resultColumns[0] = entry.getKey();
+            Column[] resultColumns = new Column[groupByColumns.size() + statFunctions.size()];
+            // group by字段
+            for (int i = 0; i < groupByColumns.size(); i++) {
+                resultColumns[i] = groupByColumns.get(i);
+            }
             // 其余字段为统计函数
             for (int i = 0; i < statFunctions.size(); i++) {
-                int index = i + 1;
+                int index = groupByColumns.size() + i;
                 StatFunction statFunction = statFunctions.get(i);
                 resultColumns[index] = functionResultToColumn(statFunction, index, query);
             }
-            resultRowList.add(new RowEntity(resultColumns));
+            // 如果有offset、limit限制，判断是否符合条件
+            if(query.isMatchLimit(query, rowIndex)) {
+                resultRowList.add(new RowEntity(resultColumns));
+                rowIndex++;
+            } else {
+                break;
+            }
+
         }
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
         Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
@@ -825,13 +844,6 @@ public class Query {
         this.session = session;
     }
 
-    public String getGroupByColumnName() {
-        return groupByColumnName;
-    }
-
-    public void setGroupByColumnName(String groupByColumnName) {
-        this.groupByColumnName = groupByColumnName;
-    }
 
     public Integer getLimit() {
         return limit;
@@ -872,5 +884,13 @@ public class Query {
 
     public void setSortFields(List<SortField> sortFields) {
         this.sortFields = sortFields;
+    }
+
+    public void setGroupFields(List<GroupField> groupFields) {
+        this.groupFields = groupFields;
+    }
+
+    public List<GroupField> getGroupFields() {
+        return groupFields;
     }
 }
