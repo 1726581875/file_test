@@ -210,6 +210,9 @@ public class SqlParser implements Parser {
         StringBuilder stringBuilder = new StringBuilder();
         char[] charArray = sql.toCharArray();
         for (int i = 0; i < charArray.length; i++) {
+            if(charArray[i] == ';') {
+                break;
+            }
             if (charArray[i] == '\n') {
                 stringBuilder.append(" ");
             } else {
@@ -515,6 +518,9 @@ public class SqlParser implements Parser {
                     assertNextKeywordIs(SELECT);
                     // 解析子查询
                     subQuery = parseQuery(subStartEnd);
+                    if(sqlCharArr[currIndex] == ')') {
+                        currIndex++;
+                    }
                     mainTable = getSubQueryAliasMainTable(subQuery);
                     mainTable.setSubQuery(subQuery);
                     mainTable.setJoinTables(new ArrayList<>());
@@ -631,7 +637,10 @@ public class SqlParser implements Parser {
                 break;
             }
             // 遇到limit结束
-            if (nextKeywordIs(ORDER) || nextKeywordIs(LIMIT)) {
+            if (sqlCharArr[currIndex] == ')'
+                    || sqlCharArr[currIndex] == ';'
+                    || nextKeywordIs(ORDER)
+                    || nextKeywordIs(LIMIT)) {
                 charEnd = currIndex;
                 break;
             }
@@ -1532,8 +1541,8 @@ public class SqlParser implements Parser {
             currIndex = startEnd.getEnd();
             condition = new ConditionIn(isIn, left, values);
         } else {
-            currIndex = startEnd.getStart();
-            getNextKeyWord();
+            currIndex = startEnd.getStart() + 1;
+            assertNextKeywordIs(SELECT);
             Query query = parseQuery(startEnd);
             condition = new ConditionInSubQuery(isIn, left, query);
         }
@@ -1728,20 +1737,20 @@ public class SqlParser implements Parser {
 
         switch (column.getColumnType()) {
             case ColumnTypeConstant.TINY_INT:
-                Byte byteValue = value == null ? null : Byte.valueOf(value);
+                Byte byteValue = isNullValue(value) ? null : Byte.valueOf(value);
                 column.setValue(byteValue);
                 break;
             case ColumnTypeConstant.INT_4:
-                Integer intValue = value == null ? null : Integer.valueOf(value);
+                Integer intValue =isNullValue(value) ? null : Integer.valueOf(value);
                 column.setValue(intValue);
                 break;
             case ColumnTypeConstant.INT_8:
-                Long longValue = value == null ? null : Long.valueOf(value);
+                Long longValue = isNullValue(value) ? null : Long.valueOf(value);
                 column.setValue(longValue);
                 break;
             case ColumnTypeConstant.VARCHAR:
             case ColumnTypeConstant.CHAR:
-                if(value == null) {
+                if(isNullValue(value)) {
                     column.setValue(null);
                 } else if (value.startsWith("'") && value.endsWith("'")) {
                     column.setValue(value.substring(1, value.length() - 1));
@@ -1750,7 +1759,7 @@ public class SqlParser implements Parser {
                 }
                 break;
             case ColumnTypeConstant.TIMESTAMP:
-                if (value == null) {
+                if (isNullValue(value)) {
                     column.setValue(null);
                 } else if (value.startsWith("'") && value.endsWith("'")) {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1776,7 +1785,7 @@ public class SqlParser implements Parser {
 
 
     private boolean isNullValue(String value) {
-        return "null".equals(value) || "NULL".equals(value);
+        return value == null || "null".equals(value) || "NULL".equals(value);
     }
 
     private Map<String, Column> getColumnMap(Column[] columns) {
@@ -1894,7 +1903,7 @@ public class SqlParser implements Parser {
             engineType = nextOriginalWord.substring("ENGINE=".length());
         }
         if(engineType == null) {
-            engineType = CommonConstant.ENGINE_TYPE_YU;
+            engineType = CommonConstant.ENGINE_TYPE_YAN;
         }
         // 构造创建表命令
         CreateTableCommand command = new CreateTableCommand();

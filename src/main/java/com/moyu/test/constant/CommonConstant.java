@@ -22,7 +22,6 @@ public interface CommonConstant {
      * yanStore b+树叶子节点存储行
      */
     String ENGINE_TYPE_YU = "yuStore";
-
     String ENGINE_TYPE_YAN = "yanStore";
 
 

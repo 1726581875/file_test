@@ -43,13 +43,13 @@ public class TotalSqlTest2 {
         /*        fastInsertData2("table_100000", 100000, engineType);
         fastInsertData2("table_1000000", 1000000, engineType);*/
 
-        //yanStoreEngineTest();
-        //testCreateIndexCommand();
-        //fastInsertData2("abc_1", 10000, engineType);
-        //testOptimizeCondition();
-        //testOrderByQuery();
-        //deleteSqlTest();
-        //testCreateTable();
+        yanStoreEngineTest();
+        testCreateIndexCommand();
+        fastInsertData2("abc_1", 10000, engineType);
+        testOptimizeCondition();
+        testOrderByQuery();
+        deleteSqlTest();
+        testCreateTable();
 
         testGroupBy();
 
@@ -67,7 +67,7 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
         testExecSQL("INSERT INTO groupby_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
         testExecSQL("select * from groupby_test");
-        testExecSQL("select id,name,count(*) from groupby_test group by id,name");
+        testExecSQL("select id,name,count(*) from groupby_test group by id,name;");
         testExecSQL("select name,id,count(*) from groupby_test group by name,id");
         testExecSQL("select name,id,count(*) from groupby_test group by name,id limit 2");
     }

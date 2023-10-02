@@ -57,12 +57,7 @@ public class TotalSqlTest {
         gptRandom20Test2();
         yanStoreEngineTest();
         //bigTableJoin();
-
-
         testUseIndex();
-
-
-
     }
 
 
