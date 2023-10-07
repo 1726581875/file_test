@@ -39,7 +39,7 @@ public class DescTableCommand extends AbstractCommand {
         IndexMetadataStore indexStore = null;
         try {
             metadataStore = new TableMetadataStore(databaseId);
-            columnMetadataStore = new ColumnMetadataStore();
+            columnMetadataStore = new ColumnMetadataStore(databaseId);
             List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
 
             TableMetadata table = null;
@@ -123,7 +123,7 @@ public class DescTableCommand extends AbstractCommand {
         IndexMetadataStore indexStore = null;
         try {
             metadataStore = new TableMetadataStore(databaseId);
-            columnMetadataStore = new ColumnMetadataStore();
+            columnMetadataStore = new ColumnMetadataStore(databaseId);
             List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
 
             TableMetadata table = null;

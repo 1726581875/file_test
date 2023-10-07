@@ -43,7 +43,7 @@ public class DropTableCommand extends AbstractCommand {
         IndexMetadataStore indexStore = null;
         try {
             tableMetadataStore = new TableMetadataStore(database.getDatabaseId());
-            columnMetadataStore = new ColumnMetadataStore();
+            columnMetadataStore = new ColumnMetadataStore(database.getDatabaseId());
             indexStore = new IndexMetadataStore(database.getDatabaseId());
             TableMetadata table = tableMetadataStore.getTable(tableName);
             if (table != null) {

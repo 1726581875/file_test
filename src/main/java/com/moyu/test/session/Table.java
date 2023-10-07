@@ -54,7 +54,7 @@ public class Table {
         ColumnMetadataStore columnStore = null;
         try {
             tableMetadata = new TableMetadataStore(databaseId);
-            columnStore = new ColumnMetadataStore();
+            columnStore = new ColumnMetadataStore(databaseId);
             TableMetadata table = tableMetadata.getTable(tableName);
             if(table == null) {
                 throw new SqlExecutionException("表" + tableName + "不存在");

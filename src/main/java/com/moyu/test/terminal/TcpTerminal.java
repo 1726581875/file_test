@@ -75,10 +75,9 @@ public class TcpTerminal {
                         continue;
                     }
 
-                    // 如果还没使用数据库，只能执行show databases命令
+                    // 如果还没使用数据库，只能执行show databases/create database命令
                     if (useDatabase == null) {
-                        if (inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase())
-                                && "DATABASES".equals(inputWords[1].toUpperCase()))) {
+                        if (isShowDatabases(inputWords) || isCreateDatabase(inputWords)) {
                             QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(-1, inputStr);
                             PrintResultUtil.printResult(queryResultDto);
                         } else {
@@ -91,7 +90,6 @@ public class TcpTerminal {
                     }
 
                 } catch (Exception e) {
-                    //System.out.println(e.getMessage());
                     e.printStackTrace();
                 }
 
@@ -102,6 +100,16 @@ public class TcpTerminal {
 
         System.out.println("结束");
     }
+
+
+    private static boolean isShowDatabases(String[] inputWords){
+        return (inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase()) && "DATABASES".equals(inputWords[1].toUpperCase())));
+    }
+
+    private static boolean isCreateDatabase(String[] inputWords){
+        return (inputWords.length >= 2 && ("CREATE".equals(inputWords[0].toUpperCase()) && "DATABASE".equals(inputWords[1].toUpperCase())));
+    }
+
 
     private static LineReader buildLineReader(Terminal terminal, DatabaseInfo database) {
         return LineReaderBuilder.builder()

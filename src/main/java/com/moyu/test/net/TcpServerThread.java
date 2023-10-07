@@ -64,6 +64,7 @@ public class TcpServerThread implements Runnable {
                         resultDto = new DatabaseInfo(database);
                         break;
                     case CommandTypeConstant.DB_QUERY:
+                    case CommandTypeConstant.DB_QUERY_RES_STR:
                         Integer databaseId = in.readInt();
                         Database dbObj = null;
                         String dbName = null;

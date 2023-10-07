@@ -22,11 +22,13 @@ public class ColumnMetadataStore {
 
     private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
 
-    private String filePath;
-
     public static final String COLUMN_META_FILE_NAME = "column.meta";
 
     private FileStore fileStore;
+
+    private Integer databaseId;
+
+    private String filePath;
 
 
     private List<TableColumnBlock> columnBlockList = new ArrayList<>();
@@ -39,7 +41,10 @@ public class ColumnMetadataStore {
 
 
     public ColumnMetadataStore() throws IOException {
-        this(DEFAULT_META_PATH);
+    }
+
+    public ColumnMetadataStore(Integer databaseId) throws IOException {
+        this(DEFAULT_META_PATH + File.separator + databaseId);
     }
 
     public ColumnMetadataStore(String filePath) throws IOException {

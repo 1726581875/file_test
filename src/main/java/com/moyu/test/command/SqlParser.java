@@ -440,6 +440,7 @@ public class SqlParser implements Parser {
     private SelectCommand getSelectCommand() {
         // 解析查询sql
         Query query = parseQuery(null);
+
         query.setSession(connectSession);
         // 对查询进行优化
         SelectCommand selectCommand = new SelectCommand(query);
@@ -1804,7 +1805,7 @@ public class SqlParser implements Parser {
         ColumnMetadataStore columnStore = null;
         try {
             tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
-            columnStore = new ColumnMetadataStore();
+            columnStore = new ColumnMetadataStore(connectSession.getDatabaseId());
             TableMetadata table = tableMetadata.getTable(tableName);
             if(table == null) {
                 throw new SqlExecutionException("表" + tableName + "不存在");
