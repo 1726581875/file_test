@@ -122,6 +122,89 @@ public class PrintResultUtil {
         System.out.println();
     }
 
+
+
+
+    public static void printTopRows(QueryResultDto queryResult, int limit) {
+        if (queryResult == null) {
+            System.out.println("发生异常，结果为空");
+            return;
+        }
+        ColumnMetaDto[] columns = queryResult.getColumns();
+        RowDto[] rows = queryResult.getRows();
+        int columnCount = columns.length;
+        // 计算字段宽度
+        int[] columnWidths = getColumnWidths(queryResult);
+        // 打印表格顶部边框
+        printHorizontalLine(columnWidths);
+        // 打印表头
+        String[] tableHeaders = new String[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = getPrintColumnName(columns[i]);
+            tableHeaders[i] = columnName;
+        }
+        printRow(tableHeaders, columnWidths);
+        // 打印表头与内容之间的分隔线
+        printHorizontalLine(columnWidths);
+        // 打印表格内容
+        for (int i = 0; i < limit; i++) {
+            Object[] row = rows[i].getColumnValues();
+            String[] rowDataStrs = new String[row.length];
+            for (int j = 0; j < columnCount; j++) {
+                String valueStr = (row[j] == null ? "" : valueToString(row[j]));
+                rowDataStrs[j] = valueStr;
+            }
+            printRow(rowDataStrs, columnWidths);
+        }
+    }
+
+
+    public static String getOutputRowStr(QueryResultDto queryResult, int currRowIndex) {
+        StringBuilder rowBuilder = new StringBuilder("");
+        ColumnMetaDto[] columns = queryResult.getColumns();
+        RowDto[] rows = queryResult.getRows();
+        int columnCount = columns.length;
+        // 计算字段宽度
+        int[] columnWidths = getColumnWidths(queryResult);
+
+        // 打印当前行
+        if(currRowIndex >= rows.length) {
+            return "";
+        }
+        Object[] row = rows[currRowIndex].getColumnValues();
+        String[] rowDataStrs = new String[row.length];
+        for (int j = 0; j < columnCount; j++) {
+            String valueStr = (row[j] == null ? "" : valueToString(row[j]));
+            rowDataStrs[j] = valueStr;
+        }
+        appendRow(rowDataStrs, columnWidths, rowBuilder);
+        appendHorizontalLine(columnWidths, rowBuilder);
+        return rowBuilder.toString();
+    }
+
+
+    private static int[] getColumnWidths(QueryResultDto queryResult) {
+        ColumnMetaDto[] columns = queryResult.getColumns();
+        RowDto[] rows = queryResult.getRows();
+        int columnCount = columns.length;
+        // 计算字段宽度
+        int[] columnWidths = new int[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = getPrintColumnName(columns[i]);
+            // 可设置最小宽度
+            columnWidths[i] = Math.max(columnName.length(), 10);
+            // 遍历结果集的所有行，计算该列数据的宽度
+            for (RowDto rowValueDto : rows) {
+                Object[] rowValues = rowValueDto.getColumnValues();
+                String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
+                columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
+            }
+        }
+        return columnWidths;
+    }
+
+
+
     private static String getPrintColumnName(ColumnMetaDto columnDto) {
         if(columnDto.getAlias() != null) {
             return columnDto.getAlias();

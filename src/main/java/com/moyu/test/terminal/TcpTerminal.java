@@ -20,12 +20,14 @@ import java.util.List;
  */
 public class TcpTerminal {
 
-    //private static final String ipAddress = "159.75.134.161";
-    private static final String ipAddress = "localhost";
+    private static final String ipAddress = "159.75.134.161";
+    //private static final String ipAddress = "localhost";
 
     private static final int port = 8888;
 
     private static final String END_CHAR = ";";
+
+    private static final int PRINT_LIMIT = 1000;
 
     public static void main(String[] args) {
 
@@ -86,7 +88,11 @@ public class TcpTerminal {
                     } else {
                         // 其他命令
                         QueryResultDto queryResultDto = tcpDataSender.execQueryGetResult(useDatabase.getDatabaseId(), inputStr);
-                        PrintResultUtil.printResult(queryResultDto);
+                        if(queryResultDto == null) {
+                            System.out.println("异常，获取不到结果..");
+                            continue;
+                        }
+                        printResult(reader, queryResultDto);
                     }
 
                 } catch (Exception e) {
@@ -100,6 +106,43 @@ public class TcpTerminal {
 
         System.out.println("结束");
     }
+
+
+    private static void printResult(LineReader reader, QueryResultDto queryResultDto) {
+        String input;
+        int dataLength = queryResultDto.getRows().length;
+        int currIndex = PRINT_LIMIT;
+        if (queryResultDto.getRows() != null && queryResultDto.getRows().length > PRINT_LIMIT) {
+            PrintResultUtil.printTopRows(queryResultDto, PRINT_LIMIT);
+
+            String outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto, currIndex);
+            // 逐行输出数据直到按下Enter键
+            while ((input = reader.readLine(outputRowStr)) != null) {
+                if (input.isEmpty()) {
+                    currIndex++;
+                    if (currIndex >= dataLength) {
+                        break;
+                    }
+                    outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto, currIndex);
+                    continue;
+                }
+
+                if ("q".equalsIgnoreCase(input)) {
+                    break;
+                }
+                outputRowStr = "";
+            }
+
+            if (queryResultDto.getDesc() != null) {
+                System.out.println(queryResultDto.getDesc());
+            }
+            System.out.println();
+
+        } else {
+            PrintResultUtil.printResult(queryResultDto);
+        }
+    }
+
 
 
     private static boolean isShowDatabases(String[] inputWords){
@@ -153,7 +196,8 @@ public class TcpTerminal {
 
 
     private static void printDatabaseMsg() {
-        System.out.println("  __     __                    _____   ____   _\n" +
+        System.out.println(
+                "  __     __                    _____   ____   _\n" +
                 "  \\ \\   / /                   / ____| / __ \\ | |\n" +
                 "   \\ \\_/ /__ _  _ __   _   _ | (___  | |  | || |\n" +
                 "    \\   // _` || '_ \\ | | | | \\___ \\ | |  | || |\n" +
