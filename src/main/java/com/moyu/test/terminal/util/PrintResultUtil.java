@@ -156,6 +156,7 @@ public class PrintResultUtil {
             }
             printRow(rowDataStrs, columnWidths);
         }
+        printHorizontalLine(columnWidths);
     }
 
 
