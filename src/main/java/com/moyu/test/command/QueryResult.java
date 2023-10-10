@@ -21,6 +21,11 @@ public class QueryResult {
      * 描述
      */
     private String desc;
+    /**
+     * 数据量太大时候不一次传输，改为分批传输
+     * 标记查询结果是否还有下一页数据，每页大小见CommonConfig.NET_TRAN_MAX_SIZE
+     */
+    private byte hasNext;
 
 
     public void addAll(List<Column[]> columnValueList) {
@@ -66,6 +71,14 @@ public class QueryResult {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public byte getHasNext() {
+        return hasNext;
+    }
+
+    public void setHasNext(byte hasNext) {
+        this.hasNext = hasNext;
     }
 
     @Override

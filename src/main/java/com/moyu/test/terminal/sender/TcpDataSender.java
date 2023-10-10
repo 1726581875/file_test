@@ -59,9 +59,12 @@ public class TcpDataSender {
         throw new DbException("获取数据库信息失败");
     }
 
+    public QueryResultDto execQueryCommand(Integer databaseId, String sql) {
+        return execQueryCommand(databaseId, sql, CommandTypeConstant.DB_QUERY);
+    }
 
-    public QueryResultDto execQueryGetResult(Integer databaseId, String sql) {
-        // 创建Socket对象，并指定服务端IP地址和端口号
+
+    public QueryResultDto execQueryCommand(Integer databaseId, String sql, int commandType) {
         try (Socket socket = new Socket(ipAddress, port);
              // 获取输入流和输出流
              InputStream inputStream = socket.getInputStream();
@@ -69,13 +72,11 @@ public class TcpDataSender {
              DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
              DataInputStream dataInputStream = new DataInputStream(inputStream)) {
             // 命令类型
-            dataOutputStream.writeByte(CommandTypeConstant.DB_QUERY);
+            dataOutputStream.writeByte(commandType);
             // 数据库id
             dataOutputStream.writeInt(databaseId);
             // SQL
             ReadWriteUtil.writeString(dataOutputStream, sql);
-/*            dataOutputStream.writeInt(sql.length());
-            dataOutputStream.writeChars(sql);*/
             // 获取结果
             Packet packet = readPacket(dataInputStream);
             if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
@@ -96,18 +97,8 @@ public class TcpDataSender {
     }
 
 
-    public static void main(String[] args) {
-        TcpDataSender sender = new TcpDataSender("localhost", 8888);
-/*        QueryResultDto queryResultDto = sender.execQueryGetResult(37, "select * from xmz_sort_test");
-        System.out.println(queryResultDto);*/
 
-        DatabaseInfo databaseInfo = sender.getDatabaseInfo("aaa");
-        System.out.println(databaseInfo);
-
-    }
-
-
-    private static Packet readPacket(DataInputStream dataInputStream) throws IOException {
+    public static Packet readPacket(DataInputStream dataInputStream) throws IOException {
 
         Packet packet = null;
 

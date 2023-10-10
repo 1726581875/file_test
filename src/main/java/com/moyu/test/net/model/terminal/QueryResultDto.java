@@ -17,6 +17,8 @@ public class QueryResultDto implements BaseResultDto {
 
     private int rowsLen;
 
+    private byte hasNext;
+
     private ColumnMetaDto[] columns;
 
     private RowDto[] rows;
@@ -45,6 +47,7 @@ public class QueryResultDto implements BaseResultDto {
         this.totalByteLen = byteBuffer.getInt();
         this.columnsLen = byteBuffer.getInt();
         this.rowsLen = byteBuffer.getInt();
+        this.hasNext = byteBuffer.get();
         this.columns = new ColumnMetaDto[columnsLen];
         for (int i = 0; i < columnsLen; i++) {
             this.columns[i] = new ColumnMetaDto(byteBuffer);
@@ -63,6 +66,7 @@ public class QueryResultDto implements BaseResultDto {
         writeBuffer.putInt(totalByteLen);
         writeBuffer.putInt(columnsLen);
         writeBuffer.putInt(rowsLen);
+        writeBuffer.put(this.hasNext);
         for (ColumnMetaDto columnDto : columns) {
             writeBuffer.put(columnDto.getByteBuffer());
         }
@@ -108,6 +112,14 @@ public class QueryResultDto implements BaseResultDto {
 
     public int getRowsLen() {
         return rowsLen;
+    }
+
+    public void setHasNext(byte hasNext) {
+        this.hasNext = hasNext;
+    }
+
+    public byte getHasNext() {
+        return hasNext;
     }
 
     @Override

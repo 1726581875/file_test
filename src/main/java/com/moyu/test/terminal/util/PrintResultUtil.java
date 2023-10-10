@@ -231,7 +231,7 @@ public class PrintResultUtil {
         System.out.println("|");
     }
 
-    private static void printHorizontalLine(int[] columnWidths) {
+    public static void printHorizontalLine(int[] columnWidths) {
         for (int width : columnWidths) {
             String line = "+" + repeat("-", width + 2);
             System.out.print(line);

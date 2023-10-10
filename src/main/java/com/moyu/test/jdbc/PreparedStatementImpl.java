@@ -13,7 +13,6 @@ import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.packet.Packet;
 import com.moyu.test.net.util.ReadWriteUtil;
-import com.moyu.test.util.TypeConvertUtil;
 
 import java.io.*;
 import java.math.BigDecimal;

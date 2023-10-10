@@ -182,6 +182,10 @@ public class Query {
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
 
+        if(query.getCondition() == null) {
+            return cursor;
+        }
+
         // 判断数据是否应该物化(在磁盘生成临时表)
         boolean toDisk = false;
         String diskTemTableName = null;

@@ -23,4 +23,9 @@ public class CommandTypeConstant {
      */
     public static final byte DB_PREPARED_QUERY = 3;
 
+    /**
+     * 查询命令,分页返回
+     */
+    public static final byte DB_QUERY_PAGE = 4;
+
 }

@@ -4,6 +4,7 @@ import com.moyu.test.command.AbstractCommand;
 import com.moyu.test.command.Command;
 import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
+import com.moyu.test.command.dml.SelectCommand;
 import com.moyu.test.command.dml.sql.Parameter;
 import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.exception.ExceptionUtil;
@@ -14,6 +15,7 @@ import com.moyu.test.net.model.terminal.*;
 import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.util.ReadWriteUtil;
+import com.moyu.test.net.util.WritePacketUtil;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
@@ -26,7 +28,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -91,6 +92,9 @@ public class TcpServerThread implements Runnable {
                             resultDto = queryResultDto;
                         }
                         break;
+                    case CommandTypeConstant.DB_QUERY_PAGE:
+                        handleQueryPage();
+                        return;
                     case CommandTypeConstant.DB_PREPARED_QUERY:
                         resultDto = preparedQuery();
                         break;
@@ -133,6 +137,42 @@ public class TcpServerThread implements Runnable {
             }
         }
     }
+
+    private void handleQueryPage() throws IOException {
+        Integer databaseId = in.readInt();
+        Database dbObj = Database.getDatabase(databaseId);
+        // 获取待执行sql
+        String sql = ReadWriteUtil.readString(in);
+        System.out.println("数据库id:" + dbObj.getDatabaseId() + "数据库:" + dbObj.getDbName() + "接收到SQL:" + sql);
+        ConnectSession connectSession = new ConnectSession(dbObj);
+        SqlParser sqlParser = new SqlParser(connectSession);
+        Command command = sqlParser.prepareCommand(sql);
+        if (command instanceof SelectCommand) {
+            SelectCommand selectCommand = (SelectCommand) command;
+            // 获取一页数据
+            QueryResult pageResult = selectCommand.getNextPageResult();
+            // 数据转换
+            QueryResultDto queryResultDto = queryResultToDTO(pageResult);
+            OkPacket okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
+            // 数据发送
+            WritePacketUtil.writeOkPacket(out, okPacket);
+            while (pageResult.getHasNext() == (byte) 1) {
+                byte flag = in.readByte();
+                if (flag == (byte) 0) {
+                    break;
+                }
+                System.out.println(Thread.currentThread().getName() + "获取下一批数据, flag=" + flag);
+                pageResult = selectCommand.getNextPageResult();
+                // 数据转换
+                queryResultDto = queryResultToDTO(pageResult);
+                okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
+                // 数据发送
+                WritePacketUtil.writeOkPacket(out, okPacket);
+            }
+        }
+    }
+
+
 
     private QueryResultDto execSqlGetResult(String sql, Database dbObj) {
         if(dbObj != null) {
@@ -216,7 +256,9 @@ public class TcpServerThread implements Runnable {
                 rowValueDtos[i] = new RowDto(resultRows.get(i));
             }
         }
-        return new QueryResultDto(columnDtos, rowValueDtos, queryResult.getDesc());
+        QueryResultDto queryResultDto = new QueryResultDto(columnDtos, rowValueDtos, queryResult.getDesc());
+        queryResultDto.setHasNext(queryResult.getHasNext());
+        return queryResultDto;
     }
 
 

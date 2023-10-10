@@ -20,6 +20,11 @@ public class CommonConfig {
      */
     public static final boolean IS_ENABLE_QUERY_CACHE = true;
 
+    /**
+     * 查询命令，一次网络传输最大行数
+     */
+    public static final int NET_TRAN_MAX_ROW_SIZE = 10000;
+
 
     private CommonConfig(){}
 
