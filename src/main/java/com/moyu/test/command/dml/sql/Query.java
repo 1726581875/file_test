@@ -182,7 +182,7 @@ public class Query {
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
 
-        if(query.getCondition() == null) {
+        if(query.getCondition() == null && query.getLimit() == null && query.getOffset() == null) {
             return cursor;
         }
 

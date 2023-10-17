@@ -1,14 +1,29 @@
 package com.moyu.test.jdbc;
+import com.moyu.test.net.model.terminal.ColumnMetaDto;
+import com.moyu.test.net.model.terminal.QueryResultDto;
+
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 /**
  * @author xiaomingzhang
  * @date 2023/9/18
  */
-public class ResultSetMetaData implements java.sql.ResultSetMetaData {
+public class ResultSetMetaDataImpl implements ResultSetMetaData {
+
+    private QueryResultDto queryResultDto;
+
+    private ColumnMetaDto[] metaDataColumns;
+
+
+    public ResultSetMetaDataImpl(QueryResultDto queryResultDto) {
+        this.queryResultDto = queryResultDto;
+        this.metaDataColumns = queryResultDto.getColumns();
+    }
+
     @Override
     public int getColumnCount() throws SQLException {
-        return 0;
+        return metaDataColumns.length;
     }
 
     @Override
@@ -48,12 +63,16 @@ public class ResultSetMetaData implements java.sql.ResultSetMetaData {
 
     @Override
     public String getColumnLabel(int column) throws SQLException {
-        return null;
+        String alias = metaDataColumns[column - 1].getAlias();
+        if(alias != null && alias.length() > 0) {
+            return alias;
+        }
+        return getColumnName(column);
     }
 
     @Override
     public String getColumnName(int column) throws SQLException {
-        return null;
+        return metaDataColumns[column - 1].getColumnName();
     }
 
     @Override

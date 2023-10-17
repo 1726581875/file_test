@@ -24,7 +24,7 @@ public class ConnectSession {
 
 
     public Command prepareCommand(String sql) {
-        if (CommonConfig.IS_ENABLE_QUERY_CACHE) {
+/*        if (CommonConfig.IS_ENABLE_QUERY_CACHE) {
             Command cacheCommand = QueryCacheUtil.getQueryCache(databaseId, sql);
             if (cacheCommand != null) {
                 System.out.println("use query cache");
@@ -32,7 +32,7 @@ public class ConnectSession {
                 return cacheCommand;
             }
 
-        }
+        }*/
         SqlParser sqlParser = new SqlParser(this);
         Command command = sqlParser.prepareCommand(sql);
 

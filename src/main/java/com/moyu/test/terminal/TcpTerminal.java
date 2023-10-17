@@ -28,8 +28,8 @@ import java.util.List;
  */
 public class TcpTerminal {
 
-    //private static final String ipAddress = "159.75.134.161";
-    private static final String ipAddress = "localhost";
+    private static final String ipAddress = "159.75.134.161";
+    //private static final String ipAddress = "localhost";
 
     private static final int port = 8888;
 

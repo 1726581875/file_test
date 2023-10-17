@@ -293,7 +293,7 @@ public class PreparedStatementImpl implements PreparedStatement {
     }
 
     @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
+    public ResultSetMetaDataImpl getMetaData() throws SQLException {
         return null;
     }
 

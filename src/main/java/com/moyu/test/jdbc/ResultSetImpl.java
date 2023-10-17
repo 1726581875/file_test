@@ -292,8 +292,8 @@ public class ResultSetImpl implements ResultSet {
     }
 
     @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
-        return null;
+    public ResultSetMetaDataImpl getMetaData() throws SQLException {
+        return new ResultSetMetaDataImpl(this.queryResultDto);
     }
 
     @Override
