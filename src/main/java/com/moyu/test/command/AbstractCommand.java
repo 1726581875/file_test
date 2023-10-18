@@ -2,10 +2,13 @@ package com.moyu.test.command;
 
 import com.moyu.test.command.dml.sql.Parameter;
 import com.moyu.test.exception.DbException;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author xiaomingzhang
@@ -61,8 +64,19 @@ public abstract class AbstractCommand implements Command {
         if(parameters.size() != parameterValues.size()) {
             throw new DbException("参数数量不一致,传入参数数量为:" + parameterValues.size() + ",可接受参数数量为:" + parameters.size());
         }
+
+        Map<Integer, Parameter> paramValueMap = new HashMap<>(parameterValues.size());
+        for (Parameter p : parameterValues) {
+            paramValueMap.put(p.getIndex(), p);
+        }
+
         for (int i = 0; i < parameters.size(); i++) {
-            parameters.get(i).setValue(parameterValues.get(i).getValue());
+            Parameter parameter = parameters.get(i);
+            Parameter p = paramValueMap.get(parameter.getIndex());
+            if(p == null) {
+                ExceptionUtil.throwSqlQueryException("缺少参数，参数下标{}", parameter.getIndex());
+            }
+            parameter.setValue(p.getValue());
         }
     }
 }

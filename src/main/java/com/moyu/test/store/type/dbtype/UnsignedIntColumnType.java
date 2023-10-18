@@ -6,13 +6,19 @@ import java.nio.ByteBuffer;
 
 /**
  * @author xiaomingzhang
- * @date 2023/5/12
+ * @date 2023/10/17
  */
-public class LongColumnType extends AbstractColumnType<Long> {
+public class UnsignedIntColumnType extends AbstractColumnType<Long> {
+
+    @Override
+    int getMaxByteLen(Long value) {
+        return 8;
+    }
 
     @Override
     protected Long readValue(ByteBuffer byteBuffer) {
-        return DataUtils.readLong(byteBuffer);
+        Long value = DataUtils.readLong(byteBuffer);
+        return value;
     }
 
     @Override
@@ -23,10 +29,5 @@ public class LongColumnType extends AbstractColumnType<Long> {
     @Override
     public Class<?> getValueTypeClass() {
         return Long.class;
-    }
-
-    @Override
-    public int getMaxByteLen(Long value) {
-        return 8;
     }
 }

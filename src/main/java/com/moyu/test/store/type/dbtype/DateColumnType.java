@@ -24,6 +24,11 @@ public class DateColumnType extends AbstractColumnType<Date> {
     }
 
     @Override
+    public Class<?> getValueTypeClass() {
+        return Date.class;
+    }
+
+    @Override
     public int getMaxByteLen(Date value) {
         return 8;
     }

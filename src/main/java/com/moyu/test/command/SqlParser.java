@@ -19,6 +19,7 @@ import com.moyu.test.util.AssertUtil;
 import com.moyu.test.util.SqlParserUtil;
 import com.moyu.test.util.TypeConvertUtil;
 
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1656,6 +1657,7 @@ public class SqlParser implements Parser {
 
         Column[] tableColumns = getColumns(tableName);
 
+        // 解析字段
         String[] columnNames = null;
         if(nextKeywordIs(VALUE) || nextKeywordIs(VALUES)) {
             columnNames = new String[tableColumns.length];
@@ -1700,8 +1702,10 @@ public class SqlParser implements Parser {
         }
 
         Map<String, String> columnValueMap = new HashMap<>();
+        Map<String, Integer> paramIndexMap = new HashMap<>();
         for (int j = 0; j < columnNames.length; j++) {
             columnValueMap.put(columnNames[j].trim(), valueList[j].trim());
+            paramIndexMap.put(columnNames[j].trim(), j + 1);
         }
 
         // 插入字段赋值
@@ -1712,8 +1716,12 @@ public class SqlParser implements Parser {
             Column column = columns[i].copy();
             String value = columnValueMap.get(column.getColumnName());
             if("?".equals(value)) {
-                int size = parameterList.size();
-                Parameter parameter = new Parameter(size + 1, null);
+                // 获取参数位置
+                Integer paramIndex = paramIndexMap.get(column.getColumnName());
+                if(paramIndex == null) {
+                    paramIndex = parameterList.size() + 1;
+                }
+                Parameter parameter = new Parameter(paramIndex, null);
                 parameterList.add(parameter);
                 column.setValue(parameter);
             } else {
@@ -1748,6 +1756,11 @@ public class SqlParser implements Parser {
             case ColumnTypeConstant.INT_8:
                 Long longValue = isNullValue(value) ? null : Long.valueOf(value);
                 column.setValue(longValue);
+                break;
+            case ColumnTypeConstant.UNSIGNED_INT_4:
+            case ColumnTypeConstant.UNSIGNED_INT_8:
+                BigInteger bigIntValue = isNullValue(value) ? null : new BigInteger(value);
+                column.setValue(bigIntValue);
                 break;
             case ColumnTypeConstant.VARCHAR:
             case ColumnTypeConstant.CHAR:
@@ -1903,7 +1916,7 @@ public class SqlParser implements Parser {
         if(nextOriginalWord.startsWith("ENGINE=")) {
             engineType = nextOriginalWord.substring("ENGINE=".length());
         }
-        if(engineType == null) {
+        if(engineType == null || !engineType.equals(CommonConstant.ENGINE_TYPE_YU)) {
             engineType = CommonConstant.ENGINE_TYPE_YAN;
         }
         // 构造创建表命令
@@ -1954,20 +1967,20 @@ public class SqlParser implements Parser {
      */
     private Column parseCreateTableColumn(int columnIndex, String columnStr) {
 
-        String[] columnKeyWord = columnStr.trim().split("\\s+");
-        if(columnKeyWord.length < 2) {
+        String[] columnKeyWords = columnStr.trim().split("\\s+");
+        if(columnKeyWords.length < 2) {
             ExceptionUtil.throwSqlIllegalException("sql语法异常,{}", columnStr);
         }
 
         // 解析字段
-        String columnName = SqlParserUtil.getUnquotedStr(columnKeyWord[0]);
+        String columnName = SqlParserUtil.getUnquotedStr(columnKeyWords[0]);
         if((columnName.startsWith("`") && columnName.endsWith("`"))
                 || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
             columnName = columnStr.substring(1, columnName.length() - 1);
         }
 
         // 解析字段类型、字段长度。示例:varchar(64)、int
-        String columnTypeStr = columnKeyWord[1];
+        String columnTypeStr = columnKeyWords[1];
 
         int columnLength = -1;
         // 括号开始
@@ -1990,9 +2003,19 @@ public class SqlParser implements Parser {
         } else {
             typeName = columnTypeStr;
         }
+
         Byte type = ColumnTypeEnum.getColumnTypeByName(typeName);
-        if(type == null) {
+        if (type == null) {
             ExceptionUtil.throwSqlIllegalException("不支持类型:{}", typeName);
+        }
+
+        // 判断是否有unsigned关键字修饰
+        if (columnKeyWords.length > 2 && "UNSIGNED".equals(columnKeyWords[2].toUpperCase())) {
+            if (type == ColumnTypeConstant.INT_4) {
+                type = ColumnTypeConstant.UNSIGNED_INT_4;
+            } else if (type == ColumnTypeConstant.INT_8) {
+                type = ColumnTypeConstant.UNSIGNED_INT_8;
+            }
         }
 
         // 如果没有指定字段长度像int、bigint等，要自动给长度
@@ -2009,10 +2032,10 @@ public class SqlParser implements Parser {
         Column column = new Column(columnName, type, columnIndex, columnLength);
 
         // 解析字段类型后面的字段设置，像column varchar(10) DEFAULT/NOT NULL 或者 id varchar(10) PRIMARY KEY等等情况
-        if (columnKeyWord.length >= 3) {
-            String str = columnKeyWord[2].trim();
+        if (columnKeyWords.length >= 3) {
+            String str = columnKeyWords[2].trim();
             if (str.equals("PRIMARY") || str.equals("primary")) {
-                if (columnKeyWord.length < 4 || !(columnKeyWord[3].trim().equals("KEY")|| columnKeyWord[3].trim().equals("key"))) {
+                if (columnKeyWords.length < 4 || !(columnKeyWords[3].trim().equals("KEY")|| columnKeyWords[3].trim().equals("key"))) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 PRIMARY语法有误");
                 }
                 column.setIsPrimaryKey((byte) 1);

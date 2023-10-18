@@ -82,10 +82,16 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
                 return new TimeColumnType();
             case ColumnTypeConstant.DOUBLE:
                 return new DoubleColumnType();
+            case ColumnTypeConstant.UNSIGNED_INT_4:
+                return new UnsignedIntColumnType();
+            case ColumnTypeConstant.UNSIGNED_INT_8:
+                return new UnsignedLongColumnType();
             default:
                 throw new DbException("不支持数据类型:" + columnType);
         }
     }
+
+    public abstract Class<?> getValueTypeClass();
 
 
 }

@@ -1,10 +1,12 @@
 package com.moyu.test.store.data2.type;
 
+import com.moyu.test.exception.DbException;
 import com.moyu.test.store.WriteBuffer;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.type.ColumnTypeFactory;
 import com.moyu.test.store.type.DataType;
+import com.moyu.test.store.type.dbtype.AbstractColumnType;
 import com.moyu.test.store.type.obj.RowDataType;
 import com.moyu.test.util.DataUtils;
 
@@ -112,12 +114,33 @@ public class RowValue extends Value {
         WriteBuffer writeBuffer = new WriteBuffer(16);
         for (Column column : columns) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
-            columnType.write(writeBuffer, column.getValue());
+            Object value = convertValue((AbstractColumnType) columnType, column.getValue());
+            columnType.write(writeBuffer, value);
         }
         writeBuffer.getBuffer().flip();
         byte[] result = new byte[writeBuffer.limit()];
         writeBuffer.get(result);
         return result;
+    }
+
+    private Object convertValue(AbstractColumnType columnType, Object value) {
+        if(value == null) {
+            return value;
+        }
+        if(columnType.getValueTypeClass().equals(value.getClass())) {
+            return value;
+        }
+
+        if(Byte.class.equals(columnType.getValueTypeClass())) {
+           if(value instanceof Integer) {
+               int v = ((Integer) value).intValue();
+               if(v > 127 || v < -128) {
+                   throw new DbException("int不能转换为byte, value=" + value);
+               }
+               return (byte)((Integer) value).intValue();
+           }
+        }
+        return value;
     }
 
 

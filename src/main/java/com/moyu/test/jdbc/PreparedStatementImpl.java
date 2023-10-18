@@ -13,14 +13,16 @@ import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.packet.Packet;
 import com.moyu.test.net.util.ReadWriteUtil;
-
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.sql.*;
 import java.sql.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -100,7 +102,7 @@ public class PreparedStatementImpl implements PreparedStatement {
                 } else {
                     paramTypes[i] = getValueType(parameter.getValue());
                 }
-                paramValues[i] = parameter.getValue();
+                paramValues[i] = convertValueType(parameter.getValue());
             }
             PreparedParamDto paramDto = new PreparedParamDto(paramTypes, paramValues);
             ByteBuffer byteBuffer = paramDto.getByteBuffer();
@@ -118,6 +120,22 @@ public class PreparedStatementImpl implements PreparedStatement {
         return null;
     }
 
+    /**
+     * 对一些特殊类型进行转换
+     * @param value
+     * @return
+     */
+    private Object convertValueType(Object value) {
+        if (value == null) {
+            return value;
+        }
+        if (value instanceof LocalDateTime) {
+            return Date.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant());
+        } else {
+            return value;
+        }
+    }
+
 
     private byte getValueType(Object value) {
 
@@ -128,9 +146,13 @@ public class PreparedStatementImpl implements PreparedStatement {
             return ColumnTypeConstant.INT_4;
         } else if (value instanceof Long) {
             return ColumnTypeConstant.INT_8;
+        } else if (value instanceof BigInteger) {
+            return ColumnTypeConstant.UNSIGNED_INT_8;
         } else if (value instanceof String) {
             return ColumnTypeConstant.VARCHAR;
         } else if (value instanceof java.util.Date) {
+            return ColumnTypeConstant.TIMESTAMP;
+        } else if (value instanceof LocalDateTime) {
             return ColumnTypeConstant.TIMESTAMP;
         } else if (value instanceof Byte) {
             return ColumnTypeConstant.TINY_INT;

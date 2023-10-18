@@ -9,6 +9,9 @@ import java.nio.ByteBuffer;
  * @date 2023/9/12
  */
 public class TinyIntColumnType extends AbstractColumnType<Byte> {
+
+
+
     @Override
     int getMaxByteLen(Byte value) {
         return 1;
@@ -22,5 +25,10 @@ public class TinyIntColumnType extends AbstractColumnType<Byte> {
     @Override
     protected void writeValue(WriteBuffer writeBuffer, Byte value) {
         writeBuffer.put(value);
+    }
+
+    @Override
+    public Class<?> getValueTypeClass() {
+        return Byte.class;
     }
 }

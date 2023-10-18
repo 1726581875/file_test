@@ -21,6 +21,11 @@ public class DoubleColumnType extends AbstractColumnType<Double> {
     }
 
     @Override
+    public Class<?> getValueTypeClass() {
+        return Double.class;
+    }
+
+    @Override
     public int getMaxByteLen(Double value) {
         return 8;
     }

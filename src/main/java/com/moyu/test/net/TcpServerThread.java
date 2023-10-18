@@ -107,9 +107,9 @@ public class TcpServerThread implements Runnable {
                 out.writeInt(bytes.length);
                 out.write(OkPacket.PACKET_TYPE_OK);
                 out.write(bytes);
-            } catch (Exception e) {
-                e.printStackTrace();
-                String errMsg = e.getMessage() == null ? e.toString() : e.getMessage();
+            } catch (Throwable t) {
+                t.printStackTrace();
+                String errMsg = t.getMessage() == null ? t.toString() : t.getMessage();
                 ErrPacket errPacket = new ErrPacket(1, errMsg);
                 byte[] bytes = errPacket.getBytes();
                 out.writeInt(bytes.length);
@@ -196,7 +196,7 @@ public class TcpServerThread implements Runnable {
      * @return
      * @throws IOException
      */
-    private QueryResultDto preparedQuery() throws IOException {
+    private QueryResultDto preparedQuery() throws Exception {
         String dbName = ReadWriteUtil.readString(in);
         Database dbObj = Database.getDatabase(dbName);
         // 获取待执行sql
@@ -211,11 +211,18 @@ public class TcpServerThread implements Runnable {
         PreparedParamDto paramDto = new PreparedParamDto(byteBuffer);
         // 转换为预编译参数
         List<Parameter> queryParams = new ArrayList<>();
+        StringBuilder paramPrintStr = new StringBuilder("");
         if(paramDto.getSize() > 0) {
             for (int i = 0; i < paramDto.getSize(); i++) {
-                queryParams.add(new Parameter(i + 1, paramDto.getValueArr()[i]));
+                int paramIndex = i + 1;
+                queryParams.add(new Parameter(paramIndex, paramDto.getValueArr()[i]));
+                paramPrintStr.append("("+paramIndex +")[" + paramDto.getValueArr()[i] + "]");
+                if(i != paramDto.getSize() - 1) {
+                    paramPrintStr.append(", ");
+                }
             }
         }
+        System.out.println("参数：" + paramPrintStr.toString());
         AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
         command.setParameterValues(queryParams);
         QueryResult queryResult = command.execCommand();

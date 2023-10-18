@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 public class IntColumnType extends AbstractColumnType<Integer> {
 
 
+
     @Override
     protected Integer readValue(ByteBuffer byteBuffer) {
         return DataUtils.readInt(byteBuffer);
@@ -20,6 +21,11 @@ public class IntColumnType extends AbstractColumnType<Integer> {
     @Override
     protected void writeValue(WriteBuffer writeBuffer, Integer value) {
         writeBuffer.putInt(value);
+    }
+
+    @Override
+    public Class<?> getValueTypeClass() {
+        return Integer.class;
     }
 
     @Override

@@ -22,4 +22,8 @@ public interface ColumnTypeConstant {
 
     byte TEXT = 15;
 
+    byte UNSIGNED_INT_4 = 16;
+
+    byte UNSIGNED_INT_8 = 17;
+
 }

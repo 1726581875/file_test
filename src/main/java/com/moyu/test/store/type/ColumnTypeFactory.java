@@ -22,6 +22,8 @@ public class ColumnTypeFactory {
         columnTypeMap.put(ColumnTypeConstant.VARCHAR, new StringColumnType());
         columnTypeMap.put(ColumnTypeConstant.CHAR, new StringColumnType());
         columnTypeMap.put(ColumnTypeConstant.TIMESTAMP, new DateColumnType());
+        columnTypeMap.put(ColumnTypeConstant.UNSIGNED_INT_4, new UnsignedIntColumnType());
+        columnTypeMap.put(ColumnTypeConstant.UNSIGNED_INT_8, new UnsignedLongColumnType());
     }
 
     public static DataType getColumnType(Byte type) {
