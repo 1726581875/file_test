@@ -716,26 +716,13 @@ public class SqlParser implements Parser {
                     if(nextKeywordIs(LIMIT)) {
                         String nextKeyWork = getNextKeyWordUnMove();
                         if(LIMIT.equals(nextKeyWork)) {
-                            // 如果没有设置排序字段，说明没有指定排序规则，使用默认排序方式
-                            if(currSortField != null && currSortField.getType() == null) {
-                                currSortField.setType(SortField.RULE_ASC);
-                            }
+                            setSortType(charStart, currSortField);
                             break;
                         }
                     }
                     // 拿到定义的排序规则
                     if (currIndex == sqlCharArr.length || sqlCharArr[currIndex] == ' ' || sqlCharArr[currIndex] == ',') {
-                        if (currIndex > charStart) {
-                            String sortType = originalSql.substring(charStart, currIndex).toUpperCase().trim();
-                            if (!sortType.equals(SortField.RULE_ASC) && !sortType.equals(SortField.RULE_DESC)) {
-                                ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 排序规则不合法。{}", sortType);
-                            } else {
-                                currSortField.setType(sortType);
-                            }
-                        } else {
-                            // 给默认排序方式
-                            currSortField.setType(SortField.DEFAULT_RULE);
-                        }
+                        setSortType(charStart, currSortField);
                         skipSpace();
                         if(currIndex < sqlCharArr.length && sqlCharArr[currIndex] == ',') {
                             currIndex++;
@@ -766,6 +753,20 @@ public class SqlParser implements Parser {
         String nextKeyWord3 = getNextKeyWordUnMove();
         if(LIMIT.equals(nextKeyWord3)) {
             parseOffsetLimit(query);
+        }
+    }
+
+    private void setSortType(int charStart, SortField currSortField) {
+        if (currIndex > charStart) {
+            String sortType = originalSql.substring(charStart, currIndex).toUpperCase().trim();
+            if (!sortType.equals(SortField.RULE_ASC) && !sortType.equals(SortField.RULE_DESC)) {
+                ExceptionUtil.throwSqlIllegalException("SQL语法有误，在ORDER BY附近, 排序规则不合法。{}", sortType);
+            } else {
+                currSortField.setType(sortType);
+            }
+        } else {
+            // 给默认排序方式
+            currSortField.setType(SortField.DEFAULT_RULE);
         }
     }
 
