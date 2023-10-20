@@ -367,14 +367,58 @@ public class Query {
             }
         }
         // 遍历所有行
+        boolean useDiskSort = false;
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
             if (Expression.isMatch(row, query.getCondition())) {
-                resultRowList.add(row);
+                if(!useDiskSort) {
+                    resultRowList.add(row);
+                } else {
+                    // TODO 磁盘排序逻辑
+
+                }
+                // 如果行数超过内存排序的最大值，启用磁盘排序
+/*                if(resultRowList.size() > CommonConfig.MAX_MEMORY_SORT_ROW_SIZE) {
+                    useDiskSort = true;
+                    resultRowList.clear();
+                }*/
+
             }
         }
 
-        //  排序
+        Cursor resultCursor = null;
+        if (useDiskSort) {
+            // TODO 待完善
+        } else {
+            // 内存排序
+            memorySort(resultRowList, columnIndexMap);
+
+            Column[] columns = SelectColumn.getColumnBySelectColumn(query);
+            resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+            // 如果有limit语句，需要进行筛选
+            if (query.getLimit() != null) {
+                List<RowEntity> rowList = new ArrayList<>(query.getLimit());
+                RowEntity r = null;
+                int i = 0;
+                while ((r = resultCursor.next()) != null) {
+                    if (isMatchLimit(query, i)) {
+                        rowList.add(r);
+                    }
+                    if (query.getLimit() != null && rowList.size() >= query.getLimit()) {
+                        break;
+                    }
+                    i++;
+                }
+                resultCursor = new MemoryTemTableCursor(rowList, columns);
+            }
+        }
+
+        return resultCursor;
+    }
+
+
+    private void memorySort(List<RowEntity> resultRowList, int[] columnIndexMap){
+        //  内存排序
         Collections.sort(resultRowList, (r1, r2) -> {
             for (int i = 0; i < columnIndexMap.length; i++) {
                 SortField sortField = sortFields.get(i);
@@ -391,27 +435,6 @@ public class Query {
             }
             return 0;
         });
-        Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList, columns);
-
-        // 如果有limit语句，需要进行筛选
-        if (query.getLimit() != null) {
-            List<RowEntity> rowList = new ArrayList<>(query.getLimit());
-            RowEntity r = null;
-            int i = 0;
-            while ((r = resultCursor.next()) != null) {
-                if (isMatchLimit(query, i)) {
-                    rowList.add(r);
-                }
-                if (query.getLimit() != null && rowList.size() >= query.getLimit()) {
-                    break;
-                }
-                i++;
-            }
-            resultCursor = new MemoryTemTableCursor(rowList, columns);
-        }
-
-        return resultCursor;
     }
 
 

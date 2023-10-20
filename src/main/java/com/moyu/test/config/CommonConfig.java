@@ -26,6 +26,12 @@ public class CommonConfig {
     public static final int NET_TRAN_MAX_ROW_SIZE = 10000;
 
 
+    /**
+     * 最大内存排序的行记录大小，超出转为磁盘排序
+     */
+    public static final int MAX_MEMORY_SORT_ROW_SIZE = 100000;
+
+
     private CommonConfig(){}
 
 
