@@ -3,6 +3,7 @@ package com.moyu.test.command.dml.sql;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.command.dml.expression.ColumnExpression;
 import com.moyu.test.command.dml.expression.Expression;
+import com.moyu.test.command.dml.expression.SelectColumnExpression;
 import com.moyu.test.command.dml.expression.SingleComparison;
 import com.moyu.test.command.dml.function.*;
 import com.moyu.test.command.dml.plan.SelectIndex;
@@ -90,11 +91,11 @@ public class Query {
 
 
     public Cursor getQueryResultCursor() {
-        if(queryCursor == null) {
+        if (queryCursor == null) {
             Deque<Query> queryStack = new LinkedList<>();
             Query q = this;
             queryStack.push(q);
-            while ((q = q.getMainTable().getSubQuery()) != null) {
+            while (q.getMainTable() != null && (q = q.getMainTable().getSubQuery()) != null) {
                 queryStack.push(q);
             }
             queryCursor = getResultQueryCursor(queryStack);
@@ -110,13 +111,18 @@ public class Query {
             Query q = queryStack.pop();
             QueryTable fromTable = q.getMainTable();
 
+            if(fromTable == null) {
+                mainCursor = getSelectResultNoTable(q);
+                return mainCursor;
+            }
+
             if (fromTable.getSubQuery() == null) {
                 mainCursor = getMainQueryCursor(q);
             }
 
             String currTableAlias = q.getMainTable().getAlias();
             if (useFunction(q)) {
-                mainCursor = getFunctionStatResult(mainCursor, q);
+                mainCursor = getStatFunctionResult(mainCursor, q);
             } else if (useGroupBy(q)) {
                 mainCursor = getGroupByResult(mainCursor, q);
             } else if(isDistinct){
@@ -182,7 +188,8 @@ public class Query {
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
 
-        if(query.getCondition() == null && query.getLimit() == null && query.getOffset() == null) {
+        if(query.getCondition() == null && query.getLimit() == null
+                && (query.getOffset() == null || query.getOffset() == 0)) {
             return cursor;
         }
 
@@ -268,7 +275,7 @@ public class Query {
 
 
 
-    private Cursor getFunctionStatResult(Cursor cursor, Query query) {
+    private Cursor getStatFunctionResult(Cursor cursor, Query query) {
 
         List<RowEntity> resultRowList = new ArrayList<>();
         // 1、初始化所有统计函数对象
@@ -294,6 +301,22 @@ public class Query {
         Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
         return resultCursor;
     }
+
+    private Cursor getSelectResultNoTable(Query query) {
+        SelectColumn[] selectColumns = query.getSelectColumns();
+        Column[] resultColumns = new Column[selectColumns.length];
+        for (int i = 0; i < selectColumns.length; i++){
+            SelectColumnExpression columnExpression = selectColumns[i].getColumnExpression();
+            resultColumns[i] = (Column)columnExpression.getValue(null);
+        }
+        List<RowEntity> resultRowList = new ArrayList<>();
+        resultRowList.add(new RowEntity(resultColumns));
+        // 字段元数据信息
+        Column[] metaColumns = resultRowList.get(0).getColumns();
+        Cursor resultCursor = new MemoryTemTableCursor(resultRowList, metaColumns);
+        return resultCursor;
+    }
+
 
 
     private Cursor getGroupByResult(Cursor cursor, Query query) {

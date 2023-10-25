@@ -12,5 +12,8 @@ public interface FunctionConstant {
     String FUNC_SUM = "SUM";
     String FUNC_AVG = "AVG";
 
+    String FUNC_UUID = "UUID";
+    String FUNC_NOW = "NOW";
+
 
 }

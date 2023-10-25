@@ -7,21 +7,37 @@ import com.moyu.test.command.dml.sql.Parameter;
  * @date 2023/5/9
  */
 public class Column {
-
+    /**
+     * 字段名
+     */
     private String columnName;
-
+    /**
+     * 字段别名
+     */
     private String alias;
-
+    /**
+     * 所属表别名
+     */
     private String tableAlias;
-
+    /**
+     * 字段类型，见ColumnTypeConstant
+     */
     private byte columnType;
-
+    /**
+     * 字段下标位置
+     */
     private int columnIndex;
-
+    /**
+     * 字段长度
+     */
     private int columnLength;
-
+    /**
+     * 是否是主键： 0否、1是
+     */
     private byte isPrimaryKey;
-
+    /**
+     * 字段值
+     */
     private Object value;
 
 

@@ -1,5 +1,7 @@
 package com.moyu.test.store.metadata.obj;
 
+import com.moyu.test.command.dml.expression.SelectColumnExpression;
+import com.moyu.test.command.dml.function.FuncArg;
 import com.moyu.test.command.dml.function.StatFunction;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.ColumnTypeEnum;
@@ -44,8 +46,11 @@ public class SelectColumn {
      * 函数参数
      */
     private String[] args;
+    private List<FuncArg> funcArgs;
 
     private StatFunction statFunction;
+
+    private SelectColumnExpression columnExpression;
 
 
     public SelectColumn(Column column, String selectColumnName, String functionName, String[] args) {
@@ -79,9 +84,14 @@ public class SelectColumn {
                 }
                 Column column = new Column(columnName, ColumnTypeEnum.INT_4.getColumnType(), i, 4);
                 columnList.add(column);
-            } else {
+            } else if(selectColumn.getColumn() != null) {
                 Column column = selectColumn.getColumn().copy();
                 column.setColumnIndex(i);
+                columnList.add(column);
+            } else {
+                Column column = new Column(selectColumn.getSelectColumnName(), selectColumn.getColumnType(), i, -1);
+                column.setAlias(selectColumn.getAlias());
+                column.setTableAlias(selectColumn.getTableAlias());
                 columnList.add(column);
             }
             i++;
@@ -143,5 +153,21 @@ public class SelectColumn {
 
     public Byte getColumnType() {
         return columnType;
+    }
+
+    public void setFuncArgs(List<FuncArg> funcArgs) {
+        this.funcArgs = funcArgs;
+    }
+
+    public List<FuncArg> getFuncArgs() {
+        return funcArgs;
+    }
+
+    public void setColumnExpression(SelectColumnExpression columnExpression) {
+        this.columnExpression = columnExpression;
+    }
+
+    public SelectColumnExpression getColumnExpression() {
+        return columnExpression;
     }
 }

@@ -1,6 +1,7 @@
 package test.parser;
 
 import com.moyu.test.command.Command;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.ddl.CreateDatabaseCommand;
 import com.moyu.test.command.ddl.DropDatabaseCommand;
 import com.moyu.test.command.dml.InsertCommand;
@@ -10,6 +11,7 @@ import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,20 +55,17 @@ public class TotalSqlTest2 {
 
         testGroupBy();*/
 
-        testOrderByQuery();
+        testFunction();
 
-        testExecSQL("drop table if exists  xmz_sort_test");
-        testExecSQL("create table xmz_sort_test (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '31', '2023-06-29 11:15:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '32', '2023-06-29 12:00:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '33', '2023-06-29 13:20:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
-        testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
-        testExecSQL("select count(*) from xmz_sort_test");
-        testExecSQL("select * from xmz_sort_test order by id desc limit 10");
+    }
 
+
+    private static void testFunction() {
+/*        testExecSQL("select uuid();");
+        testExecSQL("select now();");
+        testExecSQL("select now(),now(),uuid();");*/
+        testExecSQL("select * from (select now() as a,now() b,uuid() as c) t");
+        testExecSQL("select now() as a,now() b,uuid() as c;");
     }
 
 
@@ -309,9 +308,9 @@ public class TotalSqlTest2 {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 
