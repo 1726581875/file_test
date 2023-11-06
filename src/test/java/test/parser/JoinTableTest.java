@@ -1,6 +1,7 @@
 package test.parser;
 
 import com.moyu.test.command.Command;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.ddl.CreateDatabaseCommand;
 import com.moyu.test.command.ddl.DropDatabaseCommand;
 import com.moyu.test.command.dml.InsertCommand;
@@ -10,6 +11,7 @@ import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -144,9 +146,9 @@ public class JoinTableTest {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 

@@ -858,7 +858,15 @@ public class SqlParser implements Parser {
        // Column[] subColumns = subQuery.getMainTable().getAllColumns();
         Column[] newColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
-            Column column = new Column(selectColumns[i].getSelectColumnName(), selectColumns[i].getColumnType(), i, -1);
+            Byte columnType = selectColumns[i].getColumnType();
+            if(columnType == null && selectColumns[i].getColumn() != null) {
+                columnType = selectColumns[i].getColumn().getColumnType();
+            }
+            // todo 查询字段类型如果不明确暂时给-1
+            if(columnType == null) {
+                columnType = -1;
+            }
+            Column column = new Column(selectColumns[i].getSelectColumnName(), columnType, i, -1);
             newColumns[i] = column;
             newColumns[i].setTableAlias(tableName);
             newColumns[i].setAlias(selectColumns[i].getAlias());
@@ -1070,6 +1078,7 @@ public class SqlParser implements Parser {
                     Column column = allColumns[j].copy();
                     SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
                     selectColumn.setTableAlias(column.getTableAlias());
+                    selectColumn.setAlias(column.getAlias());
                     if(tableAlias == null) {
                         selectColumnList.add(selectColumn);
                     } else {

@@ -7,8 +7,6 @@ import com.moyu.test.config.CommonConfig;
 import com.moyu.test.exception.DbException;
 import com.moyu.test.store.data.cursor.*;
 import com.moyu.test.store.metadata.obj.SelectColumn;
-
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -29,20 +27,6 @@ public class SelectCommand extends AbstractCommand {
     public SelectCommand(Query query) {
         this.query = query;
     }
-
-    @Override
-    public String execute() {
-        long queryStartTime = System.currentTimeMillis();
-        // 执行查询
-        Cursor queryResultCursor = this.query.getQueryResultCursor();
-
-        queryResult = parseQueryResult(queryResultCursor);
-        long queryEndTime = System.currentTimeMillis();
-
-        // 解析结果，打印拼接结果字符串
-        return getResultPrintStr(queryResult, queryStartTime, queryEndTime);
-    }
-
 
     @Override
     public QueryResult execCommand() {
@@ -144,65 +128,6 @@ public class SelectCommand extends AbstractCommand {
         return stringBuilder.toString();
     }
 
-
-    private String getResultPrintStr(QueryResult queryResult, long queryStartTime, long queryEndTime) {
-        // 解析结果，打印拼接结果字符串
-        StringBuilder stringBuilder = new StringBuilder();
-        // 分界线
-        appendLine(stringBuilder);
-        // 表头
-        String tableHeaderStr = "";
-        for (SelectColumn column : query.getSelectColumns()) {
-            String value = getColumnNameStr(column);
-            tableHeaderStr = tableHeaderStr + " | " + value;
-        }
-        stringBuilder.append(tableHeaderStr + " | " + "\n");
-
-        // 分界线
-        appendLine(stringBuilder);
-
-        SelectColumn[] resultColumns = queryResult.getSelectColumns();
-        // 值
-        List<Object[]> resultRows = queryResult.getResultRows();
-        for (int i = 0; i < resultRows.size(); i++) {
-            Object[] rowValues = resultRows.get(i);
-            String rowStr = "";
-            for (int j = 0; j < rowValues.length; j++) {
-                Object value = rowValues[j];
-                String valueStr = (value == null ? "" : valueToString(value));
-                int length = getColumnNameStr(resultColumns[j]).length();
-                if (length > valueStr.length()) {
-                    int spaceNum = (length - valueStr.length()) / 2;
-                    rowStr = rowStr + " | " + getStr(' ', spaceNum) + valueStr + getStr(' ', spaceNum);
-                } else {
-                    rowStr = rowStr + " | " + valueStr;
-                }
-            }
-            stringBuilder.append(rowStr + " | " + "\n");
-        }
-
-        stringBuilder.append("查询结果行数:" + resultRows.size() + ", 耗时:" + (queryEndTime - queryStartTime) + "ms");
-
-        return stringBuilder.toString();
-    }
-
-
-    private String getColumnNameStr(SelectColumn column) {
-        String value = column.getAlias() == null ? column.getSelectColumnName() : column.getAlias();
-        if (column.getTableAlias() != null) {
-            value = column.getTableAlias() + "." + value;
-        }
-        return value;
-    }
-
-    private String valueToString(Object value) {
-        if (value instanceof Date) {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            return dateFormat.format((Date) value);
-        } else {
-            return value.toString();
-        }
-    }
 
     @Override
     public void reUse() {

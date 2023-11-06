@@ -7,8 +7,6 @@ package com.moyu.test.command;
  */
 public interface Command {
 
-    String[] exec();
-
     QueryResult execCommand();
 
     void reUse();

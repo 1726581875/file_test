@@ -21,14 +21,6 @@ public abstract class AbstractCommand implements Command {
 
 
     @Override
-    public String[] exec() {
-        String result = execute();
-        String[] strings = new String[1];
-        strings[0] = result;
-        return strings;
-    }
-
-    @Override
     public QueryResult execCommand() {
         String executeResult = execute();
         SelectColumn selectColumn = new SelectColumn(null, "执行结果", null, null);
@@ -44,7 +36,9 @@ public abstract class AbstractCommand implements Command {
      * @param
      * @return
      */
-    public abstract String execute();
+    public String execute(){
+        return null;
+    }
 
 
     @Override

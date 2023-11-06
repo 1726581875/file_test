@@ -1,12 +1,14 @@
 package test.parser;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.ddl.CreateDatabaseCommand;
 import com.moyu.test.command.ddl.DropDatabaseCommand;
 import com.moyu.test.command.dml.sql.Parameter;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,9 +89,9 @@ public class ParameterSqlTest {
         ConnectSession connectSession = new ConnectSession(database);
         AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
         command.setParameterValues(parameterList);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 

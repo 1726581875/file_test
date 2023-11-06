@@ -71,8 +71,9 @@ public class PrintResultTest {
         String sql = "select * from print_test";
         ConnectSession connectSession = new ConnectSession(database);
         SelectCommand command = (SelectCommand) connectSession.prepareCommand(sql);
-        command.exec();
-        QueryResult queryResult = command.getQueryResult();
+        QueryResult queryResult = command.execCommand();
+        System.out.println("执行结果:");
+        PrintResultUtil.printResult(queryResult);
 
 
 
@@ -161,9 +162,9 @@ public class PrintResultTest {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 

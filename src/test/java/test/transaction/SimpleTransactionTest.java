@@ -1,10 +1,12 @@
 package test.transaction;
 
 import com.moyu.test.command.Command;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.transaction.Transaction;
 import com.moyu.test.store.transaction.TransactionManager;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.Arrays;
 
@@ -42,9 +44,9 @@ public class SimpleTransactionTest {
         System.out.println("执行语句 " + sql + "");
         SqlParser sqlParser = new SqlParser(session);
         Command command = sqlParser.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 

@@ -1,12 +1,14 @@
 package test.parser;
 
 import com.moyu.test.command.Command;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.SqlParser;
 import com.moyu.test.command.dml.InsertCommand;
 import com.moyu.test.constant.ColumnTypeEnum;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.OperateTableInfo;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -398,7 +400,9 @@ public class SqlParserTest {
         ConnectSession connectSession = new ConnectSession("xmz", 0);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
+        System.out.println("执行结果:");
+        PrintResultUtil.printResult(queryResult);
     }
 
     private static void testExecSQL(String sql) {
@@ -407,9 +411,9 @@ public class SqlParserTest {
         ConnectSession connectSession = new ConnectSession("xmz", 0);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        String[] exec = command.exec();
+        QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        Arrays.asList(exec).forEach(System.out::println);
+        PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
 

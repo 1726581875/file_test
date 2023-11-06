@@ -4,6 +4,7 @@ import com.moyu.test.command.QueryResult;
 import com.moyu.test.net.model.terminal.ColumnMetaDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.net.model.terminal.RowDto;
+import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.StringUtils;
 
 import java.text.SimpleDateFormat;
@@ -25,8 +26,17 @@ public class PrintResultUtil {
         List<Object[]> resultRows = queryResult.getResultRows();
         // 计算字段宽度
         int[] columnWidths = new int[columnCount];
+
         for (int i = 0; i < columnCount; i++) {
-            String columnName = queryResult.getSelectColumns()[i].getSelectColumnName();
+            SelectColumn selectColumn = queryResult.getSelectColumns()[i];
+            String columnName = "";
+            if (selectColumn.getAlias() != null) {
+                columnName = selectColumn.getAlias();
+            } else if (StringUtils.isNotEmpty(selectColumn.getTableAlias()) && !selectColumn.getSelectColumnName().contains(".")) {
+                columnName = selectColumn.getTableAlias() + "." + selectColumn.getSelectColumnName();
+            } else {
+                columnName = selectColumn.getSelectColumnName();
+            }
             // 可设置最小宽度
             columnWidths[i] = Math.max(columnName.length(), 10);
             // 遍历结果集的所有行，计算该列数据的宽度
@@ -41,7 +51,15 @@ public class PrintResultUtil {
         // 打印表头
         String[] tableHeaders = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            String columnName = queryResult.getSelectColumns()[i].getSelectColumnName();
+            SelectColumn selectColumn = queryResult.getSelectColumns()[i];
+            String columnName = "";
+            if (selectColumn.getAlias() != null) {
+                columnName = selectColumn.getAlias();
+            } else if (StringUtils.isNotEmpty(selectColumn.getTableAlias()) && !selectColumn.getSelectColumnName().contains(".")) {
+                columnName = selectColumn.getTableAlias() + "." + selectColumn.getSelectColumnName();
+            } else {
+                columnName = selectColumn.getSelectColumnName();
+            }
             tableHeaders[i] = columnName;
         }
         printRow(tableHeaders, columnWidths);

@@ -188,10 +188,11 @@ public class Query {
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
 
-        if(query.getCondition() == null && query.getLimit() == null
+/*        if(query.getCondition() == null
+                && query.getLimit() == null
                 && (query.getOffset() == null || query.getOffset() == 0)) {
             return cursor;
-        }
+        }*/
 
         // 判断数据是否应该物化(在磁盘生成临时表)
         boolean toDisk = false;
