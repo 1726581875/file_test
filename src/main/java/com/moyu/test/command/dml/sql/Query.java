@@ -162,6 +162,19 @@ public class Query {
         return false;
     }
 
+    public boolean isUseFunction() {
+        // 如果第一个是统计函数（count、max这类函数），后面必须都是函数
+        if (this.selectColumns[0].getFunctionName() != null) {
+            for (SelectColumn c : this.selectColumns) {
+                if (c.getFunctionName() == null) {
+                    throw new SqlIllegalException("sql语法有误");
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
     private boolean useGroupBy(Query query) {
         if(query.getGroupFields() != null && query.getGroupFields().size() > 0) {
             if (query.getSelectColumns().length == 1) {
@@ -187,12 +200,6 @@ public class Query {
 
 
     private Cursor getSimpleQueryResult(Cursor cursor, Query query) {
-
-/*        if(query.getCondition() == null
-                && query.getLimit() == null
-                && (query.getOffset() == null || query.getOffset() == 0)) {
-            return cursor;
-        }*/
 
         // 判断数据是否应该物化(在磁盘生成临时表)
         boolean toDisk = false;
@@ -696,7 +703,7 @@ public class Query {
     }
 
 
-    private Cursor getQueryCursor(QueryTable table) throws IOException {
+    public Cursor getQueryCursor(QueryTable table) throws IOException {
         OperateTableInfo tableInfo = new OperateTableInfo(session, table.getTableName(), table.getTableColumns(), null);
         tableInfo.setEngineType(table.getEngineType());
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
