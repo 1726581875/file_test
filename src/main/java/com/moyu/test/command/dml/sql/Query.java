@@ -226,7 +226,8 @@ public class Query {
             // 只拿符合条件的行
             // 使用order by后，offset limit条件就先不筛选。等后面排完序再筛选行
             if (matchCondition && (useOrderBy(query)  || query.isMatchLimit(query, currIndex))) {
-                Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
+                Column[] resultColumns = query.getResultColumns(rowEntity, query.getSelectColumns());
+                //Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
                 resultRowList.add(new RowEntity(resultColumns));
             }
             if ((query.getLimit() != null && resultRowList.size() >= query.getLimit()) && !useOrderBy(query)) {
@@ -479,7 +480,9 @@ public class Query {
         RowEntity row = null;
         while ((row = cursor.next()) != null) {
             if (Expression.isMatch(row, query.getCondition())) {
-                RowEntity rowEntity = filterColumns(row, query.getSelectColumns());
+                //RowEntity rowEntity = filterColumns(row, query.getSelectColumns());
+                Column[] resultColumns = getResultColumns(row, query.getSelectColumns());
+                RowEntity rowEntity = new RowEntity(resultColumns);
                 if(!distinctSet.contains(rowEntity)) {
                     distinctSet.add(rowEntity);
                 }
@@ -611,35 +614,18 @@ public class Query {
     }
 
 
-    private RowEntity filterColumns(RowEntity row, SelectColumn[] selectColumns) {
-        Column[] columns = filterColumns(row.getColumns(), selectColumns);
-        return new RowEntity(columns);
-    }
-
-
-    public Column[] filterColumns(Column[] columnData, SelectColumn[] selectColumns) {
+    public Column[] getResultColumns(RowEntity rowEntity, SelectColumn[] selectColumns) {
         Column[] resultColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
             SelectColumn selectColumn = selectColumns[i];
-            Column column = null;
-            for (Column c : columnData) {
-                if(selectColumn.getTableAliasColumnName().equals(c.getTableAliasColumnName())) {
-                    column = c;
-                }
-                if(column == null) {
-                    if(c.getColumnName().equals(selectColumn.getSelectColumnName())) {
-                        column = c;
-                    }
-                }
-            }
-
-            resultColumns[i] = column;
-            if(resultColumns[i] == null) {
-                throw new SqlExecutionException("字段不存在:" + selectColumn.getTableAliasColumnName());
-            }
+            SelectColumnExpression columnExpression = selectColumn.getColumnExpression();
+            Column columnValue = (Column) columnExpression.getValue(rowEntity);
+            resultColumns[i] = columnValue;
         }
         return resultColumns;
     }
+
+
 
     private boolean isJoinQuery(Query q){
         return q.getMainTable().getJoinTables() != null && q.getMainTable().getJoinTables().size() > 0;

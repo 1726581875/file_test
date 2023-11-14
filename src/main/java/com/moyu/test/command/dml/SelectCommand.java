@@ -90,7 +90,7 @@ public class SelectCommand extends AbstractCommand {
                     // 只拿符合条件的行
                     // 使用order by后，offset limit条件就先不筛选。等后面排完序再筛选行
                     if (matchCondition &&  query.isMatchLimit(query, currIndex)) {
-                        Column[] resultColumns = query.filterColumns(row.getColumns(), query.getSelectColumns());
+                        Column[] resultColumns = query.getResultColumns(row, query.getSelectColumns());
                         result.addRow(resultColumns);
                     }
                     if ((query.getLimit() != null && result.getResultRows().size() >= query.getLimit())) {

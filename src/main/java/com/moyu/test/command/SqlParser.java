@@ -1062,7 +1062,7 @@ public class SqlParser implements Parser {
             columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
 
-
+        // 解析select关键字后面字段信息
         String[] selectColumnStrArr = selectColumnsStr.split(",");
         List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
@@ -1076,7 +1076,7 @@ public class SqlParser implements Parser {
                 }
                 for (int j = 0; j < allColumns.length; j++) {
                     Column column = allColumns[j].copy();
-                    SelectColumn selectColumn = new SelectColumn(column, column.getColumnName(), null, null);
+                    SelectColumn selectColumn = new SelectColumn(column, column.getColumnName());
                     selectColumn.setTableAlias(column.getTableAlias());
                     selectColumn.setAlias(column.getAlias());
                     if(tableAlias == null) {
@@ -1149,7 +1149,7 @@ public class SqlParser implements Parser {
                         cName = columnSplit[0];
                     }
 
-                    selectColumn = new SelectColumn(column, cName, null, null);
+                    selectColumn = new SelectColumn(column, cName);
                     selectColumn.setTableAlias(cTableAlias);
                 }
                 selectColumn.setAlias(alias);
@@ -1258,7 +1258,10 @@ public class SqlParser implements Parser {
                 args[0] = columnName;
                 break;
             case FunctionConstant.FUNC_UUID:
-                break;
+                SelectColumn selectColumn = new SelectColumn(null, selectColumnName, functionName, null);
+                selectColumn.setColumnExpression(SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_UUID, null));
+                selectColumn.setColumnType(resultType);
+               return selectColumn;
             case FunctionConstant.FUNC_NOW:
                 break;
             default:

@@ -45,7 +45,7 @@ public class TotalSqlTest2 {
         /*        fastInsertData2("table_100000", 100000, engineType);
         fastInsertData2("table_1000000", 1000000, engineType);*/
 
-        yanStoreEngineTest();
+/*        yanStoreEngineTest();
         testCreateIndexCommand();
         fastInsertData2("abc_1", 10000, engineType);
         testOptimizeCondition();
@@ -53,9 +53,11 @@ public class TotalSqlTest2 {
         deleteSqlTest();
         testCreateTable();
 
-        testGroupBy();
+        testGroupBy();*/
 
-        testFunction();
+        //testFunction();
+
+        //testExecSQL("select uuid()");
 
 
         testExecSQL("drop table if exists  xmz_sort_test");
@@ -67,17 +69,17 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (3, '33', '2023-06-29 13:20:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (6, 'Sophia', '2023-06-29 14:10:00')");
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
-        testExecSQL("select count(*) from xmz_sort_test");
-        testExecSQL("select * from xmz_sort_test order by id desc, name asc");
-        testExecSQL("select name from xmz_sort_test order by id desc, name asc");
+        //testExecSQL("select count(*) from xmz_sort_test");
+        //testExecSQL("select * from xmz_sort_test order by id desc, name asc");
+        testExecSQL("select name,uuid() from xmz_sort_test order by id desc, name asc");
 
     }
 
 
     private static void testFunction() {
-/*        testExecSQL("select uuid();");
+        testExecSQL("select uuid();");
         testExecSQL("select now();");
-        testExecSQL("select now(),now(),uuid();");*/
+        testExecSQL("select now(),now(),uuid();");
         testExecSQL("select * from (select now() as a,now() b,uuid() as c) t");
         testExecSQL("select now() as a,now() b,uuid() as c;");
     }

@@ -1,8 +1,6 @@
 package com.moyu.test.store.metadata.obj;
 
 import com.moyu.test.command.dml.expression.SelectColumnExpression;
-import com.moyu.test.command.dml.function.FuncArg;
-import com.moyu.test.command.dml.function.StatFunction;
 import com.moyu.test.command.dml.sql.Query;
 import com.moyu.test.constant.ColumnTypeEnum;
 
@@ -46,9 +44,6 @@ public class SelectColumn {
      * 函数参数
      */
     private String[] args;
-    private List<FuncArg> funcArgs;
-
-    private StatFunction statFunction;
 
     private SelectColumnExpression columnExpression;
 
@@ -59,6 +54,13 @@ public class SelectColumn {
         this.functionName = functionName;
         this.args = args;
     }
+
+    public SelectColumn(Column column, String selectColumnName) {
+        this.column = column;
+        this.selectColumnName = selectColumnName;
+        this.columnExpression = SelectColumnExpression.newSimpleTableColumnExpr(column);
+    }
+
 
     public static SelectColumn newColumn(String columnName, Byte columnType) {
         SelectColumn selectColumn = new SelectColumn(null, columnName, null, null);
@@ -153,14 +155,6 @@ public class SelectColumn {
 
     public Byte getColumnType() {
         return columnType;
-    }
-
-    public void setFuncArgs(List<FuncArg> funcArgs) {
-        this.funcArgs = funcArgs;
-    }
-
-    public List<FuncArg> getFuncArgs() {
-        return funcArgs;
     }
 
     public void setColumnExpression(SelectColumnExpression columnExpression) {
