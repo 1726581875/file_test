@@ -7,6 +7,9 @@ import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.data.cursor.RowEntity;
 import com.moyu.test.store.metadata.obj.Column;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -76,6 +79,7 @@ public class SelectColumnExpression extends Expression {
 
     private Column getFunctionResult() {
 
+        Column resultColumn = null;
         switch (this.functionName) {
             case FunctionConstant.FUNC_UUID:
                 String uuid = UUID.randomUUID().toString();
@@ -86,6 +90,29 @@ public class SelectColumnExpression extends Expression {
                 Date now = new Date();
                 Column dateColumn = new Column(FunctionConstant.FUNC_UUID, ColumnTypeConstant.TIMESTAMP, -1, 8);
                 dateColumn.setValue(now);
+                return dateColumn;
+            case FunctionConstant.UNIX_TIMESTAMP:
+                dateColumn = new Column(FunctionConstant.UNIX_TIMESTAMP, ColumnTypeConstant.INT_8, -1, 8);
+                FuncArg funcArg = funcArgList.get(0);
+                Object argValue = funcArg.getArgValue();
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Date time = null;
+                String timeStr = (String) argValue;
+                try {
+                    time = dateFormat.parse(timeStr);
+                } catch(ParseException e) {
+                    e.printStackTrace();
+                    ExceptionUtil.throwDbException("时间格式转换发生异常,时间格式不合法{}", argValue);
+                }
+                dateColumn.setValue(time.getTime() / 1000);
+                return dateColumn;
+            case FunctionConstant.FROM_UNIXTIME:
+                dateColumn = new Column(FunctionConstant.FROM_UNIXTIME, ColumnTypeConstant.CHAR, -1, 8);
+                Object timestampValue = funcArgList.get(0).getArgValue();
+                DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                Long timestamp = Long.valueOf((String) timestampValue);
+                String timeResult= simpleDateFormat.format(new Date(timestamp * 1000));
+                dateColumn.setValue(timeResult);
                 return dateColumn;
             default:
                 ExceptionUtil.throwSqlIllegalException("不支持函数{}", this.functionName);

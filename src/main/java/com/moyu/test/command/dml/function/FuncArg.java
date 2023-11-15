@@ -6,12 +6,18 @@ package com.moyu.test.command.dml.function;
  * 函数参数
  */
 public class FuncArg {
+
+    public static final String CONSTANT = "CONSTANT";
+    public static final String COLUMN = "COLUMN";
+
     /**
      * 参数下标
      */
     private int idx;
     /**
      * 参数类型
+     * constant 常量
+     * column 字段
      */
     private String argType;
     /**

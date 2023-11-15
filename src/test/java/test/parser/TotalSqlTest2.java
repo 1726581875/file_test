@@ -53,11 +53,11 @@ public class TotalSqlTest2 {
         deleteSqlTest();
         testCreateTable();
 
-        testGroupBy();*/
+        testGroupBy();
 
-        //testFunction();
+        testFunction();
 
-        //testExecSQL("select uuid()");
+        testExecSQL("select uuid()");
 
 
         testExecSQL("drop table if exists  xmz_sort_test");
@@ -71,7 +71,13 @@ public class TotalSqlTest2 {
         testExecSQL("INSERT INTO xmz_sort_test (id, name, time) VALUES (0, 'Daniel', '2023-06-29 15:45:00')");
         //testExecSQL("select count(*) from xmz_sort_test");
         //testExecSQL("select * from xmz_sort_test order by id desc, name asc");
-        testExecSQL("select name,uuid() from xmz_sort_test order by id desc, name asc");
+        testExecSQL("select name,uuid() from xmz_sort_test order by id desc, name asc");*/
+
+
+        testExecSQL("select unix_timestamp('2023-11-14 00:00:01');");
+        testExecSQL("select UNIX_TIMESTAMP('2023-11-14 00:00:01');");
+        testExecSQL("select from_unixtime('1699891201');");
+        testExecSQL("select FROM_UNIXTIME(1699891201);");
 
     }
 
@@ -82,6 +88,11 @@ public class TotalSqlTest2 {
         testExecSQL("select now(),now(),uuid();");
         testExecSQL("select * from (select now() as a,now() b,uuid() as c) t");
         testExecSQL("select now() as a,now() b,uuid() as c;");
+        // 时间函数
+        testExecSQL("select unix_timestamp('2023-11-14 00:00:01');");
+        testExecSQL("select UNIX_TIMESTAMP('2023-11-14 00:00:01');");
+        testExecSQL("select from_unixtime('1699891201');");
+        testExecSQL("select FROM_UNIXTIME(1699891201);");
     }
 
 

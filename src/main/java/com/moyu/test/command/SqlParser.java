@@ -642,7 +642,7 @@ public class SqlParser implements Parser {
 
             // 解析字段名
             String columnNameStr = null;
-            if(isStartWithFunc(columnStr)) {
+            if(isFunctionColumn(columnStr)) {
                 int columnEnd = columnStr.indexOf(")");
                 if (columnEnd == -1) {
                     ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近", columnStr);
@@ -669,7 +669,7 @@ public class SqlParser implements Parser {
 
             //函数
             if (isFunctionColumn(columnNameStr)) {
-                SelectColumn functionExpression = getFunctionExpression(columnNameStr);
+                SelectColumn functionExpression = parseFunction(null, columnNameStr);
                 functionExpression.setAlias(alias);
                 selectColumnList.add(functionExpression);
             }
@@ -1097,7 +1097,7 @@ public class SqlParser implements Parser {
 
                 // 解析字段名
                 String columnStr = null;
-                if(isStartWithFunc(str)) {
+                if(isFunctionColumn(str)) {
                     int columnEnd = str.indexOf(")");
                     if (columnEnd == -1) {
                         ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近", str);
@@ -1161,25 +1161,7 @@ public class SqlParser implements Parser {
 
 
     private boolean isFunctionColumn(String functionStr) {
-        String upperCase = functionStr.toUpperCase();
-        if (isStartWithFunc(functionStr) && upperCase.endsWith(")")) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isStartWithFunc(String columnStr) {
-        String upperCase = columnStr.toUpperCase();
-        if (upperCase.startsWith(FunctionConstant.FUNC_COUNT + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_MAX + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_MIN + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_SUM + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_AVG + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_UUID + "(")
-                || upperCase.startsWith(FunctionConstant.FUNC_NOW + "(")) {
-            return true;
-        }
-        return false;
+        return FunctionNameEnum.isFunction(functionStr);
     }
 
 
@@ -1224,6 +1206,8 @@ public class SqlParser implements Parser {
         String functionName = functionStr.substring(0, i).toUpperCase();
 
 
+        List<FuncArg> funcArgList = new LinkedList<>();
+        SelectColumn selectColumn = null;
         Byte resultType = null;
         switch (functionName) {
             case FunctionConstant.FUNC_COUNT:
@@ -1258,17 +1242,38 @@ public class SqlParser implements Parser {
                 args[0] = columnName;
                 break;
             case FunctionConstant.FUNC_UUID:
-                SelectColumn selectColumn = new SelectColumn(null, selectColumnName, functionName, null);
-                selectColumn.setColumnExpression(SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_UUID, null));
-                selectColumn.setColumnType(resultType);
+                SelectColumnExpression uuidFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_UUID, null);
+                selectColumn = new SelectColumn(selectColumnName, functionName, uuidFunc, ColumnTypeConstant.CHAR);
                return selectColumn;
             case FunctionConstant.FUNC_NOW:
-                break;
+                SelectColumnExpression nowFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_NOW, null);
+                selectColumn = new SelectColumn(selectColumnName, functionName, nowFunc, ColumnTypeConstant.TIMESTAMP);
+                return selectColumn;
+            case FunctionConstant.UNIX_TIMESTAMP:
+                String timeStr = getFunctionArg(functionStr);
+                if(timeStr.startsWith("'") && timeStr.endsWith("'")) {
+                    timeStr = timeStr.substring(1, timeStr.length() - 1);
+                } else {
+                    ExceptionUtil.throwSqlIllegalException("函数{}参数不合法, 参数必须为字符串,参数{}", functionName, timeStr);
+                }
+                funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timeStr));
+                SelectColumnExpression unixTimestampFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.UNIX_TIMESTAMP, funcArgList);
+                selectColumn = new SelectColumn(selectColumnName, functionName, unixTimestampFunc, ColumnTypeConstant.INT_8);
+                return selectColumn;
+            case FunctionConstant.FROM_UNIXTIME:
+                String timestampStr = getFunctionArg(functionStr);
+                if(timestampStr.startsWith("'") && timestampStr.endsWith("'")) {
+                    timestampStr = timestampStr.substring(1, timestampStr.length() - 1);
+                }
+                funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timestampStr));
+                SelectColumnExpression formUnixtimeFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FROM_UNIXTIME, funcArgList);
+                selectColumn = new SelectColumn(selectColumnName, functionName, formUnixtimeFunc, ColumnTypeConstant.CHAR);
+                return selectColumn;
             default:
                 ExceptionUtil.throwSqlIllegalException("sql不合法，不支持函数{}", functionName);
         }
 
-        SelectColumn selectColumn = new SelectColumn(column, selectColumnName, functionName, args);
+        selectColumn = new SelectColumn(column, selectColumnName, functionName, args);
         selectColumn.setColumnType(resultType);
         return selectColumn;
     }

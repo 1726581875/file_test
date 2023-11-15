@@ -48,6 +48,11 @@ public class SelectColumn {
     private SelectColumnExpression columnExpression;
 
 
+    public SelectColumn(String columnName, Byte columnType) {
+        this.selectColumnName = columnName;
+        this.columnType = columnType;
+    }
+
     public SelectColumn(Column column, String selectColumnName, String functionName, String[] args) {
         this.column = column;
         this.selectColumnName = selectColumnName;
@@ -61,11 +66,19 @@ public class SelectColumn {
         this.columnExpression = SelectColumnExpression.newSimpleTableColumnExpr(column);
     }
 
+    public SelectColumn(String selectColumnName,
+                        String functionName,
+                        SelectColumnExpression functionExpr,
+                        Byte columnType) {
+        this.selectColumnName = selectColumnName;
+        this.functionName = functionName;
+        this.columnExpression = functionExpr;
+        this.columnType = columnType;
+    }
+
 
     public static SelectColumn newColumn(String columnName, Byte columnType) {
-        SelectColumn selectColumn = new SelectColumn(null, columnName, null, null);
-        selectColumn.setColumnType(columnType);
-        return selectColumn;
+        return new SelectColumn(columnName, columnType);
     }
 
 

@@ -23,7 +23,7 @@ public abstract class AbstractCommand implements Command {
     @Override
     public QueryResult execCommand() {
         String executeResult = execute();
-        SelectColumn selectColumn = new SelectColumn(null, "执行结果", null, null);
+        SelectColumn selectColumn = new SelectColumn("执行结果", null);
         QueryResult queryResult = new QueryResult();
         queryResult.setSelectColumns(new SelectColumn[]{selectColumn});
         queryResult.addRow(new Object[]{executeResult});

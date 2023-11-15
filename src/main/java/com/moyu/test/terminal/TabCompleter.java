@@ -103,6 +103,9 @@ public class TabCompleter implements Completer {
                 }
                 // 根据完整的关键词，预测下一个词补全选项
                 switch (lastWord.toUpperCase()) {
+                    case "SELECT":
+                        optionalValues.addAll(getKeyWordsAfterSelect());
+                        break;
                     case "CREATE":
                         optionalValues.addAll(getKeyWordsAfterCreate());
                         break;
@@ -134,6 +137,11 @@ public class TabCompleter implements Completer {
         }
         tableNameList.stream().sorted();
         return tableNameList;
+    }
+
+    private List<String> getKeyWordsAfterSelect() {
+        // 常用函数
+        return buildKeyWorkList(Arrays.asList("UNIX_TIMESTAMP", "FROM_UNIXTIME", "UUID", "NOW"));
     }
 
 

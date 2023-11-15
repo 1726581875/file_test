@@ -15,5 +15,9 @@ public interface FunctionConstant {
     String FUNC_UUID = "UUID";
     String FUNC_NOW = "NOW";
 
+    String UNIX_TIMESTAMP = "UNIX_TIMESTAMP";
+
+    String FROM_UNIXTIME = "FROM_UNIXTIME";
+
 
 }
