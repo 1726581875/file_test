@@ -246,11 +246,10 @@ public class TcpTerminal {
     }
 
 
-    private static LineReader buildLineReader(Terminal terminal, DatabaseInfo database) {
-        return LineReaderBuilder.builder()
-                .terminal(terminal)
-                .completer(new TabCompleter(database))
-                .build();
+    private static LineReader buildLineReader(Terminal terminal, DatabaseInfo database) throws IOException {
+        MyLineReaderImpl myLineReader = new MyLineReaderImpl(terminal, terminal.getName());
+        myLineReader.setCompleter(new TabCompleter(database));
+        return myLineReader;
     }
 
     private static String[] getWords(String str) {
