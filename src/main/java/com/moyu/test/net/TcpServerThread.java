@@ -65,7 +65,6 @@ public class TcpServerThread implements Runnable {
                         resultDto = new DatabaseInfo(database);
                         break;
                     case CommandTypeConstant.DB_QUERY:
-                    case CommandTypeConstant.DB_QUERY_RES_STR:
                         Integer databaseId = in.readInt();
                         Database dbObj = null;
                         String dbName = null;
@@ -78,19 +77,45 @@ public class TcpServerThread implements Runnable {
                             dbObj = Database.getDatabase(dbName);
                         } else {
                             dbObj = Database.getDatabase(databaseId);
-                            dbName = dbObj.getDbName();
                         }
                         // 获取待执行sql
                         String sql = ReadWriteUtil.readString(in);
                         // 执行sql并获取结果
-                        QueryResultDto queryResultDto = execSqlGetResult(sql, dbObj);
-                        if(commandType == CommandTypeConstant.DB_QUERY_RES_STR) {
-                            String formatResult = PrintResultUtil.getFormatResult(queryResultDto);
-                            System.out.println(formatResult);
-                            resultDto = new QueryResultStrDto(formatResult);
+                        resultDto = execSqlGetResult(sql, dbObj);
+                        break;
+                    case CommandTypeConstant.DB_QUERY_RES_STR:
+                        Integer databaseId2 = in.readInt();
+                        Database dbObj2 = null;
+                        String dbName2 = null;
+                        // 数据库id为-1时候，执行不需要数据库的命令。例如show databases
+                        if (new Integer(-1).equals(databaseId2)) {
+                            dbObj2 = null;
+                        } else if (new Integer(-2).equals(databaseId2)) {
+                            // 如果数据库id传-2则表示要通过数据库名称来确认是哪个数据库
+                            dbName2 = ReadWriteUtil.readString(in);
+                            dbObj2 = Database.getDatabase(dbName2);
                         } else {
-                            resultDto = queryResultDto;
+                            dbObj2 = Database.getDatabase(databaseId2);
                         }
+                        // 获取待执行sql
+                        String sql2 = ReadWriteUtil.readString(in);
+                        // 结果字符格式类型，0横向表格，1竖向表格
+                        byte formatType = in.readByte();
+                        // 执行sql并获取结果
+                        QueryResultDto queryResultDto = execSqlGetResult(sql2, dbObj2);
+
+                        String formatResult = null;
+                        if(formatType == 0) {
+                            formatResult = PrintResultUtil.getFormatResult(queryResultDto);
+                        } else {
+                            formatResult = PrintResultUtil.getVerticalPrintResult(queryResultDto, -1);
+                        }
+                        if(queryResultDto.getDesc() != null) {
+                            formatResult += queryResultDto.getDesc() + "\n";
+                        }
+                        formatResult += "\n";
+                        System.out.println(formatResult);
+                        resultDto = new QueryResultStrDto(formatResult);
                         break;
                     case CommandTypeConstant.DB_QUERY_PAGE:
                         handleQueryPage();

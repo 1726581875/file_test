@@ -37,6 +37,11 @@ public class TcpTerminal {
 
     private static final int PRINT_LIMIT = 1000;
 
+    /**
+     * 查询结果格式，0横向表格、1竖向表格
+     */
+    private static byte formatType = 0;
+
     public static void main(String[] args) {
 
         printDatabaseMsg();
@@ -58,9 +63,21 @@ public class TcpTerminal {
                         }
                     }
                 }
-                String inputStr = input;
-                // 退出命令
+
+                if("\\x".equals(input)) {
+                    if(formatType == 0) {
+                        System.out.println("扩展显示已打开.");
+                        formatType = 1;
+                    } else {
+                        System.out.println("扩展显示已关闭.");
+                        formatType = 0;
+                    }
+                    continue;
+                }
+
+                String inputStr = input.split(";")[0];
                 String[] inputWords = getWords(inputStr);
+                // 退出命令
                 if (inputWords.length > 0 && ("EXIT".equals(inputWords[0].toUpperCase())
                         || "QUIT".equals(inputWords[0].toUpperCase()))) {
                     break;

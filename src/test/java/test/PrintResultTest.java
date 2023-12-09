@@ -9,7 +9,9 @@ import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.terminal.util.PrintResultUtil;
+import com.moyu.test.util.StringUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -40,11 +42,17 @@ public class PrintResultTest {
 
 
     public static void main(String[] args) {
+/*
         String sql = "show databases";
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
         QueryResult queryResult = command.execCommand();
-        PrintResultUtil.printResult(queryResult);
+
+
+*/
+       // System.out.println("[RECORD "+ (0 + 1) +"]");
+
+        testPrint();
     }
 
 
@@ -73,76 +81,66 @@ public class PrintResultTest {
         SelectCommand command = (SelectCommand) connectSession.prepareCommand(sql);
         QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
 
 
 
-        System.out.println();
-
-
-        int columnCount = queryResult.getSelectColumns().length;
+        SelectColumn[] selectColumns = queryResult.getSelectColumns();
         List<Object[]> resultRows = queryResult.getResultRows();
-
-        // 计算字段宽度
-        int[] columnWidths = new int[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            Column column = queryResult.getSelectColumns()[i].getColumn();
-            String columnName = column.getColumnName();
-            // 可设置最小宽度
-            columnWidths[i] = Math.max(columnName.length(), 10);
-
-            // 遍历结果集的所有行，计算该列数据的宽度
-            for (Object[] rowValues : resultRows ) {
+        String[] columnNames = new String[selectColumns.length];
+        // 获取最长字段名长度
+        int maxCNameLen = 10;
+        // 获取长的值长度
+        int maxValueLen = 10;
+        for (int i = 0; i < selectColumns.length; i++) {
+            SelectColumn selectColumn = selectColumns[i];
+            String columnName = "";
+            if (selectColumn.getAlias() != null) {
+                columnName = selectColumn.getAlias();
+            } else if (StringUtils.isNotEmpty(selectColumn.getTableAlias()) && !selectColumn.getSelectColumnName().contains(".")) {
+                columnName = selectColumn.getTableAlias() + "." + selectColumn.getSelectColumnName();
+            } else {
+                columnName = selectColumn.getSelectColumnName();
+            }
+            maxCNameLen = Math.max(maxCNameLen, columnName.length());
+            columnNames[i] = columnName;
+            // 最大值长度
+            for (Object[] rowValues : resultRows) {
                 String valueStr = (rowValues[i] == null ? "" : valueToString(rowValues[i]));
-                columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
+                maxValueLen = Math.max(maxValueLen, valueStr.length());
             }
         }
 
-        // 打印表格顶部边框
-        printHorizontalLine(columnWidths);
-        // 打印表头
-        String[] tableHeaders = new String[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            Column column = queryResult.getSelectColumns()[i].getColumn();
-            String columnName = column.getColumnName();
-            tableHeaders[i] = columnName;
-        }
-        printRow(tableHeaders, columnWidths);
-        // 打印表头与内容之间的分隔线
-        printHorizontalLine(columnWidths);
-        // 打印表格内容
+
         for (int i = 0; i < resultRows.size(); i++) {
+            String rowDesc = "[ROW " + (i + 1) + "]";
+
+            int sNum = maxCNameLen - rowDesc.length();
+            String rowLine = "-" + rowDesc + "" + repeat("-",  sNum) + "+";
+            System.out.println(rowLine + repeat("-",  maxValueLen + 1));
+
             Object[] row = resultRows.get(i);
-            String[] rowData = new String[row.length];
-            for (int j = 0; j < columnCount; j++) {
+            for (int j = 0; j < row.length; j++) {
                 String valueStr = (row[j] == null ? "" : valueToString(row[j]));
-                rowData[j] = valueStr;
+
+                // 需要填充的空格数量
+                int spaceNum = maxCNameLen - columnNames[j].length();
+                System.out.println(columnNames[j] + repeat(" ",  spaceNum) + " | " + valueStr);
+
+                //printRow(new String[]{columnNames[j], valueStr}, new int[]{maxColumnLen, valueStr.length()});
             }
-            printRow(rowData, columnWidths);
         }
-        // 打印表格底部边框
-        printHorizontalLine(columnWidths);
     }
 
 
 
-    private static void printRow(String[] rowData, int[] columnWidths) {
-        for (int i = 0; i < rowData.length; i++) {
-            System.out.printf("| %-" + columnWidths[i] + "s ", rowData[i]);
+
+
+    private static String repeat(String s, int count) {
+        StringBuilder sb = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            sb.append(s);
         }
-        System.out.println("|");
-    }
-
-
-
-    private static void printHorizontalLine(int[] columnWidths) {
-        for (int width : columnWidths) {
-            System.out.print("+");
-            for (int i = 0; i < width + 2; i++) {
-                System.out.print("-");
-            }
-        }
-        System.out.println("+");
+        return sb.toString();
     }
 
     private static String valueToString(Object value) {
@@ -153,7 +151,6 @@ public class PrintResultTest {
             return value.toString();
         }
     }
-
 
 
 

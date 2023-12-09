@@ -5,8 +5,8 @@ import traceback
 
 
 # 定义要连接的主机和端口
-#host = 'localhost'
-host = '159.75.134.161'
+host = 'localhost'
+#host = '159.75.134.161'
 port = 8888
 
 
@@ -110,6 +110,9 @@ print("请输入命令...")
 # 当前数据库id
 database_id = -1
 
+# 查询结果格式，0横向表格、1竖向表格
+format_type = 0
+
 while True:
     # 创建socket对象
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -117,10 +120,20 @@ while True:
     client_socket.connect((host, port))
     # 接收用户输入
     user_input = input("yanySQL> ")
+    user_input = user_input.split(";")[0]
     # 检查用户输入是否为 'exit', exit则结束程序
     if user_input.lower() == 'exit' or user_input.lower() == 'exit;':
         print("程序结束！")
         break
+    # 判断是否是切换显示格式，模仿postgres那样使用\x来切换格式
+    if user_input == '\\x':
+        if format_type == 0:
+            format_type = 1
+            print("扩展显示已打开.")
+        else:
+            format_type = 0
+            print("扩展显示已关闭.")
+        continue
     # 判断是否是use databaseName命令
     if user_input.startswith("use "):
         database_name = user_input.split()[1]
@@ -143,7 +156,7 @@ while True:
         sql_bytes = user_input.encode('utf-8')
         byte_len = len(sql_bytes)
         # 按大端序序列化字节
-        packed_data = struct.pack('>Bii{}s'.format(byte_len), command_type, database_id, byte_len, sql_bytes)
+        packed_data = struct.pack('>Bii{}sB'.format(byte_len), command_type, database_id, byte_len, sql_bytes, format_type)
         # 发送数据
         client_socket.send(packed_data)
         # 获取返回结果
