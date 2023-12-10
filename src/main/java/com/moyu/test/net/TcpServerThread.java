@@ -103,13 +103,8 @@ public class TcpServerThread implements Runnable {
                         byte formatType = in.readByte();
                         // 执行sql并获取结果
                         QueryResultDto queryResultDto = execSqlGetResult(sql2, dbObj2);
-
-                        String formatResult = null;
-                        if(formatType == 0) {
-                            formatResult = PrintResultUtil.getFormatResult(queryResultDto);
-                        } else {
-                            formatResult = PrintResultUtil.getVerticalPrintResult(queryResultDto, -1);
-                        }
+                        // 按格式拼接结果字符串
+                        String formatResult = PrintResultUtil.getFormatResult(queryResultDto, formatType,-1);
                         if(queryResultDto.getDesc() != null) {
                             formatResult += queryResultDto.getDesc() + "\n";
                         }

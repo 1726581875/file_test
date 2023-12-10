@@ -1,4 +1,4 @@
-package com.moyu.test.terminal;
+package com.moyu.test.terminal.jline;
 
 import org.jline.reader.*;
 import org.jline.reader.impl.LineReaderImpl;
@@ -7,6 +7,7 @@ import org.jline.terminal.Terminal;
 import org.jline.utils.Log;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -205,6 +206,41 @@ public class MyLineReaderImpl extends LineReaderImpl {
         } finally {
             size.copy(terminal.getBufferSize());
         }
+    }
+
+
+    @Override
+    protected String finish(String str) {
+/*        String historyLine = str;
+
+        if (!isSet(Option.DISABLE_EVENT_EXPANSION)) {
+            StringBuilder sb = new StringBuilder();
+            boolean escaped = false;
+            for (int i = 0; i < str.length(); i++) {
+                char ch = str.charAt(i);
+                if (escaped) {
+                    escaped = false;
+                    if (ch != '\n') {
+                        sb.append(ch);
+                    }
+                } else if (parser.isEscapeChar(ch)) {
+                    escaped = true;
+                } else {
+                    sb.append(ch);
+                }
+            }
+            str = sb.toString();
+        }
+
+        if (maskingCallback != null) {
+            historyLine = maskingCallback.history(historyLine);
+        }
+
+        // we only add it to the history if the buffer is not empty
+        if (historyLine != null && historyLine.length() > 0 ) {
+            history.add(Instant.now(), historyLine);
+        }*/
+        return str;
     }
 
 

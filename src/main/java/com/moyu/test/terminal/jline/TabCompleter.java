@@ -1,4 +1,4 @@
-package com.moyu.test.terminal;
+package com.moyu.test.terminal.jline;
 
 import com.moyu.test.net.model.terminal.DatabaseInfo;
 import org.jline.reader.Candidate;

@@ -1,11 +1,10 @@
 package com.moyu.test.terminal.util;
 
 import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.dml.SelectCommand;
+import com.moyu.test.exception.DbException;
 import com.moyu.test.net.model.terminal.ColumnMetaDto;
 import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.net.model.terminal.RowDto;
-import com.moyu.test.session.ConnectSession;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.util.StringUtils;
 
@@ -191,10 +190,45 @@ public class PrintResultUtil {
     /**
      * 获取下一行的结果
      * @param queryResult
+     * formatType 0横向打印字段,1纵向打印字段
      * @param currRowIndex
      * @return
      */
-    public static String getOutputRowStr(QueryResultDto queryResult, int currRowIndex) {
+    public static String  getOutputRowStr(QueryResultDto queryResult, byte formatType, int currRowIndex) {
+        if (queryResult == null) {
+            return "发生异常，结果为空";
+        }
+        if (formatType == 0) {
+            return getHorizontalRowStr(queryResult, currRowIndex);
+        } else if (formatType == 1) {
+            return getVerticalRowStr(queryResult, currRowIndex);
+        } else {
+            throw new DbException("不支持输出格式:" + formatType);
+        }
+    }
+
+
+    /**
+     * 获取格式化字符串结果
+     * @param queryResult
+     * @param formatType 0横向打印字段,1纵向打印字段
+     * @param limit 输出数据行数，-1表示全部行
+     * @return
+     */
+    public static String getFormatResult(QueryResultDto queryResult, byte formatType, int limit) {
+        if (queryResult == null) {
+            return "发生异常，结果为空";
+        }
+        if (formatType == 0) {
+            return getHorizontalPrintResult(queryResult, limit);
+        } else if (formatType == 1) {
+            return getVerticalPrintResult(queryResult, limit);
+        } else {
+            throw new DbException("不支持输出格式:" + formatType);
+        }
+    }
+
+    private static String getHorizontalRowStr(QueryResultDto queryResult, int currRowIndex) {
         StringBuilder rowBuilder = new StringBuilder("");
         ColumnMetaDto[] columns = queryResult.getColumns();
         RowDto[] rows = queryResult.getRows();
@@ -217,22 +251,18 @@ public class PrintResultUtil {
         return rowBuilder.toString();
     }
 
+    private static String getVerticalRowStr(QueryResultDto queryResult, int idx) {
+        StringBuilder result = new StringBuilder("");
+        VerticalAttribute att = getVerticalAttribute(queryResult);
+        appendVerticalRow(result, queryResult.getRows(), att, idx);
+        return result.toString();
+    }
 
-    /**
-     * 获取格式化字符串结果，横向字段
-     * @param queryResult
-     * @return StringBuilder
-     */
-    public static String getFormatResult(QueryResultDto queryResult) {
+
+    private static String getHorizontalPrintResult(QueryResultDto queryResult, int limit) {
         StringBuilder stringBuilder = new StringBuilder("");
-        if (queryResult == null) {
-            stringBuilder.append("发生异常，结果为空");
-            return stringBuilder.toString();
-        }
-
         ColumnMetaDto[] columns = queryResult.getColumns();
         RowDto[] rows = queryResult.getRows();
-
         int columnCount = columns.length;
         // 计算字段宽度
         int[] columnWidths = new int[columnCount];
@@ -247,7 +277,6 @@ public class PrintResultUtil {
                 columnWidths[i] = Math.max(columnWidths[i], valueStr.length());
             }
         }
-
         // 打印表格顶部边框
         appendHorizontalLine(columnWidths, stringBuilder);
         // 打印表头
@@ -259,8 +288,9 @@ public class PrintResultUtil {
         appendRow(tableHeaders, columnWidths, stringBuilder);
         // 打印表头与内容之间的分隔线
         appendHorizontalLine(columnWidths, stringBuilder);
+        limit = limit == -1 ? rows.length : limit;
         // 打印表格内容
-        for (int i = 0; i < rows.length; i++) {
+        for (int i = 0; i < limit; i++) {
             Object[] row = rows[i].getColumnValues();
             String[] rowDataStrs = new String[row.length];
             for (int j = 0; j < columnCount; j++) {
@@ -274,10 +304,18 @@ public class PrintResultUtil {
         return stringBuilder.toString();
     }
 
-    public static String getVerticalPrintResult(QueryResultDto queryResult, int limit) {
-
+    private static String getVerticalPrintResult(QueryResultDto queryResult, int limit) {
         StringBuilder result = new StringBuilder("");
+        RowDto[] resultRows = queryResult.getRows();
+        VerticalAttribute att = getVerticalAttribute(queryResult);
+        limit = limit == -1 ? resultRows.length : limit;
+        for (int i = 0; i < limit; i++) {
+            appendVerticalRow(result, resultRows, att, i);
+        }
+        return result.toString();
+    }
 
+    private static VerticalAttribute getVerticalAttribute(QueryResultDto queryResult) {
         ColumnMetaDto[] selectColumns = queryResult.getColumns();
         RowDto[] resultRows = queryResult.getRows();
         String[] columnNames = new String[selectColumns.length];
@@ -296,24 +334,48 @@ public class PrintResultUtil {
                 maxValueLen = Math.max(maxValueLen, valueStr.length());
             }
         }
+        return new VerticalAttribute(columnNames, maxCNameLen, maxValueLen);
+    }
 
-        limit = limit == -1 ? resultRows.length : limit;
-        for (int i = 0; i < limit; i++) {
-            String rowDesc = "[ROW " + (i + 1) + "]";
-            String rowLine = "-" + rowDesc  + repeat("-",  maxCNameLen - rowDesc.length()) + "+";
-            result.append(rowLine + repeat("-",  maxValueLen + 1));
+    private static void appendVerticalRow(StringBuilder result, RowDto[] resultRows,VerticalAttribute att, int idx) {
+        String[] columnNames = att.getColumnNames();
+        String rowDesc = "[ROW " + (idx + 1) + "]";
+        String rowLine = "-" + rowDesc  + repeat("-",  att.getMaxCNameLen() - rowDesc.length()) + "+";
+        result.append(rowLine + repeat("-",  att.getMaxValueLen() + 1));
+        result.append("\n");
+        Object[] row = resultRows[idx].getColumnValues();
+        for (int j = 0; j < columnNames.length; j++) {
+            String valueStr = (row[j] == null ? "" : valueToString(row[j]));
+            // 需要填充的空格数量
+            int spaceNum = att.getMaxCNameLen() - columnNames[j].length();
+            result.append(columnNames[j] + repeat(" ",  spaceNum) + " | " + valueStr);
             result.append("\n");
-            Object[] row = resultRows[i].getColumnValues();
-            for (int j = 0; j < columnNames.length; j++) {
-                String valueStr = (row[j] == null ? "" : valueToString(row[j]));
-                // 需要填充的空格数量
-                int spaceNum = maxCNameLen - columnNames[j].length();
-                result.append(columnNames[j] + repeat(" ",  spaceNum) + " | " + valueStr);
-                result.append("\n");
-            }
+        }
+    }
+
+    static class VerticalAttribute {
+        String[] columnNames;
+        int maxCNameLen;
+        int maxValueLen;
+
+        public VerticalAttribute(String[] columnNames, int maxCNameLen, int maxValueLen) {
+            this.columnNames = columnNames;
+            this.maxCNameLen = maxCNameLen;
+            this.maxValueLen = maxValueLen;
         }
 
-        return result.toString();
+
+        public String[] getColumnNames() {
+            return columnNames;
+        }
+
+        public int getMaxCNameLen() {
+            return maxCNameLen;
+        }
+
+        public int getMaxValueLen() {
+            return maxValueLen;
+        }
     }
 
 
