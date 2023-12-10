@@ -211,9 +211,9 @@ public class MyLineReaderImpl extends LineReaderImpl {
 
     @Override
     protected String finish(String str) {
-/*        String historyLine = str;
+        String historyLine = str;
 
-        if (!isSet(Option.DISABLE_EVENT_EXPANSION)) {
+/*        if (!isSet(Option.DISABLE_EVENT_EXPANSION)) {
             StringBuilder sb = new StringBuilder();
             boolean escaped = false;
             for (int i = 0; i < str.length(); i++) {
@@ -230,7 +230,7 @@ public class MyLineReaderImpl extends LineReaderImpl {
                 }
             }
             str = sb.toString();
-        }
+        }*/
 
         if (maskingCallback != null) {
             historyLine = maskingCallback.history(historyLine);
@@ -239,7 +239,7 @@ public class MyLineReaderImpl extends LineReaderImpl {
         // we only add it to the history if the buffer is not empty
         if (historyLine != null && historyLine.length() > 0 ) {
             history.add(Instant.now(), historyLine);
-        }*/
+        }
         return str;
     }
 
