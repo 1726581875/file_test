@@ -1,9 +1,15 @@
 package com.moyu.test.net.model.terminal;
+import com.moyu.test.command.QueryResult;
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.net.model.BaseResultDto;
 import com.moyu.test.net.util.ReadWriteUtil;
 import com.moyu.test.store.WriteBuffer;
+import com.moyu.test.store.metadata.obj.Column;
+import com.moyu.test.store.metadata.obj.SelectColumn;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author xiaomingzhang
@@ -42,6 +48,46 @@ public class QueryResultDto implements BaseResultDto {
         this.rows = rows;
         this.desc = desc;
     }
+
+
+    public static QueryResultDto valueOf(QueryResult queryResult) {
+        SelectColumn[] selectColumns = queryResult.getSelectColumns();
+        // 字段信息转换
+        ColumnMetaDto[] columnDtos = new ColumnMetaDto[selectColumns.length];
+        for (int i = 0; i < columnDtos.length; i++) {
+            String columnName = selectColumns[i].getSelectColumnName();
+            String alias = selectColumns[i].getAlias();
+            String tableAlias = selectColumns[i].getTableAlias();
+            byte columnType;
+            Column column = selectColumns[i].getColumn();
+            // 如果没有指数据库字段对象，默认为字符类型
+            if(selectColumns[i].getColumnType() == null) {
+                if (column == null) {
+                    columnType = ColumnTypeConstant.VARCHAR;
+                } else {
+                    columnType = column.getColumnType();
+                }
+            } else {
+                columnType = selectColumns[i].getColumnType();
+            }
+            columnDtos[i] = new ColumnMetaDto(columnName, alias, tableAlias, columnType);
+        }
+
+        // 查询结果行转换
+        RowDto[] rowValueDtos = null;
+        List<Object[]> resultRows = queryResult.getResultRows();
+        if (resultRows != null && resultRows.size() > 0) {
+            rowValueDtos = new RowDto[resultRows.size()];
+            for (int i = 0; i < resultRows.size(); i++) {
+                rowValueDtos[i] = new RowDto(resultRows.get(i));
+            }
+        }
+        QueryResultDto queryResultDto = new QueryResultDto(columnDtos, rowValueDtos, queryResult.getDesc());
+        queryResultDto.setHasNext(queryResult.getHasNext());
+        return queryResultDto;
+    }
+
+
 
     public QueryResultDto(ByteBuffer byteBuffer) {
         this.totalByteLen = byteBuffer.getInt();

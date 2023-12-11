@@ -172,7 +172,7 @@ public class TcpServerThread implements Runnable {
             // 获取一页数据
             QueryResult pageResult = selectCommand.getNextPageResult();
             // 数据转换
-            QueryResultDto queryResultDto = queryResultToDTO(pageResult);
+            QueryResultDto queryResultDto = QueryResultDto.valueOf(pageResult);
             OkPacket okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
             // 数据发送
             WritePacketUtil.writeOkPacket(out, okPacket);
@@ -184,7 +184,7 @@ public class TcpServerThread implements Runnable {
                 System.out.println(Thread.currentThread().getName() + "获取下一批数据, flag=" + flag);
                 pageResult = selectCommand.getNextPageResult();
                 // 数据转换
-                queryResultDto = queryResultToDTO(pageResult);
+                queryResultDto = QueryResultDto.valueOf(pageResult);
                 okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
                 // 数据发送
                 WritePacketUtil.writeOkPacket(out, okPacket);
@@ -206,7 +206,7 @@ public class TcpServerThread implements Runnable {
         Command command = sqlParser.prepareCommand(sql);
         // 执行sql并且获取执行结果
         QueryResult queryResult = command.execCommand();
-        QueryResultDto queryResultDto = queryResultToDTO(queryResult);
+        QueryResultDto queryResultDto = QueryResultDto.valueOf(queryResult);
         return queryResultDto;
     }
 
@@ -246,47 +246,7 @@ public class TcpServerThread implements Runnable {
         AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
         command.setParameterValues(queryParams);
         QueryResult queryResult = command.execCommand();
-        QueryResultDto queryResultDto = queryResultToDTO(queryResult);
+        QueryResultDto queryResultDto = QueryResultDto.valueOf(queryResult);
         return queryResultDto;
     }
-
-
-    private QueryResultDto queryResultToDTO(QueryResult queryResult) {
-        SelectColumn[] selectColumns = queryResult.getSelectColumns();
-        // 字段信息转换
-        ColumnMetaDto[] columnDtos = new ColumnMetaDto[selectColumns.length];
-        for (int i = 0; i < columnDtos.length; i++) {
-            String columnName = selectColumns[i].getSelectColumnName();
-            String alias = selectColumns[i].getAlias();
-            String tableAlias = selectColumns[i].getTableAlias();
-            byte columnType;
-            Column column = selectColumns[i].getColumn();
-            // 如果没有指数据库字段对象，默认为字符类型
-            if(selectColumns[i].getColumnType() == null) {
-                if (column == null) {
-                    columnType = ColumnTypeConstant.VARCHAR;
-                } else {
-                    columnType = column.getColumnType();
-                }
-            } else {
-                columnType = selectColumns[i].getColumnType();
-            }
-            columnDtos[i] = new ColumnMetaDto(columnName, alias, tableAlias, columnType);
-        }
-
-        // 查询结果行转换
-        RowDto[] rowValueDtos = null;
-        List<Object[]> resultRows = queryResult.getResultRows();
-        if (resultRows != null && resultRows.size() > 0) {
-            rowValueDtos = new RowDto[resultRows.size()];
-            for (int i = 0; i < resultRows.size(); i++) {
-                rowValueDtos[i] = new RowDto(resultRows.get(i));
-            }
-        }
-        QueryResultDto queryResultDto = new QueryResultDto(columnDtos, rowValueDtos, queryResult.getDesc());
-        queryResultDto.setHasNext(queryResult.getHasNext());
-        return queryResultDto;
-    }
-
-
 }
