@@ -7,7 +7,6 @@ import com.moyu.test.net.packet.ErrPacket;
 import com.moyu.test.net.packet.OkPacket;
 import com.moyu.test.net.packet.Packet;
 import com.moyu.test.net.util.ReadWriteUtil;
-import com.moyu.test.terminal.jline.MyJlineParser;
 import com.moyu.test.terminal.jline.MyLineReaderImpl;
 import com.moyu.test.terminal.jline.TabCompleter;
 import com.moyu.test.terminal.sender.TcpDataSender;
@@ -29,21 +28,41 @@ import java.util.List;
  */
 public class TcpTerminal {
 
-    //private static final String ipAddress = "159.75.134.161";
-    private static final String ipAddress = "localhost";
-
-    private static final int port = 8888;
-
-    private static final String END_CHAR = ";";
+    /**
+     * 数据库服务地址
+     */
+    private  String ipAddress;
+    /**
+     * 数据库服务端口
+     */
+    private int port;
+    /**
+     * 查询结果格式，0横向表格、1竖向表格
+     */
+    private byte formatType = 0;
 
     private static final int PRINT_LIMIT = 1000;
 
     /**
-     * 查询结果格式，0横向表格、1竖向表格
+     * sql结束符号
      */
-    private static byte formatType = 0;
+    private static final String END_CHAR = ";";
+
+
+    public TcpTerminal(String ipAddress, int port) {
+        this.ipAddress = ipAddress;
+        this.port = port;
+    }
 
     public static void main(String[] args) {
+        //String ipAddress = "159.75.134.161";
+        String ipAddress = "localhost";
+        int port = 8888;
+        TcpTerminal tcpTerminal = new TcpTerminal(ipAddress, port);
+        tcpTerminal.start();
+    }
+
+    public void start() {
 
         printDatabaseMsg();
 
@@ -57,12 +76,12 @@ public class TcpTerminal {
                 String input = reader.readLine("yanySQL> ");
                 // 切换输出格式
                 if("\\x".equals(input)) {
-                    if(formatType == 0) {
+                    if(this.formatType == 0) {
                         System.out.println("扩展显示已打开.");
-                        formatType = 1;
+                        this.formatType = 1;
                     } else {
                         System.out.println("扩展显示已关闭.");
-                        formatType = 0;
+                        this.formatType = 0;
                     }
                     continue;
                 }
@@ -137,8 +156,10 @@ public class TcpTerminal {
         System.out.println("结束");
     }
 
-    private static void printAllResultData(QueryResultDto queryResult) {
-        String formatResult = PrintResultUtil.getFormatResult(queryResult, formatType, -1);
+
+
+    private void printAllResultData(QueryResultDto queryResult) {
+        String formatResult = PrintResultUtil.getFormatResult(queryResult, this.formatType, -1);
         System.out.print(formatResult);
         if(queryResult != null && queryResult.getDesc() != null) {
             System.out.println(queryResult.getDesc());
@@ -148,8 +169,8 @@ public class TcpTerminal {
 
 
 
-    private static void execSelectCommandGetResult(Integer databaseId, String sql, LineReader reader) {
-        try (Socket socket = new Socket(ipAddress, port);
+    private void execSelectCommandGetResult(Integer databaseId, String sql, LineReader reader) {
+        try (Socket socket = new Socket(this.ipAddress, this.port);
              // 获取输入流和输出流
              InputStream inputStream = socket.getInputStream();
              OutputStream outputStream = socket.getOutputStream();
@@ -168,13 +189,13 @@ public class TcpTerminal {
                 QueryResultDto queryResultDto = (QueryResultDto) okPacket.getContent();
                 // 如果数据量大于1000行，先大于前1000行
                 int rowLimit = queryResultDto.getRows().length > PRINT_LIMIT ? PRINT_LIMIT : queryResultDto.getRows().length;
-                String formatResult = PrintResultUtil.getFormatResult(queryResultDto, formatType, rowLimit);
+                String formatResult = PrintResultUtil.getFormatResult(queryResultDto, this.formatType, rowLimit);
                 System.out.print(formatResult);
                 // 按下Enter键, 逐行输出数据直到数据全部打印完成或者按q结束
                 String input;
                 if ((queryResultDto.getRows() != null && queryResultDto.getRows().length > PRINT_LIMIT) || queryResultDto.getHasNext() != (byte)0) {
                     int currIndex = PRINT_LIMIT;
-                    String outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto, formatType, currIndex);
+                    String outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto, this.formatType, currIndex);
 
                     while ((input = reader.readLine(outputRowStr)) != null) {
                         // 输入是空，表示没有输入是直接按下enter
@@ -202,7 +223,7 @@ public class TcpTerminal {
                                     }
                                 }
                             }
-                            outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto,formatType, currIndex);
+                            outputRowStr = PrintResultUtil.getOutputRowStr(queryResultDto, this.formatType, currIndex);
                             continue;
                         }
 
@@ -231,23 +252,23 @@ public class TcpTerminal {
     }
 
 
-    private static boolean isShowDatabases(String[] inputWords) {
+    private boolean isShowDatabases(String[] inputWords) {
         return (inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase()) && "DATABASES".equals(inputWords[1].toUpperCase())));
     }
 
-    private static boolean isCreateDatabase(String[] inputWords) {
+    private boolean isCreateDatabase(String[] inputWords) {
         return (inputWords.length >= 2 && ("CREATE".equals(inputWords[0].toUpperCase()) && "DATABASE".equals(inputWords[1].toUpperCase())));
     }
 
 
-    private static LineReader buildLineReader(Terminal terminal, DatabaseInfo database) throws IOException {
+    private LineReader buildLineReader(Terminal terminal, DatabaseInfo database) throws IOException {
         MyLineReaderImpl myLineReader = new MyLineReaderImpl(terminal, terminal.getName());
         myLineReader.setCompleter(new TabCompleter(database));
         //myLineReader.setParser(new MyJlineParser());
         return myLineReader;
     }
 
-    private static String[] getWords(String str) {
+    private String[] getWords(String str) {
         List<String> workList = new ArrayList<>();
         str = str.trim();
         char[] charArray = str.toCharArray();
@@ -281,7 +302,7 @@ public class TcpTerminal {
     }
 
 
-    private static void printDatabaseMsg() {
+    private void printDatabaseMsg() {
         System.out.println(
                 "  __     __                    _____   ____   _\n" +
                         "  \\ \\   / /                   / ____| / __ \\ | |\n" +
