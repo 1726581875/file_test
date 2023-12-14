@@ -1,14 +1,15 @@
 package com.moyu.test.session;
 
 import com.moyu.test.exception.DbException;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.exception.SqlExecutionException;
-import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
 import com.moyu.test.store.metadata.obj.TableColumnBlock;
 import com.moyu.test.store.metadata.obj.TableMetadata;
+import com.moyu.test.util.CollectionUtils;
 
 import java.util.List;
 
@@ -36,6 +37,10 @@ public class Table {
         this.engineType = tableMetadata.getEngineType();
     }
 
+    public Table(Integer databaseId, String tableName) {
+        init(databaseId, tableName);
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -43,23 +48,25 @@ public class Table {
 
     public Column[] getColumns() {
         if(columns == null || columns.length == 0) {
-            this.columns = getColumns(databaseId, tableName);
+            init(databaseId, tableName);
         }
         return columns;
     }
 
-    private Column[] getColumns(Integer databaseId, String tableName) {
+    private void init(Integer databaseId, String tableName) {
+
+        TableMetadata tableMetadata = null;
         List<ColumnMetadata> columnMetadataList = null;
-        TableMetadataStore tableMetadata = null;
+        TableMetadataStore tableMetadataStore = null;
         ColumnMetadataStore columnStore = null;
         try {
-            tableMetadata = new TableMetadataStore(databaseId);
+            tableMetadataStore = new TableMetadataStore(databaseId);
             columnStore = new ColumnMetadataStore(databaseId);
-            TableMetadata table = tableMetadata.getTable(tableName);
-            if(table == null) {
+            tableMetadata = tableMetadataStore.getTable(tableName);
+            if(tableMetadata == null) {
                 throw new SqlExecutionException("表" + tableName + "不存在");
             }
-            TableColumnBlock columnBlock = columnStore.getColumnBlock(table.getTableId());
+            TableColumnBlock columnBlock = columnStore.getColumnBlock(tableMetadata.getTableId());
             columnMetadataList = columnBlock.getColumnMetadataList();
         } catch (SqlExecutionException e) {
             throw e;
@@ -70,13 +77,13 @@ public class Table {
             if(columnStore != null) {
                 columnStore.close();
             }
-            if(tableMetadata != null) {
-                tableMetadata.close();
+            if(tableMetadataStore != null) {
+                tableMetadataStore.close();
             }
         }
 
-        if(columnMetadataList == null || columnMetadataList.size() == 0) {
-            throw new SqlIllegalException("表缺少字段");
+        if(CollectionUtils.isEmpty(columnMetadataList)) {
+            ExceptionUtil.throwDbException("表{}缺少字段", tableName);
         }
 
         Column[] columns = new Column[columnMetadataList.size()];
@@ -91,7 +98,11 @@ public class Table {
             columns[i] = column;
         }
 
-        return columns;
+        this.columns = columns;
+        this.engineType = tableMetadata.getEngineType();
+        this.databaseId = databaseId;
+        this.tableName = tableName;
+        this.tableId = tableMetadata.getTableId();
     }
 
     public Integer getDatabaseId() {

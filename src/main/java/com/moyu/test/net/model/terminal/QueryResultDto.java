@@ -74,7 +74,7 @@ public class QueryResultDto implements BaseResultDto {
         }
 
         // 查询结果行转换
-        RowDto[] rowValueDtos = null;
+        RowDto[] rowValueDtos = new RowDto[0];
         List<Object[]> resultRows = queryResult.getResultRows();
         if (resultRows != null && resultRows.size() > 0) {
             rowValueDtos = new RowDto[resultRows.size()];

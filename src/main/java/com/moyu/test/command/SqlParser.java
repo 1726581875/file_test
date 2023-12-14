@@ -11,7 +11,7 @@ import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.exception.SqlIllegalException;
 import com.moyu.test.session.ConnectSession;
-import com.moyu.test.store.metadata.ColumnMetadataStore;
+import com.moyu.test.session.Table;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
@@ -498,29 +498,28 @@ public class SqlParser implements Parser {
 
         skipSpace();
         String tableName = null;
-        int startIndex = currIndex;
-        int endIndex = currIndex;
+        int columnStartIdx = currIndex;
+        int columnEndIdx = currIndex;
         QueryTable mainTable = null;
         Query subQuery = null;
         while (true) {
             if(currIndex >= sqlCharArr.length || sqlCharArr[currIndex] == ';') {
                 // 没有FROM关键字，例如：select now();
-                endIndex = currIndex;
+                columnEndIdx = currIndex;
                 break;
             }
             if(subQueryStartEnd != null && currIndex == subQueryStartEnd.getEnd()) {
-                endIndex = currIndex;
+                columnEndIdx = currIndex;
                 break;
             }
 
             // 遇到FROM关键字
             if(nextKeywordIs(FROM)) {
-                endIndex = currIndex;
-                skipKeyword(FROM);
-                String nextWord = getNextKeyWordUnMove();
-                // 存在子查询
-                // 像select * from [*](select * from table_1) as tmp
-                if ("(".equals(nextWord) || "(SELECT".equals(nextWord)) {
+                columnEndIdx = currIndex;
+                nextNextKeywordIs(FROM, true);
+                // 存在子查询,类似这种情况select * from (select * from table_1) as tmp
+                skipSpace();
+                if(sqlCharArr[currIndex] == '(') {
                     StartEndIndex subStartEnd = getNextBracketStartEnd();
                     currIndex++;
                     assertNextKeywordIs(SELECT);
@@ -544,7 +543,7 @@ public class SqlParser implements Parser {
 
         // 没有查询表的情况，像select now();这种不需要解析表信息可以提前返回
         if(mainTable == null) {
-            String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
+            String selectColumnsStr = originalSql.substring(columnStartIdx, columnEndIdx).trim();
             parseSelectColumnNonTable(query, selectColumnsStr);
             return query;
         }
@@ -565,7 +564,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析select字段
-        String selectColumnsStr = originalSql.substring(startIndex, endIndex).trim();
+        String selectColumnsStr = originalSql.substring(columnStartIdx, columnEndIdx).trim();
         if(selectColumnsStr.toUpperCase().startsWith(DISTINCT)) {
             query.setDistinct(true);
             selectColumnsStr = selectColumnsStr.substring(DISTINCT.length()).trim();
@@ -1165,33 +1164,6 @@ public class SqlParser implements Parser {
     }
 
 
-    private SelectColumn getFunctionExpression(String functionStr) {
-        int i = functionStr.indexOf('(');
-        if (i == -1) {
-            ExceptionUtil.throwSqlIllegalException("sql不合法，在{}附近", functionStr);
-        }
-        String functionName = functionStr.substring(0, i).toUpperCase();
-        List<FuncArg> funcArgList = new ArrayList<>();
-        Byte columnType = null;
-        SelectColumnExpression funcExp = null;
-        switch (functionName) {
-            case FunctionConstant.FUNC_UUID:
-                funcExp = new SelectColumnExpression(functionName, funcArgList);
-                columnType = ColumnTypeConstant.CHAR;
-                break;
-            case FunctionConstant.FUNC_NOW:
-                funcExp = new SelectColumnExpression(functionName, funcArgList);
-                columnType = ColumnTypeConstant.TIMESTAMP;
-                break;
-            default:
-                ExceptionUtil.throwSqlIllegalException("sql不合法，不支持函数{}", functionName);
-        }
-
-        SelectColumn selectColumn = SelectColumn.newColumn(functionName, columnType);
-        selectColumn.setColumnExpression(funcExp);
-        return selectColumn;
-    }
-
     private SelectColumn parseFunction(TableColumnInfo columnInfo, String functionStr) {
         String selectColumnStr = functionStr.trim();
 
@@ -1559,10 +1531,11 @@ public class SqlParser implements Parser {
 
     private SingleComparison parseSingleComparison(Map<String,Column> columnMap, Expression left, String operator){
         SingleComparison condition = null;
-        String nextValue = getNextOriginalWordUnMove();
+        skipSpace();
+        boolean isSubQuery = sqlCharArr[currIndex] == '(' ? true : false;
 
         Expression right = null;
-        if ("(".equals(nextValue) || "(SELECT".equals(nextValue)) {
+        if (isSubQuery) {
             StartEndIndex subStartEnd = getNextBracketStartEnd();
             currIndex++;
             assertNextKeywordIs(SELECT);
@@ -1570,6 +1543,7 @@ public class SqlParser implements Parser {
             Query subQuery = parseQuery(subStartEnd);
             right = new SubQueryValue((ColumnExpression) left, subQuery);
         } else {
+            String nextValue = getNextOriginalWordUnMove();
             Column rightColumn = columnMap.get(nextValue);
             // attribute = value
             if (rightColumn == null) {
@@ -1921,48 +1895,8 @@ public class SqlParser implements Parser {
 
 
     private Column[] getColumns(String tableName) {
-        List<ColumnMetadata> columnMetadataList = null;
-        TableMetadataStore tableMetadata = null;
-        ColumnMetadataStore columnStore = null;
-        try {
-            tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
-            columnStore = new ColumnMetadataStore(connectSession.getDatabaseId());
-            TableMetadata table = tableMetadata.getTable(tableName);
-            if(table == null) {
-                throw new SqlExecutionException("表" + tableName + "不存在");
-            }
-            TableColumnBlock columnBlock = columnStore.getColumnBlock(table.getTableId());
-            columnMetadataList = columnBlock.getColumnMetadataList();
-        } catch (SqlExecutionException e) {
-            throw e;
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if(columnStore != null) {
-                columnStore.close();
-            }
-            if(tableMetadata != null) {
-                tableMetadata.close();
-            }
-        }
-
-        if(columnMetadataList == null || columnMetadataList.size() == 0) {
-            throw new SqlIllegalException("表缺少字段");
-        }
-
-        Column[] columns = new Column[columnMetadataList.size()];
-
-        for (int i = 0; i < columnMetadataList.size(); i++) {
-            ColumnMetadata metadata = columnMetadataList.get(i);
-            Column column = new Column(metadata.getColumnName(),
-                    metadata.getColumnType(),
-                    metadata.getColumnIndex(),
-                    metadata.getColumnLength());
-            column.setIsPrimaryKey(metadata.getIsPrimaryKey());
-            columns[i] = column;
-        }
-
-        return columns;
+        Table table = new Table(connectSession.getDatabaseId(), tableName);
+        return table.getColumns();
     }
 
 
@@ -2199,8 +2133,6 @@ public class SqlParser implements Parser {
 
 
 
-
-
     private String getNextKeyWord() {
         skipSpace();
         int i = currIndex;
@@ -2212,24 +2144,6 @@ public class SqlParser implements Parser {
                 break;
             }
             if (sqlCharArr[i] == '(') {
-                break;
-            }
-            i++;
-        }
-        String word = new String(sqlCharArr, currIndex, i - currIndex);
-        currIndex = i;
-        return word;
-    }
-
-
-    private String getNextWord() {
-        skipSpace();
-        int i = currIndex;
-        while (i < sqlCharArr.length) {
-            if (sqlCharArr[i] == ' ' || sqlCharArr[i] == ';' || sqlCharArr[i] == '(') {
-                if(currIndex == i) {
-                    i++;
-                }
                 break;
             }
             i++;
@@ -2294,40 +2208,16 @@ public class SqlParser implements Parser {
     }
 
     private boolean nextKeywordIs(String keyword) {
-
-        if (currIndex >= sqlCharArr.length) {
-            return false;
-        }
-
-        if (sqlCharArr[currIndex] == ' ') {
-            skipSpace();
-        } else {
-            // 关键字前一个必须为空格
-            if (currIndex > 0 && sqlCharArr[currIndex - 1] != ' ') {
-                return false;
-            }
-        }
-        int i = currIndex;
-        while (i < sqlCharArr.length) {
-            if (sqlCharArr[i] == ' ') {
-                break;
-            }
-            if (sqlCharArr[i] == ';') {
-                break;
-            }
-            if (sqlCharArr[i] == '(') {
-                break;
-            }
-            if (sqlCharArr[i] == ')') {
-                break;
-            }
-            i++;
-        }
-        String word = new String(sqlCharArr, currIndex, i - currIndex);
-        return keyword.equals(word);
+        return nextNextKeywordIs(keyword, false);
     }
 
-    private boolean skipKeyword(String keyword) {
+    /**
+     *
+     * @param keyword 关键字的值
+     * @param skip 断言正确后是否跳过这个关键字
+     * @return
+     */
+    private boolean nextNextKeywordIs(String keyword, boolean skip) {
 
         if (currIndex >= sqlCharArr.length) {
             return false;
@@ -2343,27 +2233,24 @@ public class SqlParser implements Parser {
         }
         int i = currIndex;
         while (i < sqlCharArr.length) {
-            if (sqlCharArr[i] == ' ') {
-                break;
-            }
-            if (sqlCharArr[i] == ';') {
-                break;
-            }
-            if (sqlCharArr[i] == '(') {
-                break;
-            }
-            if (sqlCharArr[i] == ')') {
+            if (isWordEndChar(sqlCharArr[i])) {
                 break;
             }
             i++;
         }
         String word = new String(sqlCharArr, currIndex, i - currIndex);
         if (keyword.equals(word)) {
-            currIndex = i;
+            if(skip) {
+                currIndex = i;
+            }
             return true;
         } else {
             return false;
         }
+    }
+
+    private boolean isWordEndChar(char c) {
+        return c == ' ' || c == ';' || c == '(' || c == ')';
     }
 
 
