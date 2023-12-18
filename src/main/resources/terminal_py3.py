@@ -114,12 +114,13 @@ database_id = -1
 format_type = 0
 
 while True:
+    # 接收用户输入
+    user_input = input("yanySQL> ")
     # 创建socket对象
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # 连接服务器
     client_socket.connect((host, port))
-    # 接收用户输入
-    user_input = input("yanySQL> ")
+
     user_input = user_input.split(";")[0]
     # 检查用户输入是否为 'exit', exit则结束程序
     if user_input.lower() == 'exit' or user_input.lower() == 'exit;':

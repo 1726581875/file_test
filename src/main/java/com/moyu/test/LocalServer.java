@@ -10,7 +10,7 @@ public class LocalServer {
 
     public static void main(String[] args) {
         TcpServer tcpServer = new TcpServer();
-        tcpServer.listen();
+        tcpServer.start();
     }
 
 }

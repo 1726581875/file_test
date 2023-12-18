@@ -1,5 +1,7 @@
 package com.moyu.test.util;
 
+import com.moyu.test.config.PropertiesConfigLoader;
+
 import java.io.File;
 
 /**
@@ -16,15 +18,15 @@ public class PathUtil {
 
 
     public static String getBaseDirPath() {
-        return PropertiesReadUtil.get(baseDir);
+        return PropertiesConfigLoader.get(baseDir);
     }
 
     public static String getMetaDirPath() {
-        return PropertiesReadUtil.get(metaDir);
+        return PropertiesConfigLoader.get(metaDir);
     }
 
     public static String getLogDirPath() {
-        return PropertiesReadUtil.get(logDir);
+        return PropertiesConfigLoader.get(logDir);
     }
 
     public static String getDataFilePath(Integer databaseId, String tableName) {

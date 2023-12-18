@@ -1,4 +1,4 @@
-package com.moyu.test.util;
+package com.moyu.test.config;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,7 +10,7 @@ import java.util.Properties;
  * @date 2021/8/30
  * 读取properties文件
  */
-public class PropertiesReadUtil {
+public class PropertiesConfigLoader {
 
     private static final Properties properties = new Properties();
 
@@ -19,7 +19,7 @@ public class PropertiesReadUtil {
 
     public static String get(String key) {
         if (!isLoad) {
-            synchronized (PropertiesReadUtil.class) {
+            synchronized (PropertiesConfigLoader.class) {
                 if (!isLoad) {
                     loadConfig();
                 }
@@ -43,18 +43,19 @@ public class PropertiesReadUtil {
                 se.printStackTrace();
             }
             InputStream inputStream = null;
-            System.out.println("osName:" + osName);
+            System.out.println("加载配置，当前OS:" + osName);
             if(isWindows) {
                 inputStream = Object.class.getResourceAsStream("/config.properties");
             } else {
                 System.out.println("非Windows读取jar包同目录下配置文件config.properties");
-                String jarPath = PropertiesReadUtil.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+                String jarPath = PropertiesConfigLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
                 System.out.println("当前类路径[" +  jarPath + "]");
                 String jarDirPath = new File(jarPath).getParent();
                 inputStream = new FileInputStream(jarDirPath + File.separator  + "config.properties");
             }
             properties.load(inputStream);
             isLoad = true;
+            System.out.println("配置加载成功..");
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("加载配置文件config.properties发生异常");

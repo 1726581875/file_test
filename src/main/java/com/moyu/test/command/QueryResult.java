@@ -1,7 +1,9 @@
 package com.moyu.test.command;
 
+import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,9 +85,6 @@ public class QueryResult {
 
     @Override
     public String toString() {
-        return "QueryResult{" +
-                "selectColumns=" + Arrays.toString(selectColumns) +
-                ", resultRows=" + resultRows +
-                '}';
+        return PrintResultUtil.getFormatResult(QueryResultDto.valueOf(this), (byte) 0, 100);
     }
 }

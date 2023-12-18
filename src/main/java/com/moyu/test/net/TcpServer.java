@@ -1,5 +1,7 @@
 package com.moyu.test.net;
 
+import com.moyu.test.config.PropertiesConfigLoader;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,7 +16,7 @@ public class TcpServer {
 
     public static void main(String[] args) {
         TcpServer tcpServer = new TcpServer();
-        tcpServer.listen();
+        tcpServer.start();
     }
 
 
@@ -26,10 +28,13 @@ public class TcpServer {
         this.port = port;
     }
 
-    public void listen() {
+    public void start() {
         printDatabaseMsg();
         ServerSocket serverSocket = null;
         try {
+            // 加载properties配置文件
+            PropertiesConfigLoader.loadConfig();
+            // 创建ServerSocket
             serverSocket = new ServerSocket(this.port);
             int threadNum = 0;
             while (true) {
