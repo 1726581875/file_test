@@ -95,57 +95,60 @@ public class TcpTerminal {
                     }
                 }
 
-                String inputStr = input.split(";")[0];
-                String[] inputWords = getWords(inputStr);
-                // 退出命令
-                if (inputWords.length > 0 && ("EXIT".equals(inputWords[0].toUpperCase())
-                        || "QUIT".equals(inputWords[0].toUpperCase()))) {
-                    break;
-                }
+                String[] inputStrs = input.split(";");
+                for (String inputStr : inputStrs) {
 
-                if ("".equals(inputStr.trim())) {
-                    continue;
-                }
+                    String[] inputWords = getWords(inputStr);
+                    // 退出命令
+                    if (inputWords.length > 0 && ("EXIT".equals(inputWords[0].toUpperCase())
+                            || "QUIT".equals(inputWords[0].toUpperCase()))) {
+                        break;
+                    }
 
-                try {
-                    // 使用数据库,命令: use dbName
-                    if (inputWords.length >= 2 && "USE".equals(inputWords[0].toUpperCase())) {
-                        String dbName = inputWords[1];
-                        useDatabase = tcpDataSender.getDatabaseInfo(dbName);
-                        if (useDatabase != null) {
-                            System.out.println("ok");
-                            reader = buildLineReader(terminal, useDatabase);
-                        } else {
-                            System.out.println("数据库不存在");
-                        }
+                    if ("".equals(inputStr.trim())) {
                         continue;
                     }
 
-                    // 如果还没使用数据库，只能执行show databases/create database命令
-                    if (useDatabase == null) {
-                        if (isShowDatabases(inputWords) || isCreateDatabase(inputWords)) {
-                            QueryResultDto queryResultDto = tcpDataSender.execQueryCommand(-1, inputStr);
-                            printAllResultData(queryResultDto);
-                        } else {
-                            System.out.println("请先使用use命令选择数据库..");
-                        }
-                        continue;
-                    }
-
-                    // 查询命令
-                    if (inputWords.length > 1 && "SELECT".equals(inputWords[0].toUpperCase())) {
-                        execSelectCommandGetResult(useDatabase.getDatabaseId(), inputStr, reader);
-                    } else {
-                        QueryResultDto queryResultDto = tcpDataSender.execQueryCommand(useDatabase.getDatabaseId(), inputStr);
-                        if (queryResultDto == null) {
-                            System.out.println("异常，获取不到结果..");
+                    try {
+                        // 使用数据库,命令: use dbName
+                        if (inputWords.length >= 2 && "USE".equals(inputWords[0].toUpperCase())) {
+                            String dbName = inputWords[1];
+                            useDatabase = tcpDataSender.getDatabaseInfo(dbName);
+                            if (useDatabase != null) {
+                                System.out.println("ok");
+                                reader = buildLineReader(terminal, useDatabase);
+                            } else {
+                                System.out.println("数据库不存在");
+                            }
                             continue;
                         }
-                        printAllResultData(queryResultDto);
-                    }
 
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        // 如果还没使用数据库，只能执行show databases/create database命令
+                        if (useDatabase == null) {
+                            if (isShowDatabases(inputWords) || isCreateDatabase(inputWords)) {
+                                QueryResultDto queryResultDto = tcpDataSender.execQueryCommand(-1, inputStr);
+                                printAllResultData(queryResultDto);
+                            } else {
+                                System.out.println("请先使用use命令选择数据库..");
+                            }
+                            continue;
+                        }
+
+                        // 查询命令
+                        if (inputWords.length > 1 && "SELECT".equals(inputWords[0].toUpperCase())) {
+                            execSelectCommandGetResult(useDatabase.getDatabaseId(), inputStr, reader);
+                        } else {
+                            QueryResultDto queryResultDto = tcpDataSender.execQueryCommand(useDatabase.getDatabaseId(), inputStr);
+                            if (queryResultDto == null) {
+                                System.out.println("异常，获取不到结果..");
+                                continue;
+                            }
+                            printAllResultData(queryResultDto);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
             }
