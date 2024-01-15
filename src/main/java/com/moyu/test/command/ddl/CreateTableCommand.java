@@ -1,6 +1,7 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.constant.CommonConstant;
 import com.moyu.test.session.ConnectSession;
 import com.moyu.test.session.Database;
@@ -31,7 +32,7 @@ public class CreateTableCommand extends AbstractCommand {
     private List<Column> columnList;
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         boolean isSuccess = true;
         TableMetadataStore tableMetadataStore = null;
         ColumnMetadataStore columnMetadataStore = null;
@@ -57,7 +58,7 @@ public class CreateTableCommand extends AbstractCommand {
                 indexCommand.setColumns(columnList.toArray(new Column[0]));
                 indexCommand.setIndexColumn(keyColumn);
                 indexCommand.setIndexType(CommonConstant.PRIMARY_KEY);
-                indexCommand.execute();
+                indexCommand.execCommand();
             }
 
             Database database = session.getDatabase();
@@ -76,7 +77,7 @@ public class CreateTableCommand extends AbstractCommand {
                 indexMetadataStore.close();
             }
         }
-        return isSuccess ? "ok" : "error";
+        return isSuccess ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 
 

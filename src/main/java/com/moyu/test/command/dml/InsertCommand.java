@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.session.QueryCacheUtil;
 import com.moyu.test.session.Table;
 import com.moyu.test.store.data.cursor.RowEntity;
@@ -28,7 +29,7 @@ public class InsertCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int num = 0;
@@ -36,7 +37,7 @@ public class InsertCommand extends AbstractCommand {
             num = engineOperation.insert(new RowEntity(dataColumns));
         }
         QueryCacheUtil.clearQueryCache(tableInfo.getSession().getDatabaseId());
-        return num == 1 ? "ok" : "error";
+        return num == 1 ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 
 

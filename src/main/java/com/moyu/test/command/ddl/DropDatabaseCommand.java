@@ -1,6 +1,7 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
@@ -26,24 +27,23 @@ public class DropDatabaseCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         boolean isSuccess = true;
         DatabaseMetadataStore metadataStore = null;
         try {
             metadataStore = new DatabaseMetadataStore();
             DatabaseMetadata metadata = metadataStore.getDatabase(databaseName);
             if (metadata == null && isExists) {
-                return "ok";
+                return QueryResult.simpleResult(RESULT_OK);
             }
             Database database = Database.getDatabase(metadata.getDatabaseId());
             metadataStore.dropDatabase(databaseName);
             // 删除所有表
             ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());
-            String[] allTable = showTablesCommand.getAllTable();
             List<TableMetadata> resultList = showTablesCommand.getResultList();
             for (TableMetadata tableMetadata : resultList) {
                 DropTableCommand dropTableCommand = new DropTableCommand(database, tableMetadata.getTableName(), true);
-                dropTableCommand.execute();
+                dropTableCommand.execCommand();
             }
             Database.removeDatabase(metadata.getDatabaseId());
 
@@ -55,7 +55,7 @@ public class DropDatabaseCommand extends AbstractCommand {
                 metadataStore.close();
             }
         }
-        return isSuccess ? "ok" : "error";
+        return isSuccess ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 
     public String getDatabaseName() {

@@ -1,9 +1,7 @@
 package com.moyu.test.command;
 
 import com.moyu.test.command.dml.sql.Parameter;
-import com.moyu.test.exception.DbException;
 import com.moyu.test.exception.ExceptionUtil;
-import com.moyu.test.store.metadata.obj.SelectColumn;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,27 +14,15 @@ import java.util.Map;
  */
 public abstract class AbstractCommand implements Command {
 
+    protected final static String RESULT_OK = "ok";
+    protected final static String RESULT_ERROR = "error";
+
 
     private List<Parameter> parameters = new ArrayList<>();
 
 
     @Override
     public QueryResult execCommand() {
-        String executeResult = execute();
-        SelectColumn selectColumn = new SelectColumn("执行结果", null);
-        QueryResult queryResult = new QueryResult();
-        queryResult.setSelectColumns(new SelectColumn[]{selectColumn});
-        queryResult.addRow(new Object[]{executeResult});
-        return queryResult;
-    }
-
-    /**
-     * 执行命令
-     *
-     * @param
-     * @return
-     */
-    public String execute(){
         return null;
     }
 
@@ -56,7 +42,7 @@ public abstract class AbstractCommand implements Command {
 
     public void setParameterValues(List<Parameter> parameterValues) {
         if(parameters.size() != parameterValues.size()) {
-            throw new DbException("参数数量不一致,传入参数数量为:" + parameterValues.size() + ",可接受参数数量为:" + parameters.size());
+            ExceptionUtil.throwSqlQueryException("参数数量不一致,传入参数数量为:{},可接受参数数量为:{}",parameterValues.size(), parameters.size());
         }
 
         Map<Integer, Parameter> paramValueMap = new HashMap<>(parameterValues.size());

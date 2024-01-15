@@ -186,7 +186,7 @@ public class SqlParser implements Parser {
                 } else if ("TABLES".equals(word11)) {
                     return new ShowTablesCommand(this.connectSession.getDatabaseId());
                 } else {
-                    ExceptionUtil.throwSqlIllegalException("sql语法有误");
+                    ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
                 }
             case DESC:
                 skipSpace();
@@ -199,8 +199,10 @@ public class SqlParser implements Parser {
                 String word13 = getNextOriginalWord();
                 return new TruncateTableCommand(connectSession.getDatabaseId() ,word13);
             default:
-                throw new SqlIllegalException("sql语法有误" + firstKeyWord);
+                ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
         }
+
+        throw new DbException("sql语法有误");
     }
 
     /**
@@ -268,10 +270,12 @@ public class SqlParser implements Parser {
                     assertNextKeywordIs("KEY");
                     return parseIndexCommand(tableName, CommonConstant.PRIMARY_KEY);
                 }
+                break;
             case "DROP":
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
+        throw new SqlIllegalException("sql语法有误");
     }
 
 
@@ -850,11 +854,10 @@ public class SqlParser implements Parser {
         }
         String tableName = getNextOriginalWord();
         if ("".equals(tableName)) {
-            throw new SqlIllegalException("sql语法有误，子查询缺少alias, " + originalSql.substring(0, currIndex));
+            ExceptionUtil.throwSqlIllegalException("sql语法有误，子查询缺少alias, {}", originalSql.substring(0, currIndex));
         }
 
         SelectColumn[] selectColumns = subQuery.getSelectColumns();
-       // Column[] subColumns = subQuery.getMainTable().getAllColumns();
         Column[] newColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
             Byte columnType = selectColumns[i].getColumnType();
@@ -1133,7 +1136,7 @@ public class SqlParser implements Parser {
                     // 普通字段
                     Column column = columnInfo.getColumn(columnStr);
                     if (column == null) {
-                        throw new SqlIllegalException("字段" + columnStr + "不存在");
+                        ExceptionUtil.throwSqlIllegalException("字段{}不存在", columnStr);
                     }
 
                     column = column.copy();
@@ -1255,7 +1258,7 @@ public class SqlParser implements Parser {
         int start = functionStr.indexOf('(');
         int end = functionStr.indexOf(')');
         if (start < 0 || end < 0 || start > end) {
-            throw new SqlIllegalException("sql不合法，" + functionStr);
+            ExceptionUtil.throwSqlIllegalException("sql不合法，{}", functionStr);
         }
         return functionStr.substring(start + 1, end).trim();
     }
@@ -1434,7 +1437,7 @@ public class SqlParser implements Parser {
                 } else if ("LIKE".equals(word0)) {
                     condition = parseSingleComparison(columnMap, left, OperatorConstant.NOT_LIKE);
                 } else if ("EXISTS".equals(word0)) {
-                    throw new DbException("不支持EXISTS查询");
+                    throw new DbException("目前不支持EXISTS查询");
                 }
                 break;
             case "IS":
@@ -1547,7 +1550,7 @@ public class SqlParser implements Parser {
             Column rightColumn = columnMap.get(nextValue);
             // attribute = value
             if (rightColumn == null) {
-                String v = parseSimpleConditionValue();
+                String v = parseSimpleConditionValue(currIndex);
                 if("?".equals(v)) {
                     int size = parameterList.size();
                     Parameter parameter = new Parameter(size + 1, null);
@@ -1564,7 +1567,7 @@ public class SqlParser implements Parser {
                 String columnName = getNextOriginalWord();
                 Column column = columnMap.get(columnName);
                 if (column == null) {
-                    throw new SqlIllegalException("sql语法有误，字段不存在：" + columnName);
+                    ExceptionUtil.throwSqlIllegalException("sql语法有误，字段不存在:{}", columnName);
                 }
                 column = column.copy();
                 right = new ColumnExpression(column);
@@ -1633,47 +1636,6 @@ public class SqlParser implements Parser {
         return condition;
     }
 
-
-    private String parseSimpleConditionValue() {
-        String value = null;
-        // 标记字符串 "'" 符号是否打开状态
-        boolean strOpen = false;
-        int start = currIndex;
-        while (true) {
-            if (currIndex >= sqlCharArr.length) {
-                break;
-            }
-            // 字符串开始
-            if (sqlCharArr[currIndex] == '\'' && !strOpen) {
-                strOpen = true;
-                if (currIndex + 1 < sqlCharArr.length) {
-                    start = currIndex + 1;
-                } else {
-                    throw new SqlIllegalException("sql语法有误");
-                }
-            } else if (sqlCharArr[currIndex] == '\'' && strOpen) {
-                // 字符串结束
-                value = originalSql.substring(start, currIndex);
-                currIndex++;
-                break;
-                // 数值结束
-            } else if ((isEndChar(sqlCharArr[currIndex]) || currIndex == sqlCharArr.length - 1) && !strOpen) {
-                // 数值就是最后一个
-                if ((currIndex == sqlCharArr.length - 1) && !isEndChar(sqlCharArr[currIndex])) {
-                    value = originalSql.substring(start, sqlCharArr.length);
-                } else {
-                    value = originalSql.substring(start, currIndex);
-                }
-                break;
-            }
-
-            currIndex++;
-        }
-
-        return value;
-    }
-
-
     private String parseSimpleConditionValue(Integer start) {
         String value = null;
         // 标记字符串 "'" 符号是否打开状态
@@ -1731,7 +1693,7 @@ public class SqlParser implements Parser {
 
         String word = getNextKeyWord();
         if (!"INTO".equals(word)) {
-            throw new SqlIllegalException("sql语法有误," + word);
+            ExceptionUtil.throwSqlIllegalException("sql语法有误,{}", word);
         }
 
         // 解析tableName
@@ -1771,7 +1733,7 @@ public class SqlParser implements Parser {
         skipSpace();
         String valueKeyWord = getNextKeyWord();
         if (!VALUE.equals(valueKeyWord) && !VALUES.equals(valueKeyWord)) {
-            throw new SqlIllegalException("sql语法有误," + valueKeyWord);
+            ExceptionUtil.throwSqlIllegalException("sql语法有误,{}", valueKeyWord);
         }
         // value
         StartEndIndex valueBracket = getNextBracketStartEnd();
@@ -1906,7 +1868,7 @@ public class SqlParser implements Parser {
             tableMetadata = new TableMetadataStore(connectSession.getDatabaseId());
             TableMetadata table = tableMetadata.getTable(tableName);
             if(table == null) {
-                throw new SqlExecutionException("表" + tableName + "不存在");
+                ExceptionUtil.throwSqlExecutionException("表{}不存在", tableName);
             }
             return table;
         } catch (SqlExecutionException e) {

@@ -1,6 +1,6 @@
 package com.moyu.test.store.metadata;
 
-import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.*;
 import com.moyu.test.store.metadata.obj.TableIndexBlock;
@@ -19,8 +19,6 @@ import java.util.Map;
  * @date 2023/5/30
  */
 public class IndexMetadataStore {
-
-    private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
 
     private String filePath;
 
@@ -80,7 +78,7 @@ public class IndexMetadataStore {
         synchronized (ColumnMetadataStore.class) {
             TableIndexBlock block = indexBlockMap.get(tableId);
             if (block == null) {
-                throw new SqlExecutionException("索引" + indexName + "不存在");
+                ExceptionUtil.throwSqlExecutionException("索引{}不存在", indexName);
             } else {
                 List<IndexMetadata> list = block.getIndexMetadataList();
 
@@ -96,7 +94,7 @@ public class IndexMetadataStore {
                 }
 
                 if(k == -1) {
-                    throw new SqlExecutionException("索引" + indexName + "不存在");
+                    ExceptionUtil.throwSqlExecutionException("索引{}不存在", indexName);
                 } else {
                     list.remove(k);
                 }
@@ -145,7 +143,7 @@ public class IndexMetadataStore {
         TableIndexBlock columnBlock = indexBlockMap.get(tableId);
 
         if (columnBlock == null) {
-            throw new RuntimeException("删除失败，不存在tableId:" + tableId);
+            ExceptionUtil.throwSqlExecutionException("删除索引失败，找不到表id{}对应的索引块", tableId);
         }
 
         long startPos = columnBlock.getStartPos();

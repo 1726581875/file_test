@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.util.FileUtil;
 import com.moyu.test.util.PathUtil;
@@ -30,7 +31,7 @@ public class DropIndexCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         IndexMetadataStore indexStore = null;
         try {
             indexStore = new IndexMetadataStore(databaseId);
@@ -43,14 +44,13 @@ public class DropIndexCommand extends AbstractCommand {
             FileUtil.deleteOnExists(indexPath);
         } catch (Exception e) {
             e.printStackTrace();
-            return "error";
+            return QueryResult.simpleResult(RESULT_ERROR);
         } finally {
             if(indexStore != null) {
                 indexStore.close();
             }
         }
-        return "ok";
+        return QueryResult.simpleResult(RESULT_OK);
     }
-
 
 }

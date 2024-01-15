@@ -47,25 +47,6 @@ public class ShowTablesCommand extends AbstractCommand {
         return list.toArray(new String[0]);
     }
 
-
-    @Override
-    public String execute() {
-        String[] result = getAllTable();
-        StringBuilder stringBuilder = new StringBuilder();
-
-        stringBuilder.append("----------------\n");
-        stringBuilder.append("| 数据表 |   id  |\n");
-        stringBuilder.append("----------------\n");
-        for (String str : result) {
-            stringBuilder.append("| " +str + " |");
-            stringBuilder.append("\n");
-        }
-        stringBuilder.append("--------\n");
-        stringBuilder.append("总数:"+ result.length +"\n");
-        return stringBuilder.toString();
-    }
-
-
     @Override
     public QueryResult execCommand() {
 

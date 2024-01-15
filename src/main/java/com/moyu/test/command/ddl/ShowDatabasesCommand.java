@@ -41,25 +41,6 @@ public class ShowDatabasesCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
-        String[] result = execAndGetResult();
-        StringBuilder stringBuilder = new StringBuilder();
-
-
-        stringBuilder.append("--------------\n");
-        stringBuilder.append("| 数据库 |  id |\n");
-        stringBuilder.append("---------------\n");
-        for (String str : result) {
-            stringBuilder.append("| " +str + " |");
-            stringBuilder.append("\n");
-        }
-        stringBuilder.append("--------\n");
-        stringBuilder.append("总数:"+ result.length +"\n");
-        return stringBuilder.toString();
-    }
-
-
-    @Override
     public QueryResult execCommand() {
 
         long queryStartTime = System.currentTimeMillis();

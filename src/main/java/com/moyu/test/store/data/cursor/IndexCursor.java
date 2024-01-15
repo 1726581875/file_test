@@ -69,8 +69,6 @@ public class IndexCursor extends AbstractCursor {
 
     }
 
-
-
     @Override
     public RowEntity next() {
 

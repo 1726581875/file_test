@@ -1,6 +1,7 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.DatabaseMetadataStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
@@ -18,8 +19,7 @@ public class CreateDatabaseCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
-
+    public QueryResult execCommand() {
         boolean success = true;
         DatabaseMetadataStore metadataStore = null;
         try {
@@ -34,6 +34,6 @@ public class CreateDatabaseCommand extends AbstractCommand {
                 metadataStore.close();
             }
         }
-        return success ? "ok" : "error";
+        return success ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 }

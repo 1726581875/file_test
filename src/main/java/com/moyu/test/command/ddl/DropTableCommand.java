@@ -1,8 +1,9 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.constant.CommonConstant;
-import com.moyu.test.exception.SqlExecutionException;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.session.Database;
 import com.moyu.test.store.metadata.ColumnMetadataStore;
 import com.moyu.test.store.metadata.IndexMetadataStore;
@@ -35,8 +36,7 @@ public class DropTableCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
-
+    public QueryResult execCommand() {
         boolean result;
         TableMetadataStore tableMetadataStore = null;
         ColumnMetadataStore columnMetadataStore = null;
@@ -75,7 +75,7 @@ public class DropTableCommand extends AbstractCommand {
                 database.removeTable(tableName);
 
             } else if (table == null && !ifExists) {
-                throw new SqlExecutionException("表" + this.tableName + "不存在");
+                ExceptionUtil.throwSqlExecutionException("表{}不存在", this.tableName);
             }
             result = true;
         } catch (Exception e) {
@@ -86,6 +86,6 @@ public class DropTableCommand extends AbstractCommand {
             columnMetadataStore.close();
             indexStore.close();
         }
-        return result ? "ok" : "error";
+        return result ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 }

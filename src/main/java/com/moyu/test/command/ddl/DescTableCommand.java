@@ -11,7 +11,6 @@ import com.moyu.test.store.metadata.IndexMetadataStore;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -60,12 +59,12 @@ public class DescTableCommand extends AbstractCommand {
             }
 
             if (table == null) {
-                throw new SqlQueryException("表" + tableName + "不存在");
+                ExceptionUtil.throwSqlQueryException("表{}不存在", this.tableName);
             }
 
             TableColumnBlock columnBlock = columnMetadataStore.getColumnBlock(table.getTableId());
             if (columnBlock == null) {
-                throw new SqlQueryException("表字段不存在");
+                ExceptionUtil.throwSqlQueryException("表{}的字段块不存在", this.tableName);
             }
             // 构造输出结果
             List<ColumnMetadata> columnMetadataList = columnBlock.getColumnMetadataList();

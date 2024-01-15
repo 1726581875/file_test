@@ -1,12 +1,12 @@
 package com.moyu.test.command;
 
+import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.net.model.terminal.QueryResultDto;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.SelectColumn;
 import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -49,6 +49,14 @@ public class QueryResult {
             resultRows = new ArrayList<>();
         }
         resultRows.add(resultRow);
+    }
+
+    public static QueryResult simpleResult(Object resultValue) {
+        SelectColumn nameColumn = SelectColumn.newColumn("执行结果", ColumnTypeConstant.CHAR);
+        QueryResult queryResult = new QueryResult();
+        queryResult.setSelectColumns(new SelectColumn[]{nameColumn});
+        queryResult.addRow(new Object[]{resultValue});
+        return queryResult;
     }
 
     public List<Object[]> getResultRows() {

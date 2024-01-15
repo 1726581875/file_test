@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.store.data.DataChunkStore;
 import com.moyu.test.util.PathUtil;
 /**
@@ -19,20 +20,23 @@ public class TruncateTableCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
+        boolean isSuccess = false;
         DataChunkStore dataChunkStore = null;
         try {
             String fileFullPath = PathUtil.getDataFilePath(this.databaseId, this.tableName);
             dataChunkStore = new DataChunkStore(fileFullPath);
             dataChunkStore.truncateTable();
+            isSuccess = true;
         } catch (Exception e) {
+            isSuccess = false;
             e.printStackTrace();
         } finally {
             if(dataChunkStore != null) {
                 dataChunkStore.close();
             }
         }
-        return "ok";
+        return isSuccess ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);
     }
 
 }

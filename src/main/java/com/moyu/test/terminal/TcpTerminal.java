@@ -12,6 +12,7 @@ import com.moyu.test.terminal.jline.TabCompleter;
 import com.moyu.test.terminal.sender.TcpDataSender;
 import com.moyu.test.terminal.util.PrintResultUtil;
 import org.jline.reader.LineReader;
+import org.jline.reader.UserInterruptException;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
@@ -147,13 +148,21 @@ public class TcpTerminal {
                         }
 
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        if(e instanceof UserInterruptException) {
+                            // 用户Ctrl + c中断输出不需要打印错误信息
+                        } else {
+                            e.printStackTrace();
+                        }
                     }
                 }
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            if(e instanceof UserInterruptException) {
+                // 用户Ctrl + c中断输出不需要打印错误信息
+            } else {
+                e.printStackTrace();
+            }
         }
 
         System.out.println("结束");

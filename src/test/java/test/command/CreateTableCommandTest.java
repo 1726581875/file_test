@@ -1,10 +1,12 @@
 package test.command;
 
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.command.ddl.CreateTableCommand;
 import com.moyu.test.constant.ColumnTypeConstant;
 import com.moyu.test.store.metadata.TableMetadataStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
+import com.moyu.test.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +36,8 @@ public class CreateTableCommandTest {
             columnDtoList.add(columnDto);
         }
         command.setColumnList(columnDtoList);
-
-        String execute = command.execute();
-        System.out.println(execute);
+        QueryResult queryResult = command.execCommand();
+        PrintResultUtil.printResult(queryResult);
     }
 
 

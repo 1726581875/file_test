@@ -36,7 +36,7 @@ public class Database {
                 Database database = new Database(metadata.getDatabaseId(), metadata.getName());
                 databaseMap.put(metadata.getDatabaseId(), database);
                 ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());
-                showTablesCommand.execute();
+                showTablesCommand.execCommand();
                 List<TableMetadata> tableMetadataList = showTablesCommand.getResultList();
                 for (TableMetadata tableMetadata : tableMetadataList) {
                     database.addTable(new Table(tableMetadata));
@@ -68,7 +68,7 @@ public class Database {
                 return database;
             }
         }
-        throw new DbException("数据库不存在，name:" + databaseName);
+        throw new DbException("数据库不存在，库名:" + databaseName);
     }
 
 

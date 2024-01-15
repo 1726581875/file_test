@@ -1,6 +1,7 @@
 package com.moyu.test.command.dml;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.session.QueryCacheUtil;
 import com.moyu.test.session.Table;
 import com.moyu.test.store.operation.BasicOperation;
@@ -19,7 +20,7 @@ public class DeleteCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int deleteRowNum = 0;
@@ -27,6 +28,6 @@ public class DeleteCommand extends AbstractCommand {
             deleteRowNum = engineOperation.delete();
         }
         QueryCacheUtil.clearQueryCache(tableInfo.getSession().getDatabaseId());
-        return "共删除了" + deleteRowNum + "行数据";
+        return QueryResult.simpleResult("共删除了" + deleteRowNum + "行数据");
     }
 }

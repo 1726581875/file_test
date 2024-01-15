@@ -1,5 +1,6 @@
 package com.moyu.test.store.metadata;
 
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
@@ -38,10 +39,6 @@ public class ColumnMetadataStore {
      * value: TableColumnBlock
      */
     private Map<Integer, TableColumnBlock> columnBlockMap = new HashMap<>();
-
-
-    public ColumnMetadataStore() throws IOException {
-    }
 
     public ColumnMetadataStore(Integer databaseId) throws IOException {
         this(DEFAULT_META_PATH + File.separator + databaseId);
@@ -83,6 +80,7 @@ public class ColumnMetadataStore {
             TableColumnBlock columnBlock = columnBlockMap.get(tableId);
 
             if (columnBlock == null) {
+                ExceptionUtil.throwSqlExecutionException("删除失败，表id={}对应的字段块不存在", tableId);
                 throw new RuntimeException("删除失败，不存在tableId:" + tableId);
             }
 

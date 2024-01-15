@@ -63,7 +63,9 @@ public class YanEngineOperation extends BasicOperation {
             e.printStackTrace();
             return 0;
         } finally {
-            bTreeMap.close();
+            if(bTreeMap != null) {
+                bTreeMap.close();
+            }
         }
         return 1;
     }
@@ -160,7 +162,9 @@ public class YanEngineOperation extends BasicOperation {
             e.printStackTrace();
             return updateNum;
         } finally {
-            bTreeMap.close();
+            if(bTreeMap != null) {
+                bTreeMap.close();
+            }
         }
         return updateNum;
     }
@@ -208,7 +212,9 @@ public class YanEngineOperation extends BasicOperation {
             e.printStackTrace();
             return deleteNum;
         } finally {
-            bTreeMap.close();
+            if(bTreeMap != null) {
+                bTreeMap.close();
+            }
         }
         return deleteNum;
     }
@@ -267,8 +273,12 @@ public class YanEngineOperation extends BasicOperation {
             e.printStackTrace();
             throw new DbException("创建索引发生异常");
         } finally {
-            indexMetadataStore.close();
-            bTreeIndexStore.close();
+            if(indexMetadataStore != null) {
+                indexMetadataStore.close();
+            }
+            if(bTreeIndexStore != null) {
+                bTreeIndexStore.close();
+            }
         }
     }
 

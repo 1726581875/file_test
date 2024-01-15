@@ -1,6 +1,7 @@
 package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.DatabaseMetadata;
 import com.moyu.test.util.DataUtils;
@@ -57,7 +58,7 @@ public class DatabaseMetadataStore {
         synchronized (DatabaseMetadataStore.class) {
             Integer index = getDatabaseIndex(databaseName);
             if (index == null) {
-                throw new RuntimeException("数据库" + databaseName + "不存在");
+                ExceptionUtil.throwSqlExecutionException("数据库{}不存在", databaseName);
             }
             DatabaseMetadata metadata = databaseMetadataList.get(index);
             long startPos = metadata.getStartPos();
@@ -114,7 +115,7 @@ public class DatabaseMetadataStore {
     private void checkDbName(String databaseName) {
         for (DatabaseMetadata metadata : databaseMetadataList) {
             if (databaseName.equals(metadata.getName())) {
-                throw new RuntimeException("数据库" + databaseName + "已存在");
+                ExceptionUtil.throwSqlExecutionException("数据库{}已存在", databaseName);
             }
         }
     }

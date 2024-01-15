@@ -1,6 +1,7 @@
 package com.moyu.test.store.metadata;
 
 import com.moyu.test.constant.JavaTypeConstant;
+import com.moyu.test.exception.ExceptionUtil;
 import com.moyu.test.exception.SqlExecutionException;
 import com.moyu.test.store.FileStore;
 import com.moyu.test.store.metadata.obj.ColumnMetadata;
@@ -78,7 +79,7 @@ public class TableMetadataStore {
         }
 
         if(tableMetadata == null) {
-            throw new RuntimeException("表" + tableName + "不存在");
+            ExceptionUtil.throwSqlExecutionException("表{}不存在", tableName);
         }
 
         long startPos = tableMetadata.getStartPos();

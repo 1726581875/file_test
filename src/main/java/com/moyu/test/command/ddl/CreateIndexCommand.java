@@ -1,6 +1,7 @@
 package com.moyu.test.command.ddl;
 
 import com.moyu.test.command.AbstractCommand;
+import com.moyu.test.command.QueryResult;
 import com.moyu.test.store.metadata.obj.Column;
 import com.moyu.test.store.operation.BasicOperation;
 import com.moyu.test.store.operation.OperateTableInfo;
@@ -29,23 +30,16 @@ public class CreateIndexCommand extends AbstractCommand {
 
     private Column indexColumn;
 
-    public CreateIndexCommand() {
-    }
-
     public CreateIndexCommand(OperateTableInfo tableInfo) {
         this.tableInfo = tableInfo;
     }
 
-
-
     @Override
-    public String execute() {
+    public QueryResult execCommand() {
         BasicOperation engineOperation = BasicOperation.getEngineOperation(tableInfo);
         engineOperation.createIndex(tableId, indexName, columnName, indexType);
-        return "ok";
+        return QueryResult.simpleResult(RESULT_OK);
     }
-
-
 
     public Integer getDatabaseId() {
         return databaseId;

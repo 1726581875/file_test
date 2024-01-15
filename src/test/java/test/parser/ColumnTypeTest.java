@@ -24,9 +24,9 @@ public class ColumnTypeTest {
 
     static {
         DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execute();
+        dropDatabaseCommand.execCommand();
         CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execute();
+        createDatabaseCommand.execCommand();
         database = Database.getDatabase(databaseName);
     }
 
