@@ -13,7 +13,7 @@ public class Condition {
     private String key;
 
     /**
-     * @see com.moyu.test.constant.OperatorConstant
+     * @see com.moyu.test.common.constant.OperatorConstant
      */
     private String operator;
 

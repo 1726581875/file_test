@@ -1,8 +1,8 @@
 package test.store.metadata;
 
-import com.moyu.test.store.metadata.IndexMetadataStore;
-import com.moyu.test.store.metadata.obj.IndexMetadata;
-import com.moyu.test.store.metadata.obj.TableIndexBlock;
+import com.moyu.xmz.store.accessor.IndexMetaFileAccessor;
+import com.moyu.xmz.store.common.meta.IndexMetadata;
+import com.moyu.xmz.store.common.block.TableIndexBlock;
 
 import java.util.Map;
 
@@ -13,9 +13,9 @@ import java.util.Map;
 public class IndexMetadataStoreTest {
 
     public static void main(String[] args) {
-        IndexMetadataStore metadataStore = null;
+        IndexMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new IndexMetadataStore(0);
+            metadataStore = new IndexMetaFileAccessor(0);
             IndexMetadata index = new IndexMetadata(0L, 1, "aaa", "bbb", (byte) 0);
             //metadataStore.saveIndexMetadata(2, index);
             //metadataStore.dropIndexMetadata(1, "indexName");

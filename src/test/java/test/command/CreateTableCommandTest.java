@@ -1,12 +1,12 @@
 package test.command;
 
-import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.ddl.CreateTableCommand;
-import com.moyu.test.constant.ColumnTypeConstant;
-import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.ColumnMetadata;
-import com.moyu.test.terminal.util.PrintResultUtil;
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.command.ddl.CreateTableCommand;
+import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.store.accessor.TableMetaFileAccessor;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.common.meta.ColumnMetadata;
+import com.moyu.xmz.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +43,10 @@ public class CreateTableCommandTest {
 
 
     private static void printTableInfo(Integer databaseId) {
-        TableMetadataStore metadataStore = null;
+        TableMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new TableMetadataStore(0);
-            TableMetadataStore finalMetadataStore = metadataStore;
+            metadataStore = new TableMetaFileAccessor(0);
+            TableMetaFileAccessor finalMetadataStore = metadataStore;
             metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println("==== table ==== ");
                 System.out.println(tableMetadata);

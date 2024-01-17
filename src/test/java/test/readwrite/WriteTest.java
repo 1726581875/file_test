@@ -1,6 +1,6 @@
 package test.readwrite;
 
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtil;
 
 /**
  * @author xiaomingzhang

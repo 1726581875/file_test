@@ -1,6 +1,6 @@
 package test.command;
 
-import com.moyu.test.constant.OperatorConstant;
+import com.moyu.xmz.common.constant.OperatorConstant;
 import test.readwrite.entity.Chunk;
 
 import java.util.Arrays;

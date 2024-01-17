@@ -2,9 +2,9 @@ package test.readwrite;
 
 import test.readwrite.entity.Chunk;
 import test.readwrite.entity.FileHeader;
-import com.moyu.test.store.FileStore;
-import com.moyu.test.util.DataUtils;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.store.accessor.FileAccessor;
+import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ public class UnfixedLengthWriteReadTest {
     public static void main(String[] args) {
         String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
         FileUtil.createFileIfNotExists(filePath);
-        FileStore fileStore = null;
+        FileAccessor fileAccessor = null;
 
         // header
         FileHeader fileHeader = new FileHeader(FileHeader.HEADER_LENGTH ,
@@ -37,18 +37,18 @@ public class UnfixedLengthWriteReadTest {
         }
 
         try {
-            fileStore = new FileStore(filePath);
+            fileAccessor = new FileAccessor(filePath);
 
             // write header
             headerBuff.rewind();
-            fileStore.write(headerBuff, 0);
+            fileAccessor.write(headerBuff, 0);
 
             // 写文件
             for (int i = 0; i < chunkList.size(); i++) {
                 Chunk chunk = chunkList.get(i);
                 ByteBuffer byteBuffer = chunk.getByteBuff();
                 byteBuffer.rewind();
-                fileStore.write(byteBuffer, chunk.getChunkStartPos());
+                fileAccessor.write(byteBuffer, chunk.getChunkStartPos());
             }
 
             // end write header
@@ -56,18 +56,18 @@ public class UnfixedLengthWriteReadTest {
             fileHeader.setFileEndPos(chunkStartPop);
             ByteBuffer endFileBuff = fileHeader.getByteBuff();
             endFileBuff.rewind();
-            fileStore.write(endFileBuff, 0);
+            fileAccessor.write(endFileBuff, 0);
 
             // 读文件
             long startPos = fileHeader.getFirstChunkStartPos();
             for (int i = 0; i < chunkList.size(); i++) {
                 // 读取块长度
                 long chunkLenAttrStartPos = startPos;
-                ByteBuffer chunkLenBuff = fileStore.read(chunkLenAttrStartPos, 4);
+                ByteBuffer chunkLenBuff = fileAccessor.read(chunkLenAttrStartPos, 4);
                 int chunkLen = DataUtils.readInt(chunkLenBuff);
 
 
-                ByteBuffer byteBuff = fileStore.read(startPos, chunkLen);
+                ByteBuffer byteBuff = fileAccessor.read(startPos, chunkLen);
 
                 Chunk chunk = new Chunk(byteBuff);
                 System.out.println(chunk);
@@ -80,8 +80,8 @@ public class UnfixedLengthWriteReadTest {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (fileStore != null) {
-                fileStore.close();
+            if (fileAccessor != null) {
+                fileAccessor.close();
             }
         }
     }

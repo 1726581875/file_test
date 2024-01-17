@@ -1,6 +1,6 @@
 package test.net.simpletest02;
 
-import com.moyu.test.util.DataUtils;
+import com.moyu.xmz.common.util.DataUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

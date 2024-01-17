@@ -1,20 +1,18 @@
 package test;
 
-import com.moyu.test.command.Command;
-import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.ddl.CreateDatabaseCommand;
-import com.moyu.test.command.ddl.DropDatabaseCommand;
-import com.moyu.test.command.dml.SelectCommand;
-import com.moyu.test.constant.CommonConstant;
-import com.moyu.test.session.ConnectSession;
-import com.moyu.test.session.Database;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.SelectColumn;
-import com.moyu.test.terminal.util.PrintResultUtil;
-import com.moyu.test.util.StringUtils;
+import com.moyu.xmz.command.Command;
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.command.ddl.CreateDatabaseCommand;
+import com.moyu.xmz.command.ddl.DropDatabaseCommand;
+import com.moyu.xmz.command.dml.SelectCommand;
+import com.moyu.xmz.common.constant.CommonConstant;
+import com.moyu.xmz.session.ConnectSession;
+import com.moyu.xmz.session.Database;
+import com.moyu.xmz.store.common.dto.SelectColumn;
+import com.moyu.xmz.terminal.util.PrintResultUtil;
+import com.moyu.xmz.common.util.StringUtils;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 

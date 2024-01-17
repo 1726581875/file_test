@@ -1,10 +1,10 @@
 package test.store.metadata;
 
-import com.moyu.test.constant.ColumnTypeConstant;
-import com.moyu.test.store.metadata.ColumnMetadataStore;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.TableColumnBlock;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.store.accessor.ColumnMetaFileAccessor;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.common.block.TableColumnBlock;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public class ColumnMetadataStoreTest {
 
 
     public static void main(String[] args) {
-        FileUtil.deleteOnExists(filePath + ColumnMetadataStore.COLUMN_META_FILE_NAME);
+        FileUtil.deleteOnExists(filePath + ColumnMetaFileAccessor.COLUMN_META_FILE_NAME);
 
 
         testCreateColumnBlock(1);
@@ -32,9 +32,9 @@ public class ColumnMetadataStoreTest {
 
 
     private static void testCreateColumnBlock(Integer tableId){
-        ColumnMetadataStore metadataStore = null;
+        ColumnMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new ColumnMetadataStore(filePath);
+            metadataStore = new ColumnMetaFileAccessor(filePath);
             List<Column> columnDtoList = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 Column columnDto = new Column("column_" + i, ColumnTypeConstant.VARCHAR, i, 64);
@@ -55,9 +55,9 @@ public class ColumnMetadataStoreTest {
 
 
     private static void testDropColumnBlock(Integer tableId){
-        ColumnMetadataStore metadataStore = null;
+        ColumnMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new ColumnMetadataStore(filePath);
+            metadataStore = new ColumnMetaFileAccessor(filePath);
             metadataStore.dropColumnBlock(tableId);
             Map<Integer, TableColumnBlock> columnMap = metadataStore.getColumnMap();
             System.out.println("======= drop tableId="+ tableId +" ========");

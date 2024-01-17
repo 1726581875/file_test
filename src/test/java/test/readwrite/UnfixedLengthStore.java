@@ -1,7 +1,7 @@
 package test.readwrite;
 
-import com.moyu.test.store.FileStore;
-import com.moyu.test.util.DataUtils;
+import com.moyu.xmz.store.accessor.FileAccessor;
+import com.moyu.xmz.common.util.DataUtils;
 import test.readwrite.entity.Chunk;
 import test.readwrite.entity.FileHeader;
 
@@ -17,7 +17,7 @@ public class UnfixedLengthStore {
 
     private String fileFullPath;
 
-    private FileStore fileStore;
+    private FileAccessor fileAccessor;
 
     private long currentPos;
 
@@ -25,8 +25,8 @@ public class UnfixedLengthStore {
 
     public UnfixedLengthStore(String fileFullPath) throws IOException {
         this.fileFullPath = fileFullPath;
-        this.fileStore = new FileStore(fileFullPath);
-        ByteBuffer headerBuffer = fileStore.read(0, FileHeader.HEADER_LENGTH);
+        this.fileAccessor = new FileAccessor(fileFullPath);
+        ByteBuffer headerBuffer = fileAccessor.read(0, FileHeader.HEADER_LENGTH);
         this.fileHeader = new FileHeader(headerBuffer);
         this.currentPos = this.fileHeader.getFirstChunkStartPos();
     }
@@ -39,9 +39,9 @@ public class UnfixedLengthStore {
         try {
             synchronized (this) {
                 long chunkLenAttrStartPos = currentPos;
-                ByteBuffer chunkLenBuff = fileStore.read(chunkLenAttrStartPos, 4);
+                ByteBuffer chunkLenBuff = fileAccessor.read(chunkLenAttrStartPos, 4);
                 int chunkLen = DataUtils.readInt(chunkLenBuff);
-                ByteBuffer byteBuff = fileStore.read(currentPos, chunkLen);
+                ByteBuffer byteBuff = fileAccessor.read(currentPos, chunkLen);
                 Chunk chunk = new Chunk(byteBuff);
                 currentPos += chunkLen;
                 return chunk;
@@ -58,13 +58,13 @@ public class UnfixedLengthStore {
             synchronized (fileFullPath.intern()) {
                 // write chunk
                 ByteBuffer byteBuffer = chunk.getByteBuff();
-                fileStore.write(byteBuffer, fileHeader.getFileEndPos());
+                fileAccessor.write(byteBuffer, fileHeader.getFileEndPos());
 
                 // write header
                 fileHeader.setFileEndPos(fileHeader.getFileEndPos() + chunk.getChunkLen());
                 fileHeader.setTotalChunkNum(fileHeader.getTotalChunkNum() + 1);
                 ByteBuffer headerBuff = fileHeader.getByteBuff();
-                fileStore.write(headerBuff, 0);
+                fileAccessor.write(headerBuff, 0);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,25 +80,25 @@ public class UnfixedLengthStore {
             throw new RuntimeException("文件已存在");
         }
 
-        FileStore fileStore = new FileStore(fileFullPath);
+        FileAccessor fileAccessor = new FileAccessor(fileFullPath);
         try {
             // init header
             FileHeader fileHeader = new FileHeader(FileHeader.HEADER_LENGTH,
                     0, 0, FileHeader.HEADER_LENGTH);
             ByteBuffer headerBuff = fileHeader.getByteBuff();
-            fileStore.write(headerBuff, 0);
+            fileAccessor.write(headerBuff, 0);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            fileStore.close();
+            fileAccessor.close();
         }
     }
 
 
 
     public void close() {
-        if (fileStore != null) {
-            fileStore.close();
+        if (fileAccessor != null) {
+            fileAccessor.close();
         }
     }
 }

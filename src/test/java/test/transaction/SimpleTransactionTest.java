@@ -1,14 +1,12 @@
 package test.transaction;
 
-import com.moyu.test.command.Command;
-import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.SqlParser;
-import com.moyu.test.session.ConnectSession;
-import com.moyu.test.store.transaction.Transaction;
-import com.moyu.test.store.transaction.TransactionManager;
-import com.moyu.test.terminal.util.PrintResultUtil;
-
-import java.util.Arrays;
+import com.moyu.xmz.command.Command;
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.command.SqlParser;
+import com.moyu.xmz.session.ConnectSession;
+import com.moyu.xmz.store.transaction.Transaction;
+import com.moyu.xmz.store.transaction.TransactionManager;
+import com.moyu.xmz.terminal.util.PrintResultUtil;
 
 /**
  * @author xiaomingzhang

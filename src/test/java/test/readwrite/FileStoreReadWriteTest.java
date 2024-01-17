@@ -1,7 +1,7 @@
 package test.readwrite;
 
-import com.moyu.test.store.FileStore;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.store.accessor.FileAccessor;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.nio.ByteBuffer;
 
@@ -16,22 +16,22 @@ public class FileStoreReadWriteTest {
 
     public static void main(String[] args) {
         FileUtil.createFileIfNotExists(filePath);
-        FileStore fileStore = null;
+        FileAccessor fileAccessor = null;
         try {
-            fileStore = new FileStore(filePath);
+            fileAccessor = new FileAccessor(filePath);
             // 写文件
             String str = "Hello World !";
             ByteBuffer byteBuffer = ByteBuffer.wrap(str.getBytes());
-            fileStore.write(byteBuffer, 0);
+            fileAccessor.write(byteBuffer, 0);
 
             // 读文件
-            ByteBuffer readBuff = fileStore.read(0, str.length());
+            ByteBuffer readBuff = fileAccessor.read(0, str.length());
             System.out.println(new String(readBuff.array(), "UTF-8"));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (fileStore != null) {
-                fileStore.close();
+            if (fileAccessor != null) {
+                fileAccessor.close();
             }
         }
     }

@@ -1,7 +1,5 @@
 package test.net.simpletest02;
 
-import com.moyu.test.util.DataUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

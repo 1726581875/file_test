@@ -1,17 +1,16 @@
 package test.parser;
 
-import com.moyu.test.command.Command;
-import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.SqlParser;
-import com.moyu.test.command.dml.InsertCommand;
-import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.session.ConnectSession;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.operation.OperateTableInfo;
-import com.moyu.test.terminal.util.PrintResultUtil;
+import com.moyu.xmz.command.Command;
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.command.SqlParser;
+import com.moyu.xmz.command.dml.InsertCommand;
+import com.moyu.xmz.common.constant.ColumnTypeEnum;
+import com.moyu.xmz.session.ConnectSession;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 

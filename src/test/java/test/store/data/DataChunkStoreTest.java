@@ -1,11 +1,11 @@
 package test.store.data;
 
-import com.moyu.test.constant.ColumnTypeConstant;
-import com.moyu.test.store.data.DataChunk;
-import com.moyu.test.store.data.DataChunkStore;
-import com.moyu.test.store.data.RowData;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.store.common.block.DataChunk;
+import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
+import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +28,11 @@ public class DataChunkStoreTest {
 
         FileUtil.deleteOnExists(filePath);
 
-        DataChunkStore dataChunkStore = null;
+        DataChunkFileAccessor dataChunkFileAccessor = null;
         try {
-            dataChunkStore = new DataChunkStore(filePath);
+            dataChunkFileAccessor = new DataChunkFileAccessor(filePath);
             // create a chunk
-            dataChunkStore.createChunk();
+            dataChunkFileAccessor.createChunk();
 
 
             List<Column> columnList = new ArrayList<>();
@@ -58,8 +58,8 @@ public class DataChunkStoreTest {
             // write data
             for (int i = 0; i < 1; i++) {
                 try {
-                    byte[] bytes = RowData.toRowByteData(columnList);
-                    dataChunkStore.storeRow(bytes,false);
+                    byte[] bytes = RowMetadata.toRowByteData(columnList);
+                    dataChunkFileAccessor.storeRow(bytes,false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -68,7 +68,7 @@ public class DataChunkStoreTest {
             }
 
             // print
-            DataChunk chunk = dataChunkStore.getChunk(0);
+            DataChunk chunk = dataChunkFileAccessor.getChunk(0);
             System.out.println(chunk);
             chunk.getDataRowList().forEach(row -> {
                 System.out.println(row);
@@ -80,8 +80,8 @@ public class DataChunkStoreTest {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (dataChunkStore != null) {
-                dataChunkStore.close();
+            if (dataChunkFileAccessor != null) {
+                dataChunkFileAccessor.close();
             }
         }
 
@@ -92,16 +92,16 @@ public class DataChunkStoreTest {
 
         FileUtil.deleteOnExists(filePath);
 
-        DataChunkStore dataChunkStore = null;
+        DataChunkFileAccessor dataChunkFileAccessor = null;
         try {
-            dataChunkStore = new DataChunkStore(filePath);
+            dataChunkFileAccessor = new DataChunkFileAccessor(filePath);
             // create a chunk
-            dataChunkStore.createChunk();
+            dataChunkFileAccessor.createChunk();
 
             // write data
             for (int i = 0; i < 1024; i++) {
                 try {
-                    dataChunkStore.storeRow("hello world!hello world!啊啊啊啊".getBytes(), false);
+                    dataChunkFileAccessor.storeRow("hello world!hello world!啊啊啊啊".getBytes(), false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -110,7 +110,7 @@ public class DataChunkStoreTest {
             }
 
             // print
-            DataChunk chunk = dataChunkStore.getChunk(0);
+            DataChunk chunk = dataChunkFileAccessor.getChunk(0);
             System.out.println(chunk);
             chunk.getDataRowList().forEach(row -> {
                 System.out.println(row);
@@ -120,8 +120,8 @@ public class DataChunkStoreTest {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (dataChunkStore != null) {
-                dataChunkStore.close();
+            if (dataChunkFileAccessor != null) {
+                dataChunkFileAccessor.close();
             }
         }
     }

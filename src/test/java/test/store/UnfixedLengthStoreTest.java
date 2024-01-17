@@ -2,7 +2,7 @@ package test.store;
 
 import test.readwrite.entity.Chunk;
 import test.readwrite.UnfixedLengthStore;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.io.IOException;
 

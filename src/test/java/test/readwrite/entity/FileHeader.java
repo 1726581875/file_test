@@ -1,6 +1,6 @@
 package test.readwrite.entity;
 
-import com.moyu.test.util.DataUtils;
+import com.moyu.xmz.common.util.DataUtils;
 
 import java.nio.ByteBuffer;
 

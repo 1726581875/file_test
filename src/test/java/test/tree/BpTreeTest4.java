@@ -1,14 +1,14 @@
 package test.tree;
 
-import com.moyu.test.constant.ColumnTypeEnum;
-import com.moyu.test.store.data2.BTreeMap;
-import com.moyu.test.store.data2.BTreeStore;
-import com.moyu.test.store.data2.type.RowValue;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.type.dbtype.IntColumnType;
-import com.moyu.test.store.type.obj.RowDataType;
-import com.moyu.test.util.FileUtil;
-import com.moyu.test.util.PathUtil;
+import com.moyu.xmz.common.constant.ColumnTypeEnum;
+import com.moyu.xmz.store.tree.BTreeMap;
+import com.moyu.xmz.store.tree.BTreeStore;
+import com.moyu.xmz.store.type.value.RowValue;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.type.dbtype.IntColumnType;
+import com.moyu.xmz.store.type.obj.RowDataType;
+import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.PathUtil;
 
 import java.io.File;
 import java.io.IOException;

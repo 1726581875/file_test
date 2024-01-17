@@ -1,7 +1,7 @@
 package test.utils;
 
-import com.moyu.test.util.AssertUtil;
-import com.moyu.test.util.DataUtils;
+import com.moyu.xmz.common.util.AssertUtil;
+import com.moyu.xmz.common.util.DataUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Random;

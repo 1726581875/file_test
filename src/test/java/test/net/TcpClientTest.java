@@ -1,9 +1,9 @@
 package test.net;
 
-import com.moyu.test.exception.DbException;
-import com.moyu.test.net.packet.ErrPacket;
-import com.moyu.test.net.packet.OkPacket;
-import com.moyu.test.net.packet.Packet;
+import com.moyu.xmz.common.exception.DbException;
+import com.moyu.xmz.net.packet.ErrPacket;
+import com.moyu.xmz.net.packet.OkPacket;
+import com.moyu.xmz.net.packet.Packet;
 
 import java.io.*;
 import java.net.Socket;

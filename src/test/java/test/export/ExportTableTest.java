@@ -1,12 +1,12 @@
 package test.export;
 
-import com.moyu.test.command.Command;
-import com.moyu.test.command.QueryResult;
-import com.moyu.test.command.SqlParser;
-import com.moyu.test.net.model.terminal.ColumnMetaDto;
-import com.moyu.test.net.model.terminal.QueryResultDto;
-import com.moyu.test.net.model.terminal.RowDto;
-import com.moyu.test.session.ConnectSession;
+import com.moyu.xmz.command.Command;
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.command.SqlParser;
+import com.moyu.xmz.net.model.terminal.ColumnMetaDto;
+import com.moyu.xmz.net.model.terminal.QueryResultDto;
+import com.moyu.xmz.net.model.terminal.RowDto;
+import com.moyu.xmz.session.ConnectSession;
 
 import java.io.File;
 import java.io.FileOutputStream;

@@ -1,13 +1,13 @@
 package test.store.metadata;
 
-import com.moyu.test.constant.ColumnTypeConstant;
-import com.moyu.test.store.metadata.ColumnMetadataStore;
-import com.moyu.test.store.metadata.DatabaseMetadataStore;
-import com.moyu.test.store.metadata.TableMetadataStore;
-import com.moyu.test.store.metadata.obj.Column;
-import com.moyu.test.store.metadata.obj.ColumnMetadata;
-import com.moyu.test.store.metadata.obj.TableColumnBlock;
-import com.moyu.test.util.FileUtil;
+import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.store.accessor.ColumnMetaFileAccessor;
+import com.moyu.xmz.store.accessor.DatabaseMetaFileAccessor;
+import com.moyu.xmz.store.accessor.TableMetaFileAccessor;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.common.meta.ColumnMetadata;
+import com.moyu.xmz.store.common.block.TableColumnBlock;
+import com.moyu.xmz.common.util.FileUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,9 +24,9 @@ public class MetadataStoreTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        FileUtil.deleteOnExists(filePath + ColumnMetadataStore.COLUMN_META_FILE_NAME);
-        FileUtil.deleteOnExists(filePath + TableMetadataStore.TABLE_META_FILE_NAME);
-        FileUtil.deleteOnExists(filePath + DatabaseMetadataStore.DATABASE_META_FILE_NAME);
+        FileUtil.deleteOnExists(filePath + ColumnMetaFileAccessor.COLUMN_META_FILE_NAME);
+        FileUtil.deleteOnExists(filePath + TableMetaFileAccessor.TABLE_META_FILE_NAME);
+        FileUtil.deleteOnExists(filePath + DatabaseMetaFileAccessor.DATABASE_META_FILE_NAME);
 
         testDatabase();
 
@@ -48,9 +48,9 @@ public class MetadataStoreTest {
 
 
     private static void testDatabase() {
-        DatabaseMetadataStore metadataStore = null;
+        DatabaseMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new DatabaseMetadataStore(filePath);
+            metadataStore = new DatabaseMetaFileAccessor(filePath);
             metadataStore.createDatabase("xmz1");
             metadataStore.getAllData().forEach(System.out::println);
         } catch (Exception e) {
@@ -61,11 +61,11 @@ public class MetadataStoreTest {
     }
 
     private static void testTable(String tableName) {
-        TableMetadataStore metadataStore = null;
+        TableMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new TableMetadataStore(0, filePath);
+            metadataStore = new TableMetaFileAccessor(0, filePath);
             metadataStore.createTable(tableName, null);
-            TableMetadataStore finalMetadataStore = metadataStore;
+            TableMetaFileAccessor finalMetadataStore = metadataStore;
             metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println("==== table ==== ");
                 System.out.println(tableMetadata);
@@ -83,11 +83,11 @@ public class MetadataStoreTest {
 
 
     private static void testDropTable(String tableName) {
-        TableMetadataStore metadataStore = null;
+        TableMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new TableMetadataStore(0, filePath);
+            metadataStore = new TableMetaFileAccessor(0, filePath);
             metadataStore.dropTable(tableName);
-            TableMetadataStore finalMetadataStore = metadataStore;
+            TableMetaFileAccessor finalMetadataStore = metadataStore;
             System.out.println("==== drop table ==== ");
             metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println(tableMetadata);
@@ -105,10 +105,10 @@ public class MetadataStoreTest {
 
 
     private static void testShowTables() {
-        TableMetadataStore metadataStore = null;
+        TableMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new TableMetadataStore(0, filePath);
-            TableMetadataStore finalMetadataStore = metadataStore;
+            metadataStore = new TableMetaFileAccessor(0, filePath);
+            TableMetaFileAccessor finalMetadataStore = metadataStore;
             System.out.println("==== drop table ==== ");
             metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
                 System.out.println(tableMetadata);
@@ -126,9 +126,9 @@ public class MetadataStoreTest {
 
 
     private static void testColumn(){
-        ColumnMetadataStore metadataStore = null;
+        ColumnMetaFileAccessor metadataStore = null;
         try {
-            metadataStore = new ColumnMetadataStore(filePath);
+            metadataStore = new ColumnMetaFileAccessor(filePath);
             List<Column> columnDtoList = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 Column columnDto = new Column("column_" + i, ColumnTypeConstant.VARCHAR, i, 64);

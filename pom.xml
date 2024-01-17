@@ -42,7 +42,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.moyu.test.net.TcpServer</mainClass>
+                            <mainClass>TcpServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -63,7 +63,7 @@
                             <finalName>yany-server-1.0.0</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.moyu.test.net.TcpServer</mainClass>
+                                    <mainClass>com.moyu.xmz.net.TcpServer</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
@@ -78,7 +78,7 @@
                             <finalName>yany-client-1.0.0</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.moyu.test.terminal.TcpTerminal</mainClass>
+                                    <mainClass>com.moyu.xmz.terminal.TcpTerminal</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
