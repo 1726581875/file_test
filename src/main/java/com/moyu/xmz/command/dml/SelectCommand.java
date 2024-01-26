@@ -146,11 +146,6 @@ public class SelectCommand extends AbstractCommand {
         return result;
     }
 
-    @Override
-    public void reUse() {
-        query.resetQueryCursor();
-    }
-
     public QueryResult getQueryResult() {
         return queryResult;
     }

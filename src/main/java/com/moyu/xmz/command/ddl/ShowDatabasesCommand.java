@@ -8,7 +8,6 @@ import com.moyu.xmz.store.accessor.DatabaseMetaFileAccessor;
 import com.moyu.xmz.store.common.meta.DatabaseMetadata;
 import com.moyu.xmz.store.common.dto.SelectColumn;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -18,27 +17,6 @@ import java.util.List;
 public class ShowDatabasesCommand extends AbstractCommand {
 
     private List<DatabaseMetadata> resultList;
-
-
-    public String[] execAndGetResult() {
-        List<String> list = new ArrayList<>();
-        DatabaseMetaFileAccessor metadataStore = null;
-        try {
-            metadataStore = new DatabaseMetaFileAccessor();
-            List<DatabaseMetadata> allData = metadataStore.getAllData();
-            resultList = allData;
-            for (int i = 0; i < allData.size(); i++) {
-                list.add(allData.get(i).getName() + "  |  " + allData.get(i).getDatabaseId());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (metadataStore != null) {
-                metadataStore.close();
-            }
-        }
-        return list.toArray(new String[0]);
-    }
 
     @Override
     public QueryResult execCommand() {
@@ -68,7 +46,7 @@ public class ShowDatabasesCommand extends AbstractCommand {
         }
 
         long queryEndTime = System.currentTimeMillis();
-        String desc = "查询结果行数:" +  queryResult.getResultRows().size() + ", 耗时:" + (queryEndTime - queryStartTime)  + "ms";
+        String desc = "查询结果行数:" + queryResult.getResultRows().size() + ", 耗时:" + (queryEndTime - queryStartTime) + "ms";
         queryResult.setDesc(desc);
 
         return queryResult;

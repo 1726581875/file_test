@@ -4,14 +4,13 @@ import com.moyu.xmz.command.AbstractCommand;
 import com.moyu.xmz.command.QueryResult;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
-import com.moyu.xmz.session.Database;
 import com.moyu.xmz.session.Table;
 import com.moyu.xmz.store.accessor.ColumnMetaFileAccessor;
 import com.moyu.xmz.store.accessor.IndexMetaFileAccessor;
 import com.moyu.xmz.store.accessor.TableMetaFileAccessor;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.meta.TableMetadata;
 import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.meta.TableMetadata;
 
 import java.util.List;
 
@@ -45,24 +44,19 @@ public class CreateTableCommand extends AbstractCommand {
             TableMetadata table = tableMetaFileAccessor.createTable(tableName, engineType);
             // 插入column元数据
             columnMetaFileAccessor.createColumnBlock(table.getTableId(), columnList);
+            // 添加该表信息到内存
+            Table tableObj = new Table(table);
+            session.getDatabase().addTable(tableObj);
             // 如果有主键，创建主键索引
             Column keyColumn = getPrimaryKeyColumn(columnList.toArray(new Column[0]));
             if(keyColumn != null && CommonConstant.ENGINE_TYPE_YU.equals(engineType)) {
-                OperateTableInfo tableInfo = new OperateTableInfo(session, tableName, columnList.toArray(new Column[0]), null);
+                OperateTableInfo tableInfo = new OperateTableInfo(session, tableObj, null);
                 CreateIndexCommand indexCommand = new CreateIndexCommand(tableInfo);
-                indexCommand.setDatabaseId(databaseId);
-                indexCommand.setTableId(table.getTableId());
-                indexCommand.setColumnName(keyColumn.getColumnName());
                 indexCommand.setIndexName(keyColumn.getColumnName());
-                indexCommand.setTableName(tableName);
-                indexCommand.setColumns(columnList.toArray(new Column[0]));
-                indexCommand.setIndexColumn(keyColumn);
+                indexCommand.setColumnName(keyColumn.getColumnName());
                 indexCommand.setIndexType(CommonConstant.PRIMARY_KEY);
                 indexCommand.execCommand();
             }
-
-            Database database = session.getDatabase();
-            database.addTable(new Table(table));
         } catch (Exception e) {
             isSuccess = false;
             e.printStackTrace();

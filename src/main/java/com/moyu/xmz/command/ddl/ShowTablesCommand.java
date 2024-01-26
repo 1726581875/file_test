@@ -26,27 +26,6 @@ public class ShowTablesCommand extends AbstractCommand {
         this.databaseId = databaseId;
     }
 
-    public String[] getAllTable() {
-        List<String> list = new ArrayList<>();
-        TableMetaFileAccessor metadataStore = null;
-        try {
-            metadataStore = new TableMetaFileAccessor(databaseId);
-            List<TableMetadata> allData = metadataStore.getCurrDbAllTable();
-
-            for (int i = 0; i < allData.size(); i++) {
-                list.add(allData.get(i).getTableName() + "  |  " + allData.get(i).getTableId());
-            }
-            resultList = allData;
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (metadataStore != null) {
-                metadataStore.close();
-            }
-        }
-        return list.toArray(new String[0]);
-    }
-
     @Override
     public QueryResult execCommand() {
 

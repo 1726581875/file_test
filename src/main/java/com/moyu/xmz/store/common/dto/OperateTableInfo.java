@@ -3,6 +3,7 @@ package com.moyu.xmz.store.common.dto;
 import com.moyu.xmz.command.dml.expression.Expression;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
+import com.moyu.xmz.session.Table;
 import com.moyu.xmz.store.common.meta.IndexMetadata;
 
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.List;
 public class OperateTableInfo {
 
     private ConnectSession session;
+
+    private Table table;
 
     private String tableName;
 
@@ -30,6 +33,15 @@ public class OperateTableInfo {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;
+        this.condition = condition;
+    }
+
+    public OperateTableInfo(ConnectSession session, Table table, Expression condition) {
+        this.session = session;
+        this.table = table;
+        this.engineType = table.getEngineType();
+        this.tableName = table.getTableName();
+        this.tableColumns = table.getColumns();
         this.condition = condition;
     }
 
@@ -69,5 +81,9 @@ public class OperateTableInfo {
 
     public Expression getCondition() {
         return condition;
+    }
+
+    public Table getTable() {
+        return table;
     }
 }

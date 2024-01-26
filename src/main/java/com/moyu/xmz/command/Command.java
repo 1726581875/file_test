@@ -9,6 +9,4 @@ public interface Command {
 
     QueryResult execCommand();
 
-    void reUse();
-
 }

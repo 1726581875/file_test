@@ -28,9 +28,9 @@ public class Database {
     private Map<String, Table> tableMap = new ConcurrentHashMap<>();
 
     static {
-        ShowDatabasesCommand showDatabasesCommand = new ShowDatabasesCommand();
-        showDatabasesCommand.execAndGetResult();
-        List<DatabaseMetadata> resultList = showDatabasesCommand.getResultList();
+        ShowDatabasesCommand showDbCommand = new ShowDatabasesCommand();
+        showDbCommand.execCommand();
+        List<DatabaseMetadata> resultList = showDbCommand.getResultList();
         if (resultList != null) {
             for (DatabaseMetadata metadata : resultList) {
                 Database database = new Database(metadata.getDatabaseId(), metadata.getName());

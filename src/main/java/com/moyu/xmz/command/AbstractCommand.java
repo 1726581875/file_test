@@ -27,11 +27,6 @@ public abstract class AbstractCommand implements Command {
     }
 
 
-    @Override
-    public void reUse() {
-
-    }
-
     public List<Parameter> getParameters() {
         return parameters;
     }

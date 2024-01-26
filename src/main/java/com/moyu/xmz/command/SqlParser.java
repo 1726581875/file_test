@@ -129,7 +129,7 @@ public class SqlParser implements Parser {
                         String tableName = parseTableNameOrIndexName();
                         StartEndIndex startEnd = getNextBracketStartEnd();
                         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-                        return getCreateIndexCommand(tableName, columnName, indexName, CommonConstant.GENERAL_INDEX);
+                        return buildCreateIndexCommand(tableName, columnName, indexName, CommonConstant.GENERAL_INDEX);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
@@ -288,33 +288,18 @@ public class SqlParser implements Parser {
         String indexName = parseTableNameOrIndexName();
         StartEndIndex startEnd = getNextBracketStartEnd();
         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-        CreateIndexCommand command = getCreateIndexCommand(tableName, columnName, indexName, indexType);
+        CreateIndexCommand command = buildCreateIndexCommand(tableName, columnName, indexName, indexType);
         return command;
     }
 
 
 
-    private CreateIndexCommand getCreateIndexCommand(String tableName,
-                                                     String columnName,
-                                                     String indexName,
-                                                     byte indexType){
-        TableMetadata tableMeta = getTableMeta(tableName);
-        Column[] columns = getColumns(tableName);
-
-        Column indexColumn = null;
-        for (Column c : columns) {
-            if(columnName.equals(c.getColumnName())) {
-                indexColumn = c;
-            }
-        }
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, columns, null);
-        tableInfo.setEngineType(tableMeta.getEngineType());
-        CreateIndexCommand command = new CreateIndexCommand(tableInfo);
-        command.setTableId(tableMeta.getTableId());
+    private CreateIndexCommand buildCreateIndexCommand(String tableName, String columnName, String indexName, byte indexType){
+        Table table = connectSession.getDatabase().getTable(tableName);
+        CreateIndexCommand command = new CreateIndexCommand(new OperateTableInfo(connectSession, table, null));
         command.setIndexName(indexName);
         command.setColumnName(columnName);
         command.setIndexType(indexType);
-        command.setIndexColumn(indexColumn);
         return command;
     }
 

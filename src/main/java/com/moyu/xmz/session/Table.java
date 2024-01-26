@@ -112,4 +112,8 @@ public class Table {
     public String getEngineType() {
         return engineType;
     }
+
+    public Integer getTableId() {
+        return tableId;
+    }
 }
