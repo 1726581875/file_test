@@ -42,8 +42,9 @@ public class DescTableCommand extends AbstractCommand {
         SelectColumn columnIndex = SelectColumn.newColumn("columnIndex", ColumnTypeConstant.INT_4);
         SelectColumn columnType = SelectColumn.newColumn("columnType", ColumnTypeConstant.CHAR);
         SelectColumn columnLength = SelectColumn.newColumn("columnLength", ColumnTypeConstant.INT_4);
+        SelectColumn comment = SelectColumn.newColumn("comment", ColumnTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
-        queryResult.setSelectColumns(new SelectColumn[]{columnName, columnIndex, columnType, columnLength});
+        queryResult.setSelectColumns(new SelectColumn[]{columnName, columnIndex, columnType, columnLength, comment});
 
         TableMetaFileAccessor metadataStore = null;
         ColumnMetaFileAccessor columnMetaFileAccessor = null;
@@ -73,7 +74,9 @@ public class DescTableCommand extends AbstractCommand {
             // 构造输出结果
             List<ColumnMetadata> columnMetadataList = columnBlock.getColumnMetadataList();
             for (ColumnMetadata column : columnMetadataList) {
-                queryResult.addRow(new Object[]{column.getColumnName(), column.getColumnIndex(), ColumnTypeEnum.getNameByType(column.getColumnType()), column.getColumnLength()});
+                queryResult.addRow(new Object[]{column.getColumnName(), column.getColumnIndex(),
+                        ColumnTypeEnum.getNameByType(column.getColumnType()), column.getColumnLength()
+                        , column.getComment()});
             }
 
 

@@ -87,6 +87,7 @@ public class SqlParser implements Parser {
 
     private static final String VALUE = "VALUE";
     private static final String VALUES = "VALUES";
+    private static final String JOIN = "JOIN";
 
 
     public SqlParser(ConnectSession connectSession) {
@@ -924,7 +925,7 @@ public class SqlParser implements Parser {
                 // skip keyword INNER/LEFT/RIGHT
                 getNextKeyWord();
                 // skip keyword JOIN
-                assertNextKeywordIs("JOIN");
+                assertNextKeywordIs(JOIN);
 
                 // 解析连接表信息
                 QueryTable joinTable = parseTableInfo();
@@ -1965,7 +1966,7 @@ public class SqlParser implements Parser {
             ExceptionUtil.throwSqlIllegalException("sql语法异常,{}", columnStr);
         }
 
-        // 解析字段
+        // 解析字段名
         String columnName = SqlParserUtil.getUnquotedStr(columnKeyWords[0]);
         if((columnName.startsWith("`") && columnName.endsWith("`"))
                 || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
@@ -1988,7 +1989,6 @@ public class SqlParser implements Parser {
                 end = i;
             }
         }
-
         String typeName = null;
         if(end > start && start > 0) {
             columnLength = Integer.valueOf(columnTypeStr.substring(start + 1, end));
@@ -2002,13 +2002,15 @@ public class SqlParser implements Parser {
             ExceptionUtil.throwSqlIllegalException("不支持类型:{}", typeName);
         }
 
+        int nextWordIdx = 2;
         // 判断是否有unsigned关键字修饰
-        if (columnKeyWords.length > 2 && "UNSIGNED".equals(columnKeyWords[2].toUpperCase())) {
+        if (columnKeyWords.length > nextWordIdx && "UNSIGNED".equals(columnKeyWords[nextWordIdx].toUpperCase())) {
             if (type == ColumnTypeConstant.INT_4) {
                 type = ColumnTypeConstant.UNSIGNED_INT_4;
             } else if (type == ColumnTypeConstant.INT_8) {
                 type = ColumnTypeConstant.UNSIGNED_INT_8;
             }
+            nextWordIdx++;
         }
 
         // 如果没有指定字段长度像int、bigint等，要自动给长度
@@ -2025,17 +2027,49 @@ public class SqlParser implements Parser {
         Column column = new Column(columnName, type, columnIndex, columnLength);
 
         // 解析字段类型后面的字段设置，像column varchar(10) DEFAULT/NOT NULL 或者 id varchar(10) PRIMARY KEY等等情况
-        if (columnKeyWords.length >= 3) {
-            String str = columnKeyWords[2].trim();
-            if (str.equals("PRIMARY") || str.equals("primary")) {
-                if (columnKeyWords.length < 4 || !(columnKeyWords[3].trim().equals("KEY")|| columnKeyWords[3].trim().equals("key"))) {
+        if (columnKeyWords.length > nextWordIdx) {
+            String str = columnKeyWords[nextWordIdx].trim();
+            if (str.toUpperCase().equals("PRIMARY")) {
+                nextWordIdx++;
+                if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].trim().toUpperCase().equals("KEY"))) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 PRIMARY语法有误");
                 }
                 column.setIsPrimaryKey((byte) 1);
+                nextWordIdx++;
             } else if (str.equals("NOT")) {
-
+                nextWordIdx++;
+                if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].toUpperCase().equals("NULL"))) {
+                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近，是否为NOT NULL", columnStr);
+                }
+                column.setIsNotNull((byte) 1);
+                nextWordIdx++;
             } else if (str.equals("DEFAULT")) {
+                nextWordIdx++;
+                if (columnKeyWords.length <= nextWordIdx) {
+                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
+                }
+                String defaultVal = columnKeyWords[nextWordIdx];
+                if(defaultVal.toUpperCase().equals("NULL")) {
+                    column.setIsNotNull((byte) 0);
+                    column.setDefaultVal("NULL");
+                } else {
+                    column.setIsNotNull((byte) 0);
+                    column.setDefaultVal(defaultVal);
+                }
+                nextWordIdx++;
+            }
+        }
 
+        // 解析comment字段
+        if (columnKeyWords.length > nextWordIdx) {
+            String str = columnKeyWords[nextWordIdx].trim();
+            if (str.toUpperCase().equals("COMMENT")) {
+                nextWordIdx++;
+                if (columnKeyWords.length <= nextWordIdx) {
+                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
+                }
+                column.setComment(columnKeyWords[nextWordIdx]);
+                nextWordIdx++;
             }
         }
 

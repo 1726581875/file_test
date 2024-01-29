@@ -49,7 +49,8 @@ public class ColumnMetaFileAccessor {
     }
 
 
-    public void createColumnBlock(Integer tableId, List<Column> columnDtoList) {
+    public void createColumnBlock(Integer tableId,
+                                  List<Column> columnDtoList) {
         synchronized (ColumnMetaFileAccessor.class) {
             TableColumnBlock lastData = getLastColumnBlock();
             long startPos = lastData == null ? 0 : lastData.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
@@ -62,6 +63,9 @@ public class ColumnMetaFileAccessor {
                 ColumnMetadata column = new ColumnMetadata(tableId, columnStartPos, columnDto.getColumnName(),
                         columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
                 column.setIsPrimaryKey(columnDto.getIsPrimaryKey());
+                column.setIsNotNull(columnDto.getIsNotNull());
+                column.setDefaultVal(columnDto.getDefaultVal());
+                column.setComment(columnDto.getComment());
                 columnBlock.addColumn(column);
                 columnStartPos += column.getTotalByteLen();
             }

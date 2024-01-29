@@ -1,5 +1,6 @@
 package com.moyu.xmz.store.common.meta;
 
+import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.common.constant.ColumnTypeConstant;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.common.util.DataUtils;
@@ -10,8 +11,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/5
  */
-public class ColumnMetadata implements SerializableByte {
-
+public class ColumnMetadata extends AbstractMetadata implements SerializableByte {
     /**
      * 所有字段占用字节(包含自身)
      */
@@ -24,14 +24,6 @@ public class ColumnMetadata implements SerializableByte {
      * 列字段所属表id
      */
     private int tableId;
-    /**
-     * 字段名字节长度
-     */
-    private int columnNameByteLen;
-    /**
-     * 字段名字符长度
-     */
-    private int columnNameCharLen;
     /**
      * 字段名
      */
@@ -53,23 +45,29 @@ public class ColumnMetadata implements SerializableByte {
      * 是否主键索引 1:是 、0否
      */
     private byte isPrimaryKey;
+    /**
+     * 字段注释，允许空的字段
+     */
+    private String comment;
+    /**
+     * 是否允许为空 1是、0否
+     */
+    private byte isNotNull;
+    /**
+     * 字段默认值,如果是空或者NULL表示默认空
+     * 如果有默认值，字符传、日期这类会带上单引号或者双引号
+     */
+    private String defaultVal;
 
 
-    public ColumnMetadata(int tableId,
-                          long startPos,
-                          String columnName,
-                          byte columnType,
-                          int columnIndex,
-                          int columnLength) {
+    public ColumnMetadata(int tableId, long startPos,String columnName,byte columnType,int columnIndex,int columnLength) {
         this.startPos = startPos;
         this.tableId = tableId;
         this.columnName = columnName;
-        this.columnNameByteLen = DataUtils.getDateStringByteLength(columnName);
-        this.columnNameCharLen = columnName.length();
         this.columnType = columnType;
         this.columnIndex = columnIndex;
         this.columnLength = columnLength;
-        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + this.columnNameByteLen + 1 + 4 + 4 + 1;
+        this.totalByteLen = 0;
         this.isPrimaryKey = 0;
     }
 
@@ -77,33 +75,34 @@ public class ColumnMetadata implements SerializableByte {
         this.totalByteLen = DataUtils.readInt(byteBuffer);
         this.startPos = DataUtils.readLong(byteBuffer);
         this.tableId = DataUtils.readInt(byteBuffer);
-        this.columnNameByteLen = DataUtils.readInt(byteBuffer);
-        this.columnNameCharLen = DataUtils.readInt(byteBuffer);
-        this.columnName = DataUtils.readString(byteBuffer, this.columnNameCharLen);
+        this.columnName = readString(byteBuffer);
         this.columnType = byteBuffer.get();
         this.columnIndex = DataUtils.readInt(byteBuffer);
         this.columnLength = DataUtils.readInt(byteBuffer);
         this.isPrimaryKey = byteBuffer.get();
+        this.comment = readString(byteBuffer);
+        this.isNotNull = byteBuffer.get();
+        this.defaultVal = readString(byteBuffer);
     }
 
 
     @Override
     public ByteBuffer getByteBuffer() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(totalByteLen);
-        DataUtils.writeInt(byteBuffer, totalByteLen);
-        DataUtils.writeLong(byteBuffer, startPos);
-        DataUtils.writeInt(byteBuffer, tableId);
-
-        DataUtils.writeInt(byteBuffer, columnNameByteLen);
-        DataUtils.writeInt(byteBuffer, columnNameCharLen);
-        DataUtils.writeStringData(byteBuffer, columnName, columnName.length());
-
+        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
+        byteBuffer.putInt(totalByteLen);
+        byteBuffer.putLong(startPos);
+        byteBuffer.putInt(tableId);
+        writeString(byteBuffer, columnName);
         byteBuffer.put(columnType);
-        DataUtils.writeInt(byteBuffer, columnIndex);
-        DataUtils.writeInt(byteBuffer, columnLength);
+        byteBuffer.putInt(columnIndex);
+        byteBuffer.putInt(columnLength);
         byteBuffer.put(isPrimaryKey);
-        byteBuffer.rewind();
-        return byteBuffer;
+        writeString(byteBuffer, comment);
+        byteBuffer.put(isNotNull);
+        writeString(byteBuffer, defaultVal);
+        int position = byteBuffer.position();
+        byteBuffer.putInt(0, position);
+        return  byteBuffer.flipAndGetBuffer();
     }
 
 
@@ -129,22 +128,6 @@ public class ColumnMetadata implements SerializableByte {
 
     public void setTableId(int tableId) {
         this.tableId = tableId;
-    }
-
-    public int getColumnNameByteLen() {
-        return columnNameByteLen;
-    }
-
-    public void setColumnNameByteLen(int columnNameByteLen) {
-        this.columnNameByteLen = columnNameByteLen;
-    }
-
-    public int getColumnNameCharLen() {
-        return columnNameCharLen;
-    }
-
-    public void setColumnNameCharLen(int columnNameCharLen) {
-        this.columnNameCharLen = columnNameCharLen;
     }
 
     public String getColumnName() {
@@ -188,5 +171,27 @@ public class ColumnMetadata implements SerializableByte {
         this.isPrimaryKey = isPrimaryKey;
     }
 
+    public String getComment() {
+        return comment;
+    }
 
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public byte getIsNotNull() {
+        return isNotNull;
+    }
+
+    public void setIsNotNull(byte isNotNull) {
+        this.isNotNull = isNotNull;
+    }
+
+    public String getDefaultVal() {
+        return defaultVal;
+    }
+
+    public void setDefaultVal(String defaultVal) {
+        this.defaultVal = defaultVal;
+    }
 }

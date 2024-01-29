@@ -1,5 +1,6 @@
 package com.moyu.xmz.store.accessor;
 
+import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.store.common.meta.DatabaseMetadata;
 import com.moyu.xmz.common.constant.JavaTypeConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
@@ -129,8 +130,11 @@ public class DatabaseMetaFileAccessor {
 
 
     private void init() throws IOException {
+
+        FileUtil.createDirIfNotExists(filePath);
+
         String databasePath = filePath + File.separator + DATABASE_META_FILE_NAME;
-        // 1、初始化"数据库"的元数据文件，不存在会创建文件，并把所有数据库信息读取到内存
+        // 初始化"数据库"的元数据文件，不存在则创建文件，并把所有数据库信息读取到内存
         File dbFile = new File(databasePath);
         if (!dbFile.exists()) {
             dbFile.createNewFile();

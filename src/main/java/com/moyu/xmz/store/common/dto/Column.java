@@ -36,6 +36,19 @@ public class Column {
      */
     private byte isPrimaryKey;
     /**
+     * 字段注释，允许空的字段
+     */
+    private String comment;
+    /**
+     * 是否不能为空，0否、1是
+     */
+    private byte isNotNull;
+    /**
+     * 字段默认值,如果是空或者NULL表示默认空
+     * 如果有默认值，字符传、日期这类会带上单引号或者双引号
+     */
+    private String defaultVal;
+    /**
      * 字段值
      */
     private Object value;
@@ -47,6 +60,7 @@ public class Column {
         this.columnIndex = columnIndex;
         this.columnLength = columnLength;
         this.isPrimaryKey = 0;
+        this.isNotNull = 0;
     }
 
 
@@ -134,6 +148,30 @@ public class Column {
 
     public void setTableAlias(String tableAlias) {
         this.tableAlias = tableAlias;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public byte getIsNotNull() {
+        return isNotNull;
+    }
+
+    public void setIsNotNull(byte isNotNull) {
+        this.isNotNull = isNotNull;
+    }
+
+    public String getDefaultVal() {
+        return defaultVal;
+    }
+
+    public void setDefaultVal(String defaultVal) {
+        this.defaultVal = defaultVal;
     }
 
     @Override
