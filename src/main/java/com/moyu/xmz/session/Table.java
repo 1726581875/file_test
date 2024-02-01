@@ -64,7 +64,7 @@ public class Table {
             columnStore = new ColumnMetaFileAccessor(databaseId);
             tableMetadata = tableMetaFileAccessor.getTable(tableName);
             if(tableMetadata == null) {
-                throw new SqlExecutionException("表" + tableName + "不存在");
+                ExceptionUtil.throwSqlExecutionException("数据库id{}的表{}不存在", databaseId, tableName);
             }
             TableColumnBlock columnBlock = columnStore.getColumnBlock(tableMetadata.getTableId());
             columnMetadataList = columnBlock.getColumnMetadataList();
@@ -72,7 +72,7 @@ public class Table {
             throw e;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new DbException("获取字段信息发生异常");
+            ExceptionUtil.throwDbException("数据库id{}的表{}获取字段信息发生异常", databaseId, tableName);
         } finally {
             if(columnStore != null) {
                 columnStore.close();
@@ -87,15 +87,8 @@ public class Table {
         }
 
         Column[] columns = new Column[columnMetadataList.size()];
-
         for (int i = 0; i < columnMetadataList.size(); i++) {
-            ColumnMetadata metadata = columnMetadataList.get(i);
-            Column column = new Column(metadata.getColumnName(),
-                    metadata.getColumnType(),
-                    metadata.getColumnIndex(),
-                    metadata.getColumnLength());
-            column.setIsPrimaryKey(metadata.getIsPrimaryKey());
-            columns[i] = column;
+            columns[i] = new Column(columnMetadataList.get(i));
         }
 
         this.columns = columns;

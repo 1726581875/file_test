@@ -1,6 +1,7 @@
 package com.moyu.xmz.store.common.dto;
 
 import com.moyu.xmz.command.dml.sql.Parameter;
+import com.moyu.xmz.store.common.meta.ColumnMetadata;
 
 /**
  * @author xiaomingzhang
@@ -63,6 +64,17 @@ public class Column {
         this.isNotNull = 0;
     }
 
+    public Column(ColumnMetadata metadata) {
+        this.columnName = metadata.getColumnName();
+        this.columnType = metadata.getColumnType();
+        this.columnIndex = metadata.getColumnIndex();
+        this.columnLength = metadata.getColumnLength();
+        this.isPrimaryKey = metadata.getIsPrimaryKey();
+        this.isNotNull = metadata.getIsNotNull();
+        this.comment = metadata.getComment();
+        this.defaultVal = metadata.getDefaultVal();
+    }
+
 
     public Column createNullValueColumn() {
         Column column = new Column(columnName, columnType, columnIndex, columnLength);
@@ -79,6 +91,9 @@ public class Column {
         column.setTableAlias(tableAlias);
         column.setAlias(alias);
         column.setValue(value);
+        column.setIsNotNull(isNotNull);
+        column.setComment(comment);
+        column.setDefaultVal(defaultVal);
         return column;
     }
 
@@ -222,6 +237,7 @@ public class Column {
         return tableAlias + columnName;
     }
 
+
     @Override
     public String toString() {
         return "Column{" +
@@ -232,6 +248,9 @@ public class Column {
                 ", columnIndex=" + columnIndex +
                 ", columnLength=" + columnLength +
                 ", isPrimaryKey=" + isPrimaryKey +
+                ", comment='" + comment + '\'' +
+                ", isNotNull=" + isNotNull +
+                ", defaultVal='" + defaultVal + '\'' +
                 ", value=" + value +
                 '}';
     }

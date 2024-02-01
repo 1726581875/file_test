@@ -351,7 +351,7 @@ public class SqlParser implements Parser {
             String columnStr = updateColumnStrArr[i];
             String[] split = columnStr.split("=");
             if(split.length != 2) {
-                ExceptionUtil.throwSqlIllegalException("sql语法有误");
+                ExceptionUtil.throwSqlIllegalException("sql语法有误,再{}附近", columnStr);
             }
             String columnNameStr = split[0].trim();
             String columnValueStr = split[1].trim();
@@ -1773,9 +1773,12 @@ public class SqlParser implements Parser {
 
     private void setColumnValue(Column column, String value) {
 
-        // TODO 默认空值，以后判断字段是否非空做校验
-        if(value == null) {
-            //value = "null";
+        if(column.getDefaultVal() != null && isNullValue(value)) {
+            value = column.getDefaultVal();
+        }
+
+        if(column.getIsNotNull() == 1 && isNullValue(value)) {
+            ExceptionUtil.throwSqlIllegalException("字段{}不能为空", column.getColumnName());
         }
 
         switch (column.getColumnType()) {
@@ -2028,32 +2031,44 @@ public class SqlParser implements Parser {
 
         // 解析字段类型后面的字段设置，像column varchar(10) DEFAULT/NOT NULL 或者 id varchar(10) PRIMARY KEY等等情况
         if (columnKeyWords.length > nextWordIdx) {
-            String str = columnKeyWords[nextWordIdx].trim();
-            if (str.toUpperCase().equals("PRIMARY")) {
+            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
+            if (str.equals("PRIMARY")) {
                 nextWordIdx++;
                 if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].trim().toUpperCase().equals("KEY"))) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 PRIMARY语法有误");
                 }
                 column.setIsPrimaryKey((byte) 1);
                 nextWordIdx++;
-            } else if (str.equals("NOT")) {
+            }
+        }
+
+        if (columnKeyWords.length > nextWordIdx) {
+            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
+            if (str.equals("NOT")) {
                 nextWordIdx++;
                 if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].toUpperCase().equals("NULL"))) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近，是否为NOT NULL", columnStr);
                 }
                 column.setIsNotNull((byte) 1);
                 nextWordIdx++;
-            } else if (str.equals("DEFAULT")) {
+            }
+        }
+
+        if (columnKeyWords.length > nextWordIdx) {
+            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
+            if (str.equals("DEFAULT")) {
                 nextWordIdx++;
                 if (columnKeyWords.length <= nextWordIdx) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
                 }
                 String defaultVal = columnKeyWords[nextWordIdx];
-                if(defaultVal.toUpperCase().equals("NULL")) {
+                if (defaultVal.toUpperCase().equals("NULL")) {
+                    if(column.getIsNotNull() == (byte) 1) {
+                        ExceptionUtil.throwSqlIllegalException("字段{}不能允许为空，检查是否使NOT NULL和DEFAULT NULL同时使用", column.getColumnName());
+                    }
                     column.setIsNotNull((byte) 0);
                     column.setDefaultVal("NULL");
                 } else {
-                    column.setIsNotNull((byte) 0);
                     column.setDefaultVal(defaultVal);
                 }
                 nextWordIdx++;
@@ -2068,7 +2083,14 @@ public class SqlParser implements Parser {
                 if (columnKeyWords.length <= nextWordIdx) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
                 }
-                column.setComment(columnKeyWords[nextWordIdx]);
+                String comment = columnKeyWords[nextWordIdx];
+                if ((comment.startsWith("'") && comment.endsWith("'"))
+                        || (comment.startsWith("\"") && comment.endsWith("\""))) {
+                    comment = comment.substring(1, comment.length() - 1);
+                } else {
+                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
+                }
+                column.setComment(comment);
                 nextWordIdx++;
             }
         }

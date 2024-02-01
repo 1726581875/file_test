@@ -43,8 +43,10 @@ public class DescTableCommand extends AbstractCommand {
         SelectColumn columnType = SelectColumn.newColumn("columnType", ColumnTypeConstant.CHAR);
         SelectColumn columnLength = SelectColumn.newColumn("columnLength", ColumnTypeConstant.INT_4);
         SelectColumn comment = SelectColumn.newColumn("comment", ColumnTypeConstant.CHAR);
+        SelectColumn isNotNull = SelectColumn.newColumn("isNotNull", ColumnTypeConstant.INT_4);
+        SelectColumn defaultVal = SelectColumn.newColumn("defaultVal", ColumnTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
-        queryResult.setSelectColumns(new SelectColumn[]{columnName, columnIndex, columnType, columnLength, comment});
+        queryResult.setSelectColumns(new SelectColumn[]{columnName, columnIndex, columnType, columnLength, comment, isNotNull, defaultVal});
 
         TableMetaFileAccessor metadataStore = null;
         ColumnMetaFileAccessor columnMetaFileAccessor = null;
@@ -76,7 +78,7 @@ public class DescTableCommand extends AbstractCommand {
             for (ColumnMetadata column : columnMetadataList) {
                 queryResult.addRow(new Object[]{column.getColumnName(), column.getColumnIndex(),
                         ColumnTypeEnum.getNameByType(column.getColumnType()), column.getColumnLength()
-                        , column.getComment()});
+                        , column.getComment(), column.getIsNotNull(), column.getDefaultVal()});
             }
 
 
