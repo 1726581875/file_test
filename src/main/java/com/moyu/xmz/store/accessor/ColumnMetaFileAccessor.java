@@ -49,28 +49,20 @@ public class ColumnMetaFileAccessor {
     }
 
 
-    public void createColumnBlock(Integer tableId,
-                                  List<Column> columnDtoList) {
+    public void createColumnBlock(Integer tableId, List<Column> columnDtoList) {
         synchronized (ColumnMetaFileAccessor.class) {
             TableColumnBlock lastData = getLastColumnBlock();
             long startPos = lastData == null ? 0 : lastData.getStartPos() + TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE;
             int blockIndex = lastData == null ? 0 : lastData.getBlockIndex() + 1;
-
             TableColumnBlock columnBlock = new TableColumnBlock(blockIndex, startPos, tableId);
             long columnStartPos = columnBlock.getStartPos();
             for (int i = 0; i < columnDtoList.size(); i++) {
                 Column columnDto = columnDtoList.get(i);
-                ColumnMetadata column = new ColumnMetadata(tableId, columnStartPos, columnDto.getColumnName(),
-                        columnDto.getColumnType(), columnDto.getColumnIndex(), columnDto.getColumnLength());
-                column.setIsPrimaryKey(columnDto.getIsPrimaryKey());
-                column.setIsNotNull(columnDto.getIsNotNull());
-                column.setDefaultVal(columnDto.getDefaultVal());
-                column.setComment(columnDto.getComment());
-                columnBlock.addColumn(column);
+                ColumnMetadata column = new ColumnMetadata(tableId, columnStartPos, columnDto);
                 columnStartPos += column.getTotalByteLen();
+                columnBlock.addColumn(column);
             }
             fileAccessor.write(columnBlock.getByteBuffer(), startPos);
-
             columnBlockMap.put(columnBlock.getTableId(), columnBlock);
             columnBlockList.add(columnBlock);
         }

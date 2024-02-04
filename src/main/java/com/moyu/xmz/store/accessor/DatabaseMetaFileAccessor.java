@@ -4,7 +4,7 @@ import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.store.common.meta.DatabaseMetadata;
 import com.moyu.xmz.common.constant.JavaTypeConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.PathUtil;
 
 import java.io.File;
@@ -144,7 +144,7 @@ public class DatabaseMetaFileAccessor {
         if (endPosition > JavaTypeConstant.INT_LENGTH) {
             long currPos = 0;
             while (currPos < endPosition) {
-                int dataByteLen = DataUtils.readInt(fileAccessor.read(currPos, JavaTypeConstant.INT_LENGTH));
+                int dataByteLen = DataByteUtils.readInt(fileAccessor.read(currPos, JavaTypeConstant.INT_LENGTH));
                 ByteBuffer readBuffer = fileAccessor.read(currPos, dataByteLen);
                 DatabaseMetadata dbMetadata = new DatabaseMetadata(readBuffer);
                 databaseMetadataList.add(dbMetadata);

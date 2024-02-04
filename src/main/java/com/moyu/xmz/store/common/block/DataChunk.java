@@ -2,7 +2,7 @@ package com.moyu.xmz.store.common.block;
 
 import com.moyu.xmz.store.common.meta.RowMetadata;
 import com.moyu.xmz.common.exception.SqlExecutionException;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -62,12 +62,12 @@ public class DataChunk {
     }
 
     public DataChunk(ByteBuffer byteBuffer) {
-        this.usedByteLen = DataUtils.readInt(byteBuffer);
-        this.chunkIndex = DataUtils.readInt(byteBuffer);
-        this.rowNum = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.rowStartPos = DataUtils.readLong(byteBuffer);
-        this.nextRowStartPos = DataUtils.readLong(byteBuffer);
+        this.usedByteLen = DataByteUtils.readInt(byteBuffer);
+        this.chunkIndex = DataByteUtils.readInt(byteBuffer);
+        this.rowNum = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.rowStartPos = DataByteUtils.readLong(byteBuffer);
+        this.nextRowStartPos = DataByteUtils.readLong(byteBuffer);
 
         this.dataRowList = new ArrayList<>();
         for (int i = 0; i < this.rowNum; i++) {
@@ -78,12 +78,12 @@ public class DataChunk {
 
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(DATA_CHUNK_LEN);
-        DataUtils.writeInt(byteBuffer, this.usedByteLen);
-        DataUtils.writeInt(byteBuffer, this.chunkIndex);
-        DataUtils.writeInt(byteBuffer, this.rowNum);
-        DataUtils.writeLong(byteBuffer, this.startPos);
-        DataUtils.writeLong(byteBuffer, this.rowStartPos);
-        DataUtils.writeLong(byteBuffer, this.nextRowStartPos);
+        DataByteUtils.writeInt(byteBuffer, this.usedByteLen);
+        DataByteUtils.writeInt(byteBuffer, this.chunkIndex);
+        DataByteUtils.writeInt(byteBuffer, this.rowNum);
+        DataByteUtils.writeLong(byteBuffer, this.startPos);
+        DataByteUtils.writeLong(byteBuffer, this.rowStartPos);
+        DataByteUtils.writeLong(byteBuffer, this.nextRowStartPos);
 
         if (this.dataRowList != null && this.dataRowList.size() > 0) {
             for (int i = 0; i < this.dataRowList.size(); i++) {

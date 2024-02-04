@@ -5,7 +5,7 @@ import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.store.common.block.DataChunk;
 import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
 import com.moyu.xmz.store.common.meta.RowMetadata;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.PathUtil;
 
 import java.nio.ByteBuffer;
@@ -83,12 +83,12 @@ public class Transaction implements TxOperator, SerializableByte {
 
 
     public Transaction(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.transactionId = DataUtils.readInt(byteBuffer);
-        this.status = DataUtils.readInt(byteBuffer);
-        this.startTime = DataUtils.readLong(byteBuffer);
-        this.recordNum = DataUtils.readInt(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.transactionId = DataByteUtils.readInt(byteBuffer);
+        this.status = DataByteUtils.readInt(byteBuffer);
+        this.startTime = DataByteUtils.readLong(byteBuffer);
+        this.recordNum = DataByteUtils.readInt(byteBuffer);
         this.rowLogRecords = new ArrayList<>();
         for (int i = 0; i < this.recordNum; i++) {
             this.rowLogRecords.add(new RowLogRecord(byteBuffer));
@@ -99,14 +99,14 @@ public class Transaction implements TxOperator, SerializableByte {
     @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(BLOCK_SIZE);
-        DataUtils.writeInt(byteBuffer, this.totalByteLen);
-        DataUtils.writeLong(byteBuffer, this.startPos);
-        DataUtils.writeInt(byteBuffer, this.transactionId);
-        DataUtils.writeInt(byteBuffer, this.status);
-        DataUtils.writeLong(byteBuffer, this.startTime);
+        DataByteUtils.writeInt(byteBuffer, this.totalByteLen);
+        DataByteUtils.writeLong(byteBuffer, this.startPos);
+        DataByteUtils.writeInt(byteBuffer, this.transactionId);
+        DataByteUtils.writeInt(byteBuffer, this.status);
+        DataByteUtils.writeLong(byteBuffer, this.startTime);
 
         this.recordNum = rowLogRecords.size();
-        DataUtils.writeInt(byteBuffer, this.recordNum);
+        DataByteUtils.writeInt(byteBuffer, this.recordNum);
         for (int i = 0; i < this.rowLogRecords.size(); i++) {
             RowLogRecord rowLogRecord = this.rowLogRecords.get(i);
             byteBuffer.put(rowLogRecord.getByteBuffer());

@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.store.common.WriteBuffer;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -14,8 +14,8 @@ public class StringColumnType extends AbstractColumnType<String> {
 
     @Override
     protected String readValue(ByteBuffer byteBuffer) {
-        int charLen = DataUtils.readInt(byteBuffer);
-        return DataUtils.readString(byteBuffer, charLen);
+        int charLen = DataByteUtils.readInt(byteBuffer);
+        return DataByteUtils.readString(byteBuffer, charLen);
     }
 
     @Override

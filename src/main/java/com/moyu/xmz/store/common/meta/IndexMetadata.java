@@ -1,7 +1,8 @@
 package com.moyu.xmz.store.common.meta;
 
+import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -9,12 +10,14 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/30
  */
-public class IndexMetadata implements SerializableByte {
+public class IndexMetadata extends AbstractMetadata implements SerializableByte {
 
     private int totalByteLen;
 
     private long startPos;
-
+    /**
+     * 表id
+     */
     private int tableId;
     /**
      * 索引名
@@ -42,33 +45,28 @@ public class IndexMetadata implements SerializableByte {
     }
 
     public IndexMetadata(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.tableId = DataUtils.readInt(byteBuffer);
-        int l1 = DataUtils.readInt(byteBuffer);
-        this.indexName = DataUtils.readString(byteBuffer, l1);
-        int l2 = DataUtils.readInt(byteBuffer);
-        this.columnName = DataUtils.readString(byteBuffer, l2);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.tableId = DataByteUtils.readInt(byteBuffer);
+        this.indexName = readString(byteBuffer);
+        this.columnName = readString(byteBuffer);
         this.indexType = byteBuffer.get();
     }
 
 
     @Override
     public ByteBuffer getByteBuffer() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(this.totalByteLen);
+        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
         byteBuffer.putInt(this.totalByteLen);
         byteBuffer.putLong(this.startPos);
         byteBuffer.putInt(this.tableId);
-        byteBuffer.putInt(this.indexName.length());
-        DataUtils.writeStringData(byteBuffer, this.indexName, this.indexName.length());
-        byteBuffer.putInt(this.columnName.length());
-        DataUtils.writeStringData(byteBuffer, this.columnName, this.columnName.length());
+        writeString(byteBuffer, this.indexName);
+        writeString(byteBuffer, this.columnName);
         byteBuffer.put(this.indexType);
-        // 获取真实长度
+        // 获取字节长度
         this.totalByteLen = byteBuffer.position();
         byteBuffer.putInt(0, this.totalByteLen);
-        byteBuffer.flip();
-        return byteBuffer;
+        return byteBuffer.flipAndGetBuffer();
     }
 
     public int getTotalByteLen() {

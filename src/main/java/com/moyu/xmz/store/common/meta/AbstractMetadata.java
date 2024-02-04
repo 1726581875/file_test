@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.common.meta;
 
 import com.moyu.xmz.common.DynamicByteBuffer;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -27,8 +27,8 @@ public abstract class AbstractMetadata {
         if (flag == (byte) 0) {
             return null;
         } else {
-            int len = DataUtils.readInt(byteBuffer);
-            return DataUtils.readString(byteBuffer, len);
+            int len = DataByteUtils.readInt(byteBuffer);
+            return DataByteUtils.readString(byteBuffer, len);
         }
     }
 

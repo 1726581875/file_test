@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.store.common.WriteBuffer;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Date;
@@ -14,7 +14,7 @@ public class DateColumnType extends AbstractColumnType<Date> {
 
     @Override
     protected Date readValue(ByteBuffer byteBuffer) {
-        long time = DataUtils.readLong(byteBuffer);
+        long time = DataByteUtils.readLong(byteBuffer);
         return new Date(time);
     }
 

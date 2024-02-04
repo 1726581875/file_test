@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.store.common.WriteBuffer;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import java.nio.ByteBuffer;
 
 /**
@@ -17,7 +17,7 @@ public class UnsignedIntColumnType extends AbstractColumnType<Long> {
 
     @Override
     protected Long readValue(ByteBuffer byteBuffer) {
-        Long value = DataUtils.readLong(byteBuffer);
+        Long value = DataByteUtils.readLong(byteBuffer);
         return value;
     }
 

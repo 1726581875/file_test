@@ -2,7 +2,7 @@ package com.moyu.xmz.store.common.block;
 
 import com.moyu.xmz.store.common.meta.IndexMetadata;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,6 +11,7 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/5/30
+ * 表的索引块，包含一个表的所有索引元数据
  */
 public class TableIndexBlock implements SerializableByte {
 
@@ -42,12 +43,12 @@ public class TableIndexBlock implements SerializableByte {
 
 
     public TableIndexBlock(ByteBuffer byteBuffer) {
-        this.usedByteLen = DataUtils.readInt(byteBuffer);
-        this.blockIndex = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.tableId = DataUtils.readInt(byteBuffer);
-        this.indexNum = DataUtils.readInt(byteBuffer);
-        this.indexStartPos = DataUtils.readLong(byteBuffer);
+        this.usedByteLen = DataByteUtils.readInt(byteBuffer);
+        this.blockIndex = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.tableId = DataByteUtils.readInt(byteBuffer);
+        this.indexNum = DataByteUtils.readInt(byteBuffer);
+        this.indexStartPos = DataByteUtils.readLong(byteBuffer);
         this.indexMetadataList = new ArrayList<>(indexNum);
         for (int i = 1; i <= indexNum; i++) {
             this.indexMetadataList.add(new IndexMetadata(byteBuffer));
@@ -58,12 +59,12 @@ public class TableIndexBlock implements SerializableByte {
     @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(TABLE_COLUMN_BLOCK_SIZE);
-        DataUtils.writeInt(byteBuffer, usedByteLen);
-        DataUtils.writeInt(byteBuffer, blockIndex);
-        DataUtils.writeLong(byteBuffer, startPos);
-        DataUtils.writeInt(byteBuffer, tableId);
-        DataUtils.writeInt(byteBuffer, indexNum);
-        DataUtils.writeLong(byteBuffer, indexStartPos);
+        DataByteUtils.writeInt(byteBuffer, usedByteLen);
+        DataByteUtils.writeInt(byteBuffer, blockIndex);
+        DataByteUtils.writeLong(byteBuffer, startPos);
+        DataByteUtils.writeInt(byteBuffer, tableId);
+        DataByteUtils.writeInt(byteBuffer, indexNum);
+        DataByteUtils.writeLong(byteBuffer, indexStartPos);
         for (int i = 0; i < this.indexMetadataList.size(); i++) {
             IndexMetadata index = this.indexMetadataList.get(i);
             byteBuffer.put(index.getByteBuffer());

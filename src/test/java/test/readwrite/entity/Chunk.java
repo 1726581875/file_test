@@ -1,6 +1,6 @@
 package test.readwrite.entity;
 
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -36,7 +36,7 @@ public class Chunk {
     public Chunk(long chunkStartPos, String data) {
         this.chunkStartPos = chunkStartPos;
         this.charLen = data.length();
-        this.dataLen = DataUtils.getDateStringByteLength(data);
+        this.dataLen = DataByteUtils.getDateStringByteLength(data);
         // chunkStartPos + chunkLen + nextChunkPos + dataLen + charLen = 28 再加上data的字节长度
         this.chunkLen = 28 + dataLen;
         this.nextChunkPos = chunkStartPos + chunkLen;
@@ -45,23 +45,23 @@ public class Chunk {
 
 
     public Chunk(ByteBuffer readBuff) {
-        this.chunkLen = DataUtils.readInt(readBuff);
-        this.chunkStartPos = DataUtils.readLong(readBuff);
-        this.nextChunkPos = DataUtils.readLong(readBuff);
-        this.dataLen = DataUtils.readInt(readBuff);
-        this.charLen = DataUtils.readInt(readBuff);
-        this.data = DataUtils.readString(readBuff, charLen);
+        this.chunkLen = DataByteUtils.readInt(readBuff);
+        this.chunkStartPos = DataByteUtils.readLong(readBuff);
+        this.nextChunkPos = DataByteUtils.readLong(readBuff);
+        this.dataLen = DataByteUtils.readInt(readBuff);
+        this.charLen = DataByteUtils.readInt(readBuff);
+        this.data = DataByteUtils.readString(readBuff, charLen);
     }
 
 
     public ByteBuffer getByteBuff() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(chunkLen);
-        DataUtils.writeInt(byteBuffer, chunkLen);
-        DataUtils.writeLong(byteBuffer, chunkStartPos);
-        DataUtils.writeLong(byteBuffer, nextChunkPos);
-        DataUtils.writeInt(byteBuffer, dataLen);
-        DataUtils.writeInt(byteBuffer, charLen);
-        DataUtils.writeStringData(byteBuffer, data, data.length());
+        DataByteUtils.writeInt(byteBuffer, chunkLen);
+        DataByteUtils.writeLong(byteBuffer, chunkStartPos);
+        DataByteUtils.writeLong(byteBuffer, nextChunkPos);
+        DataByteUtils.writeInt(byteBuffer, dataLen);
+        DataByteUtils.writeInt(byteBuffer, charLen);
+        DataByteUtils.writeStringData(byteBuffer, data, data.length());
         byteBuffer.rewind();
         return byteBuffer;
     }

@@ -8,7 +8,7 @@ import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -75,10 +75,10 @@ public class RowValue extends Value {
     }
 
     public RowValue(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.rowByteLen = DataUtils.readInt(byteBuffer);
-        this.rowId = DataUtils.readLong(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.rowByteLen = DataByteUtils.readInt(byteBuffer);
+        this.rowId = DataByteUtils.readLong(byteBuffer);
         this.isDeleted = byteBuffer.get();
         byte[] row = new byte[rowByteLen];
         byteBuffer.get(row);
@@ -89,10 +89,10 @@ public class RowValue extends Value {
     @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(totalByteLen);
-        DataUtils.writeInt(byteBuffer, this.totalByteLen);
-        DataUtils.writeLong(byteBuffer, this.startPos);
-        DataUtils.writeInt(byteBuffer, this.rowByteLen);
-        DataUtils.writeLong(byteBuffer, this.rowId);
+        DataByteUtils.writeInt(byteBuffer, this.totalByteLen);
+        DataByteUtils.writeLong(byteBuffer, this.startPos);
+        DataByteUtils.writeInt(byteBuffer, this.rowByteLen);
+        DataByteUtils.writeLong(byteBuffer, this.rowId);
         byteBuffer.put(isDeleted);
         byteBuffer.put(this.columnBytes);
         byteBuffer.rewind();

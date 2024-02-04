@@ -1,6 +1,6 @@
 package test.net.simpletest02;
 
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ public class ServerTest02 {
                     ByteBuffer dbIdBytes = ByteBuffer.allocate(4);
                     dbIdBytes.put(bytes);
                     dbIdBytes.rewind();
-                    int dbId = DataUtils.readInt(dbIdBytes);
+                    int dbId = DataByteUtils.readInt(dbIdBytes);
                     System.out.println("databaseId=" + dbId);
 
                     // 读取客户端发送的消息

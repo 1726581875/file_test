@@ -1,7 +1,7 @@
 package test.readwrite;
 
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import test.readwrite.entity.Chunk;
 import test.readwrite.entity.FileHeader;
 
@@ -40,7 +40,7 @@ public class UnfixedLengthStore {
             synchronized (this) {
                 long chunkLenAttrStartPos = currentPos;
                 ByteBuffer chunkLenBuff = fileAccessor.read(chunkLenAttrStartPos, 4);
-                int chunkLen = DataUtils.readInt(chunkLenBuff);
+                int chunkLen = DataByteUtils.readInt(chunkLenBuff);
                 ByteBuffer byteBuff = fileAccessor.read(currentPos, chunkLen);
                 Chunk chunk = new Chunk(byteBuff);
                 currentPos += chunkLen;

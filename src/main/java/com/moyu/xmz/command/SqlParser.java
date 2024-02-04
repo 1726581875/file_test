@@ -55,26 +55,20 @@ public class SqlParser implements Parser {
 
     private List<Parameter> parameterList = new ArrayList<>();
 
-
     private static final String CREATE = "CREATE";
     private static final String UPDATE = "UPDATE";
     private static final String DELETE = "DELETE";
     private static final String SELECT = "SELECT";
     private static final String INSERT = "INSERT";
     private static final String TRUNCATE = "TRUNCATE";
-
     private static final String ALTER = "ALTER";
-
     private static final String DROP = "DROP";
     private static final String SHOW = "SHOW";
     private static final String DESC = "DESC";
-
     private static final String DATABASE = "DATABASE";
     private static final String TABLE = "TABLE";
     private static final String INDEX = "INDEX";
-
     private static final String DISTINCT = "DISTINCT";
-
     private static final String FROM = "FROM";
     private static final String WHERE = "WHERE";
     private static final String GROUP = "GROUP";
@@ -84,10 +78,14 @@ public class SqlParser implements Parser {
     private static final String BY = "BY";
     private static final String AS = "AS";
     private static final String ON = "ON";
-
     private static final String VALUE = "VALUE";
     private static final String VALUES = "VALUES";
     private static final String JOIN = "JOIN";
+    private static final String IS = "IS";
+    private static final String NOT = "NOT";
+    private static final String NULL = "NULL";
+    private static final String DEFAULT = "DEFAULT";
+
 
 
     public SqlParser(ConnectSession connectSession) {
@@ -1430,9 +1428,9 @@ public class SqlParser implements Parser {
                     throw new DbException("目前不支持EXISTS查询");
                 }
                 break;
-            case "IS":
+            case IS:
                 String word1 = getNextKeyWord();
-                if ("NULL".equals(word1)) {
+                if (NULL.equals(word1)) {
                     condition = new SingleComparison(OperatorConstant.IS_NULL, left, new ConstantValue(null));
                 } else if ("NOT".equals(word1)) {
                     condition = new SingleComparison(OperatorConstant.IS_NOT_NULL, left, new ConstantValue(null));
@@ -1836,7 +1834,7 @@ public class SqlParser implements Parser {
 
 
     private boolean isNullValue(String value) {
-        return value == null || "null".equals(value) || "NULL".equals(value);
+        return value == null  || NULL.equals(value.toUpperCase());
     }
 
     private Map<String, Column> getColumnMap(Column[] columns) {
@@ -2044,9 +2042,9 @@ public class SqlParser implements Parser {
 
         if (columnKeyWords.length > nextWordIdx) {
             String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
-            if (str.equals("NOT")) {
+            if (NOT.equals(str)) {
                 nextWordIdx++;
-                if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].toUpperCase().equals("NULL"))) {
+                if (columnKeyWords.length <= nextWordIdx || !NULL.equals(columnKeyWords[nextWordIdx].toUpperCase())) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近，是否为NOT NULL", columnStr);
                 }
                 column.setIsNotNull((byte) 1);
@@ -2056,18 +2054,18 @@ public class SqlParser implements Parser {
 
         if (columnKeyWords.length > nextWordIdx) {
             String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
-            if (str.equals("DEFAULT")) {
+            if (DEFAULT.equals(str)) {
                 nextWordIdx++;
                 if (columnKeyWords.length <= nextWordIdx) {
                     ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
                 }
                 String defaultVal = columnKeyWords[nextWordIdx];
-                if (defaultVal.toUpperCase().equals("NULL")) {
+                if (NULL.equals(defaultVal.toUpperCase())) {
                     if(column.getIsNotNull() == (byte) 1) {
                         ExceptionUtil.throwSqlIllegalException("字段{}不能允许为空，检查是否使NOT NULL和DEFAULT NULL同时使用", column.getColumnName());
                     }
                     column.setIsNotNull((byte) 0);
-                    column.setDefaultVal("NULL");
+                    column.setDefaultVal(NULL);
                 } else {
                     column.setDefaultVal(defaultVal);
                 }

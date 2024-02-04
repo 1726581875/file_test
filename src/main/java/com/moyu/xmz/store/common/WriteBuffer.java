@@ -5,7 +5,7 @@
  */
 package com.moyu.xmz.store.common;
 
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -53,7 +53,7 @@ public class WriteBuffer {
      * @return this
      */
     public WriteBuffer putVarInt(int x) {
-        DataUtils.writeInt(ensureCapacity(5), x);
+        DataByteUtils.writeInt(ensureCapacity(5), x);
         return this;
     }
 
@@ -64,7 +64,7 @@ public class WriteBuffer {
      * @return this
      */
     public WriteBuffer putVarLong(long x) {
-        DataUtils.writeLong(ensureCapacity(10), x);
+        DataByteUtils.writeLong(ensureCapacity(10), x);
         return this;
     }
 
@@ -77,7 +77,7 @@ public class WriteBuffer {
      */
     public WriteBuffer putStringData(String s, int len) {
         ByteBuffer b = ensureCapacity(3 * len);
-        DataUtils.writeStringData(b, s, len);
+        DataByteUtils.writeStringData(b, s, len);
         return this;
     }
 

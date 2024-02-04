@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/4/23
  */
-public class DataUtils {
+public class DataByteUtils {
 
     /**
      * 参考H2database的DataUtils.writeStringData类
@@ -133,6 +133,15 @@ public class DataUtils {
         buff.put((byte) (value >> 16 & 0xff));
         buff.put((byte) (value >> 8 & 0xff));
         buff.put((byte) (value & 0xff));
+    }
+
+    public static byte[] intToBytes(int value) {
+        return new byte[]{
+                (byte) (value >> 24 & 0xff),
+                (byte) (value >> 16 & 0xff),
+                (byte) (value >> 8 & 0xff),
+                (byte) (value & 0xff)
+        };
     }
 
     /**

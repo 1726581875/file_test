@@ -3,7 +3,7 @@ package com.moyu.xmz.store.accessor;
 import com.moyu.xmz.store.common.block.DataChunk;
 import com.moyu.xmz.store.common.meta.RowMetadata;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.common.util.PathUtil;
 
@@ -46,7 +46,7 @@ public class DataChunkFileAccessor {
         this.dataChunkNum = (int) (endPosition / DataChunk.DATA_CHUNK_LEN);
 
         if(fileAccessor.getEndPosition() >= 8) {
-            this.maxRowId = DataUtils.readLong(fileAccessor.read(0, 8));
+            this.maxRowId = DataByteUtils.readLong(fileAccessor.read(0, 8));
         }
 
         if (endPosition > DataChunk.DATA_CHUNK_LEN) {
@@ -99,7 +99,7 @@ public class DataChunkFileAccessor {
     public void updateMaxRowId() {
         synchronized (DataChunkFileAccessor.class) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(8);
-            DataUtils.writeLong(byteBuffer, this.maxRowId);
+            DataByteUtils.writeLong(byteBuffer, this.maxRowId);
             byteBuffer.rewind();
             fileAccessor.write(byteBuffer, 0);
         }

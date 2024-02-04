@@ -2,7 +2,7 @@ package com.moyu.xmz.store.transaction;
 
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.store.common.meta.RowMetadata;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -72,15 +72,15 @@ public class RowLogRecord implements SerializableByte {
     }
 
     public RowLogRecord(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.transactionId = DataUtils.readInt(byteBuffer);
-        this.databaseId = DataUtils.readInt(byteBuffer);
-        int tableNameLen = DataUtils.readInt(byteBuffer);
-        this.tableName = DataUtils.readString(byteBuffer, tableNameLen);
-        this.blockPos = DataUtils.readLong(byteBuffer);
-        this.rowId = DataUtils.readLong(byteBuffer);
-        this.version = DataUtils.readInt(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.transactionId = DataByteUtils.readInt(byteBuffer);
+        this.databaseId = DataByteUtils.readInt(byteBuffer);
+        int tableNameLen = DataByteUtils.readInt(byteBuffer);
+        this.tableName = DataByteUtils.readString(byteBuffer, tableNameLen);
+        this.blockPos = DataByteUtils.readLong(byteBuffer);
+        this.rowId = DataByteUtils.readLong(byteBuffer);
+        this.version = DataByteUtils.readInt(byteBuffer);
         this.type = byteBuffer.get();
         if (this.type != RowLogRecord.TYPE_INSERT) {
             this.oldRow = new RowMetadata(byteBuffer);
@@ -90,17 +90,17 @@ public class RowLogRecord implements SerializableByte {
     @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(this.totalByteLen);
-        DataUtils.writeInt(byteBuffer, this.totalByteLen);
-        DataUtils.writeLong(byteBuffer, this.startPos);
-        DataUtils.writeInt(byteBuffer, this.transactionId);
-        DataUtils.writeInt(byteBuffer, this.databaseId);
+        DataByteUtils.writeInt(byteBuffer, this.totalByteLen);
+        DataByteUtils.writeLong(byteBuffer, this.startPos);
+        DataByteUtils.writeInt(byteBuffer, this.transactionId);
+        DataByteUtils.writeInt(byteBuffer, this.databaseId);
 
-        DataUtils.writeInt(byteBuffer, this.tableName.length());
-        DataUtils.writeStringData(byteBuffer, this.tableName, this.tableName.length());
+        DataByteUtils.writeInt(byteBuffer, this.tableName.length());
+        DataByteUtils.writeStringData(byteBuffer, this.tableName, this.tableName.length());
 
-        DataUtils.writeLong(byteBuffer, this.blockPos);
-        DataUtils.writeLong(byteBuffer, this.rowId);
-        DataUtils.writeInt(byteBuffer, this.version);
+        DataByteUtils.writeLong(byteBuffer, this.blockPos);
+        DataByteUtils.writeLong(byteBuffer, this.rowId);
+        DataByteUtils.writeInt(byteBuffer, this.version);
         byteBuffer.put(this.type);
         if (this.type != RowLogRecord.TYPE_INSERT) {
             byteBuffer.put(this.oldRow.getByteBuff());

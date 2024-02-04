@@ -3,7 +3,7 @@ package test.readwrite;
 import test.readwrite.entity.Chunk;
 import test.readwrite.entity.FileHeader;
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtil;
 
 import java.nio.ByteBuffer;
@@ -64,7 +64,7 @@ public class UnfixedLengthWriteReadTest {
                 // 读取块长度
                 long chunkLenAttrStartPos = startPos;
                 ByteBuffer chunkLenBuff = fileAccessor.read(chunkLenAttrStartPos, 4);
-                int chunkLen = DataUtils.readInt(chunkLenBuff);
+                int chunkLen = DataByteUtils.readInt(chunkLenBuff);
 
 
                 ByteBuffer byteBuff = fileAccessor.read(startPos, chunkLen);

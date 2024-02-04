@@ -34,7 +34,6 @@ public class SelectColumn {
      * 结果字段类型
      */
     private Byte columnType;
-
     /**
      * 函数名
      * 如count、sum、max、min等等

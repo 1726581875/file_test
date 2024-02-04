@@ -1,9 +1,10 @@
 package com.moyu.xmz.store.common.meta;
 
+import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -11,14 +12,18 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/5
  */
-public class TableMetadata implements SerializableByte {
+public class TableMetadata extends AbstractMetadata implements SerializableByte {
 
     private int totalByteLen;
 
     private long startPos;
-
+    /**
+     * 数据库id
+     */
     private int databaseId;
-
+    /**
+     * 表id
+     */
     private int tableId;
 
     /**
@@ -27,66 +32,48 @@ public class TableMetadata implements SerializableByte {
      * 1 yanStore
      */
     private byte engineType;
-
-    private int tableNameByteLen;
-    private int tableNameCharLen;
+    /**
+     * 表名
+     */
     private String tableName;
+    /**
+     * 表注释
+     */
+    private String comment;
 
-
-    private int createTableSqlByteLen;
-    private int createTableSqlCharLen;
-    private String createTableSql;
-
-    public TableMetadata(String tableName,
-                         int tableId,
-                         int databaseId,
-                         long startPos,
-                         String createTableSql) {
+    public TableMetadata(String tableName, int tableId, int databaseId, long startPos, String comment) {
         this.startPos = startPos;
         this.databaseId = databaseId;
         this.tableId = tableId;
         this.tableName = tableName;
-        this.tableNameByteLen = DataUtils.getDateStringByteLength(tableName);
-        this.tableNameCharLen = tableName.length();
-        this.createTableSql = createTableSql;
-        this.createTableSqlByteLen = DataUtils.getDateStringByteLength(createTableSql);
-        this.createTableSqlCharLen = createTableSql.length();
-        this.totalByteLen = 4 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 1 +this.tableNameByteLen + this.createTableSqlByteLen;
+        this.comment = comment;
     }
 
     public TableMetadata(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.databaseId = DataUtils.readInt(byteBuffer);
-        this.tableId = DataUtils.readInt(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.databaseId = DataByteUtils.readInt(byteBuffer);
+        this.tableId = DataByteUtils.readInt(byteBuffer);
         this.engineType = byteBuffer.get();
-        this.tableNameByteLen = DataUtils.readInt(byteBuffer);
-        this.tableNameCharLen = DataUtils.readInt(byteBuffer);
-        this.tableName = DataUtils.readString(byteBuffer, this.tableNameCharLen);
-        this.createTableSqlByteLen = DataUtils.readInt(byteBuffer);
-        this.createTableSqlCharLen = DataUtils.readInt(byteBuffer);
-        this.createTableSql = DataUtils.readString(byteBuffer, this.createTableSqlCharLen);
+        this.tableName = readString(byteBuffer);
+        this.comment = readString(byteBuffer);
     }
 
 
     @Override
     public ByteBuffer getByteBuffer() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(totalByteLen);
-        DataUtils.writeInt(byteBuffer, totalByteLen);
-        DataUtils.writeLong(byteBuffer, startPos);
-        DataUtils.writeInt(byteBuffer, databaseId);
-        DataUtils.writeInt(byteBuffer, tableId);
-        byteBuffer.put(engineType);
-
-        DataUtils.writeInt(byteBuffer, tableNameByteLen);
-        DataUtils.writeInt(byteBuffer, tableNameCharLen);
-        DataUtils.writeStringData(byteBuffer, tableName, tableName.length());
-
-        DataUtils.writeInt(byteBuffer, createTableSqlByteLen);
-        DataUtils.writeInt(byteBuffer, createTableSqlCharLen);
-        DataUtils.writeStringData(byteBuffer, createTableSql, createTableSql.length());
-        byteBuffer.rewind();
-        return byteBuffer;
+        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
+        byteBuffer.putInt(this.totalByteLen);
+        byteBuffer.putLong(this.startPos);
+        byteBuffer.putInt(this.databaseId);
+        byteBuffer.putInt(this.tableId);
+        byteBuffer.put(this.engineType);
+        writeString(byteBuffer, this.tableName);
+        writeString(byteBuffer, this.comment);
+        int totalByteLen = byteBuffer.position();
+        byteBuffer.putInt(0, totalByteLen);
+        this.totalByteLen = totalByteLen;
+        return byteBuffer.flipAndGetBuffer();
     }
 
 
@@ -114,22 +101,6 @@ public class TableMetadata implements SerializableByte {
         this.databaseId = databaseId;
     }
 
-    public int getTableNameByteLen() {
-        return tableNameByteLen;
-    }
-
-    public void setTableNameByteLen(int tableNameByteLen) {
-        this.tableNameByteLen = tableNameByteLen;
-    }
-
-    public int getTableNameCharLen() {
-        return tableNameCharLen;
-    }
-
-    public void setTableNameCharLen(int tableNameCharLen) {
-        this.tableNameCharLen = tableNameCharLen;
-    }
-
     public String getTableName() {
         return tableName;
     }
@@ -138,28 +109,13 @@ public class TableMetadata implements SerializableByte {
         this.tableName = tableName;
     }
 
-    public int getCreateTableSqlByteLen() {
-        return createTableSqlByteLen;
+
+    public String getComment() {
+        return comment;
     }
 
-    public void setCreateTableSqlByteLen(int createTableSqlByteLen) {
-        this.createTableSqlByteLen = createTableSqlByteLen;
-    }
-
-    public int getCreateTableSqlCharLen() {
-        return createTableSqlCharLen;
-    }
-
-    public void setCreateTableSqlCharLen(int createTableSqlCharLen) {
-        this.createTableSqlCharLen = createTableSqlCharLen;
-    }
-
-    public String getCreateTableSql() {
-        return createTableSql;
-    }
-
-    public void setCreateTableSql(String createTableSql) {
-        this.createTableSql = createTableSql;
+    public void setComment(String comment) {
+        this.comment = comment;
     }
 
     public long getStartPos() {
@@ -195,12 +151,9 @@ public class TableMetadata implements SerializableByte {
                 ", startPos=" + startPos +
                 ", databaseId=" + databaseId +
                 ", tableId=" + tableId +
-                ", tableNameByteLen=" + tableNameByteLen +
-                ", tableNameCharLen=" + tableNameCharLen +
+                ", engineType=" + engineType +
                 ", tableName='" + tableName + '\'' +
-                ", createTableSqlByteLen=" + createTableSqlByteLen +
-                ", createTableSqlCharLen=" + createTableSqlCharLen +
-                ", createTableSql='" + createTableSql + '\'' +
+                ", comment='" + comment + '\'' +
                 '}';
     }
 }

@@ -6,7 +6,7 @@ import com.moyu.xmz.store.common.meta.TableMetadata;
 import com.moyu.xmz.common.constant.JavaTypeConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.common.util.PathUtil;
 
@@ -55,7 +55,7 @@ public class TableMetaFileAccessor {
             TableMetadata lastData = getLastTable();
             int nextTableId = lastData == null ? 0 : lastData.getTableId() + 1;
             long startPos = lastData == null ? 0L : lastData.getStartPos() + lastData.getTotalByteLen();
-            metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, "NULL");
+            metadata = new TableMetadata(tableName, nextTableId, databaseId, startPos, null);
             metadata.setEngineType(engineType);
             ByteBuffer byteBuffer = metadata.getByteBuffer();
             fileAccessor.write(byteBuffer, startPos);
@@ -88,7 +88,7 @@ public class TableMetaFileAccessor {
         } else {
             long nextStartPos = endPos;
             while (nextStartPos < fileAccessor.getEndPosition()) {
-                int dataByteLen = DataUtils.readInt(fileAccessor.read(nextStartPos, JavaTypeConstant.INT_LENGTH));
+                int dataByteLen = DataByteUtils.readInt(fileAccessor.read(nextStartPos, JavaTypeConstant.INT_LENGTH));
                 ByteBuffer readBuffer = fileAccessor.read(nextStartPos, dataByteLen);
                 TableMetadata metadata = new TableMetadata(readBuffer);
                 metadata.setStartPos(startPos);
@@ -199,7 +199,7 @@ public class TableMetaFileAccessor {
         if (endPosition > JavaTypeConstant.INT_LENGTH) {
             long currPos = 0;
             while (currPos < endPosition) {
-                int dataByteLen = DataUtils.readInt(fileAccessor.read(currPos, JavaTypeConstant.INT_LENGTH));
+                int dataByteLen = DataByteUtils.readInt(fileAccessor.read(currPos, JavaTypeConstant.INT_LENGTH));
                 ByteBuffer readBuffer = fileAccessor.read(currPos, dataByteLen);
                 TableMetadata dbMetadata = new TableMetadata(readBuffer);
                 tableMetadataList.add(dbMetadata);

@@ -2,7 +2,7 @@ package com.moyu.xmz.store.tree;
 
 import com.moyu.xmz.store.accessor.FileAccessor;
 import com.moyu.xmz.common.constant.JavaTypeConstant;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.common.util.PathUtil;
 
@@ -43,8 +43,8 @@ public class BTreeStore {
         long endPosition = fileAccessor.getEndPosition();
         // 前8字节是记录根节点位置
         if(endPosition >= PAGE_START_POS) {
-            this.rootStartPos = DataUtils.readLong(fileAccessor.read(0, JavaTypeConstant.LONG_LENGTH));
-            this.nextRowId = DataUtils.readLong(fileAccessor.read(8, JavaTypeConstant.LONG_LENGTH));
+            this.rootStartPos = DataByteUtils.readLong(fileAccessor.read(0, JavaTypeConstant.LONG_LENGTH));
+            this.nextRowId = DataByteUtils.readLong(fileAccessor.read(8, JavaTypeConstant.LONG_LENGTH));
             this.pageCount = (int) ((endPosition - PAGE_START_POS) / Page.PAGE_SIZE);
 
         } else {
@@ -64,7 +64,7 @@ public class BTreeStore {
 
     public void updateRootPos(long rootPos) {
         ByteBuffer buffer = ByteBuffer.allocate(JavaTypeConstant.LONG_LENGTH);
-        DataUtils.writeLong(buffer, rootPos);
+        DataByteUtils.writeLong(buffer, rootPos);
         buffer.rewind();
         fileAccessor.write(buffer, 0);
         this.rootStartPos = rootPos;
@@ -113,7 +113,7 @@ public class BTreeStore {
 
     public void updateNextRowId() {
         ByteBuffer buffer = ByteBuffer.allocate(JavaTypeConstant.LONG_LENGTH);
-        DataUtils.writeLong(buffer, nextRowId);
+        DataByteUtils.writeLong(buffer, nextRowId);
         buffer.rewind();
         fileAccessor.write(buffer, 8);
     }

@@ -2,7 +2,7 @@ package com.moyu.xmz.store.common.block;
 
 import com.moyu.xmz.store.common.meta.ColumnMetadata;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,6 +11,7 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/5/15
+ * 表的字段块，包含一个表的所有字段元数据
  */
 public class TableColumnBlock implements SerializableByte {
 
@@ -30,9 +31,7 @@ public class TableColumnBlock implements SerializableByte {
 
     private List<ColumnMetadata> columnMetadataList;
 
-    public TableColumnBlock(int blockIndex,
-                            long startPos,
-                            int tableId) {
+    public TableColumnBlock(int blockIndex, long startPos, int tableId) {
         this.usedByteLen = 32;
         this.blockIndex = blockIndex;
         this.startPos = startPos;
@@ -44,12 +43,12 @@ public class TableColumnBlock implements SerializableByte {
 
 
     public TableColumnBlock(ByteBuffer byteBuffer) {
-        this.usedByteLen = DataUtils.readInt(byteBuffer);
-        this.blockIndex = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.tableId = DataUtils.readInt(byteBuffer);
-        this.columnNum = DataUtils.readInt(byteBuffer);
-        this.columnStartPos = DataUtils.readLong(byteBuffer);
+        this.usedByteLen = DataByteUtils.readInt(byteBuffer);
+        this.blockIndex = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.tableId = DataByteUtils.readInt(byteBuffer);
+        this.columnNum = DataByteUtils.readInt(byteBuffer);
+        this.columnStartPos = DataByteUtils.readLong(byteBuffer);
         this.columnMetadataList = new ArrayList<>(columnNum);
         for (int i = 1; i <= columnNum; i++) {
             this.columnMetadataList.add(new ColumnMetadata(byteBuffer));
@@ -60,12 +59,12 @@ public class TableColumnBlock implements SerializableByte {
     @Override
     public ByteBuffer getByteBuffer() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(TABLE_COLUMN_BLOCK_SIZE);
-        DataUtils.writeInt(byteBuffer, usedByteLen);
-        DataUtils.writeInt(byteBuffer, blockIndex);
-        DataUtils.writeLong(byteBuffer, startPos);
-        DataUtils.writeInt(byteBuffer, tableId);
-        DataUtils.writeInt(byteBuffer, columnNum);
-        DataUtils.writeLong(byteBuffer, columnStartPos);
+        DataByteUtils.writeInt(byteBuffer, usedByteLen);
+        DataByteUtils.writeInt(byteBuffer, blockIndex);
+        DataByteUtils.writeLong(byteBuffer, startPos);
+        DataByteUtils.writeInt(byteBuffer, tableId);
+        DataByteUtils.writeInt(byteBuffer, columnNum);
+        DataByteUtils.writeLong(byteBuffer, columnStartPos);
         for (int i = 0; i < this.columnMetadataList.size(); i++) {
             ColumnMetadata column = this.columnMetadataList.get(i);
             byteBuffer.put(column.getByteBuffer());

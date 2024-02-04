@@ -1,6 +1,6 @@
 package com.moyu.xmz.common;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -30,23 +30,32 @@ public class DynamicByteBuffer {
         buffer.put(value);
     }
 
+    public void put(byte[] value) {
+        ensureCapacityInternal(buffer.capacity() + value.length);
+        buffer.put(value);
+    }
+
     public void putInt(int value) {
         ensureCapacityInternal(buffer.capacity() + 4);
-        DataUtils.writeInt(buffer, value);
+        DataByteUtils.writeInt(buffer, value);
     }
 
     public void putInt(int index, int value){
-        buffer.putInt(index, value);
+        byte[] bytes = DataByteUtils.intToBytes(value);
+        buffer.put(index, bytes[0]);
+        buffer.put(index + 1, bytes[1]);
+        buffer.put(index + 2, bytes[2]);
+        buffer.put(index + 3, bytes[3]);
     }
 
     public void putLong(long v) {
         ensureCapacityInternal(buffer.capacity() + 8);
-        DataUtils.writeLong(buffer, v);
+        DataByteUtils.writeLong(buffer, v);
     }
 
     public void putString(String v) {
         ensureCapacityInternal(buffer.capacity() + v.length() * 3);
-        DataUtils.writeStringData(buffer, v, v.length());
+        DataByteUtils.writeStringData(buffer, v, v.length());
     }
 
     private void ensureCapacityInternal(int minCapacity) {

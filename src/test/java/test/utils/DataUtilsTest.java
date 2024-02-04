@@ -1,7 +1,7 @@
 package test.utils;
 
 import com.moyu.xmz.common.util.AssertUtil;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -23,9 +23,9 @@ public class DataUtilsTest {
         for (int i = 0; i < 1000; i++) {
             int randomInt = random.nextInt(Integer.MAX_VALUE);
             ByteBuffer intBufferTest = ByteBuffer.allocate(4);
-            DataUtils.writeInt(intBufferTest, randomInt);
+            DataByteUtils.writeInt(intBufferTest, randomInt);
             intBufferTest.rewind();
-            int result = DataUtils.readInt(intBufferTest);
+            int result = DataByteUtils.readInt(intBufferTest);
             System.out.println("int原值:" + randomInt + ",经过转换再恢复的值:" + result);
             AssertUtil.assertTrue(randomInt == result, "转换后的int的值必须和原值相等");
         }
@@ -36,9 +36,9 @@ public class DataUtilsTest {
         for (int i = 0; i < 1000; i++) {
             long randomLong = random.nextLong();
             ByteBuffer longBufferTest = ByteBuffer.allocate(8);
-            DataUtils.writeLong(longBufferTest, randomLong);
+            DataByteUtils.writeLong(longBufferTest, randomLong);
             longBufferTest.rewind();
-            long longResult = DataUtils.readLong(longBufferTest);
+            long longResult = DataByteUtils.readLong(longBufferTest);
             System.out.println(randomLong);
             System.out.println("long原值:" + randomLong + ",经过转换再恢复的值:" + longResult);
             AssertUtil.assertTrue(randomLong == longResult, "转换后的long的值必须和原值相等");

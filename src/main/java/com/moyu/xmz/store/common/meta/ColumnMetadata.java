@@ -3,7 +3,8 @@ package com.moyu.xmz.store.common.meta;
 import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.common.constant.ColumnTypeConstant;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
+import com.moyu.xmz.store.common.dto.Column;
 
 import java.nio.ByteBuffer;
 
@@ -60,25 +61,27 @@ public class ColumnMetadata extends AbstractMetadata implements SerializableByte
     private String defaultVal;
 
 
-    public ColumnMetadata(int tableId, long startPos,String columnName,byte columnType,int columnIndex,int columnLength) {
+    public ColumnMetadata(int tableId, long startPos, Column columnDto) {
         this.startPos = startPos;
         this.tableId = tableId;
-        this.columnName = columnName;
-        this.columnType = columnType;
-        this.columnIndex = columnIndex;
-        this.columnLength = columnLength;
-        this.totalByteLen = 0;
-        this.isPrimaryKey = 0;
+        this.columnName = columnDto.getColumnName();
+        this.columnType = columnDto.getColumnType();
+        this.columnIndex = columnDto.getColumnIndex();
+        this.columnLength = columnDto.getColumnLength();
+        this.isPrimaryKey = columnDto.getIsPrimaryKey();
+        this.isNotNull = columnDto.getIsNotNull();
+        this.defaultVal = columnDto.getDefaultVal();
+        this.comment = columnDto.getComment();
     }
 
     public ColumnMetadata(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readInt(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.tableId = DataUtils.readInt(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.tableId = DataByteUtils.readInt(byteBuffer);
         this.columnName = readString(byteBuffer);
         this.columnType = byteBuffer.get();
-        this.columnIndex = DataUtils.readInt(byteBuffer);
-        this.columnLength = DataUtils.readInt(byteBuffer);
+        this.columnIndex = DataByteUtils.readInt(byteBuffer);
+        this.columnLength = DataByteUtils.readInt(byteBuffer);
         this.isPrimaryKey = byteBuffer.get();
         this.comment = readString(byteBuffer);
         this.isNotNull = byteBuffer.get();
@@ -100,14 +103,17 @@ public class ColumnMetadata extends AbstractMetadata implements SerializableByte
         writeString(byteBuffer, comment);
         byteBuffer.put(isNotNull);
         writeString(byteBuffer, defaultVal);
-        int position = byteBuffer.position();
-        byteBuffer.putInt(0, position);
+        this.totalByteLen = byteBuffer.position();
+        byteBuffer.putInt(0, this.totalByteLen);
         return  byteBuffer.flipAndGetBuffer();
     }
 
 
     public int getTotalByteLen() {
-        return totalByteLen;
+        if(this.totalByteLen == 0) {
+            getByteBuffer();
+        }
+        return this.totalByteLen;
     }
 
     public void setTotalByteLen(int totalByteLen) {

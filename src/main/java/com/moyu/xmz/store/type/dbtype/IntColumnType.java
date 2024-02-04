@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.store.common.WriteBuffer;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -15,7 +15,7 @@ public class IntColumnType extends AbstractColumnType<Integer> {
 
     @Override
     protected Integer readValue(ByteBuffer byteBuffer) {
-        return DataUtils.readInt(byteBuffer);
+        return DataByteUtils.readInt(byteBuffer);
     }
 
     @Override

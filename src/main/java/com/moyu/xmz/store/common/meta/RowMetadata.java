@@ -1,11 +1,12 @@
 package com.moyu.xmz.store.common.meta;
 
+import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.store.cursor.RowEntity;
 import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.ColumnTypeFactory;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -18,7 +19,7 @@ import java.util.List;
  */
 public class RowMetadata {
 
-    private long totalByteLen;
+    private int totalByteLen;
 
     private long startPos;
 
@@ -49,28 +50,19 @@ public class RowMetadata {
      */
     private byte[] row;
 
-
-    public RowMetadata(long startPos, byte[] row) {
-        this.startPos = startPos;
-        this.rowByteLen = row.length;
-        this.row = row;
-        this.totalByteLen = 29 + row.length;
-    }
-
     public RowMetadata(long startPos, byte[] row, long rowId) {
         this.startPos = startPos;
         this.rowByteLen = row.length;
         this.row = row;
         this.rowId = rowId;
         this.isDeleted = 0;
-        this.totalByteLen = 29 + row.length;
     }
 
     public RowMetadata(ByteBuffer byteBuffer) {
-        this.totalByteLen = DataUtils.readLong(byteBuffer);
-        this.startPos = DataUtils.readLong(byteBuffer);
-        this.rowByteLen = DataUtils.readInt(byteBuffer);
-        this.rowId = DataUtils.readLong(byteBuffer);
+        this.totalByteLen = DataByteUtils.readInt(byteBuffer);
+        this.startPos = DataByteUtils.readLong(byteBuffer);
+        this.rowByteLen = DataByteUtils.readInt(byteBuffer);
+        this.rowId = DataByteUtils.readLong(byteBuffer);
         this.isDeleted = byteBuffer.get();
         byte[] row = new byte[rowByteLen];
         byteBuffer.get(row);
@@ -79,15 +71,16 @@ public class RowMetadata {
 
 
     public ByteBuffer getByteBuff() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate((int) totalByteLen);
-        DataUtils.writeLong(byteBuffer, this.totalByteLen);
-        DataUtils.writeLong(byteBuffer, this.startPos);
-        DataUtils.writeInt(byteBuffer, this.rowByteLen);
-        DataUtils.writeLong(byteBuffer, this.rowId);
-        byteBuffer.put(isDeleted);
+        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
+        byteBuffer.putLong(this.totalByteLen);
+        byteBuffer.putLong(this.startPos);
+        byteBuffer.putInt(this.rowByteLen);
+        byteBuffer.putLong(this.rowId);
+        byteBuffer.put(this.isDeleted);
         byteBuffer.put(this.row);
-        byteBuffer.rewind();
-        return byteBuffer;
+        this.totalByteLen = byteBuffer.position();
+        byteBuffer.putInt(0, this.totalByteLen);
+        return byteBuffer.flipAndGetBuffer();
     }
 
 
@@ -109,7 +102,7 @@ public class RowMetadata {
     }
 
     public List<Column> getColumnList(List<Column> columnList) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(row);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(this.row);
         for (Column column : columnList) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             Object value = columnType.read(byteBuffer);
@@ -141,11 +134,11 @@ public class RowMetadata {
     }
 
 
-    public long getTotalByteLen() {
+    public int getTotalByteLen() {
         return totalByteLen;
     }
 
-    public void setTotalByteLen(long totalByteLen) {
+    public void setTotalByteLen(int totalByteLen) {
         this.totalByteLen = totalByteLen;
     }
 

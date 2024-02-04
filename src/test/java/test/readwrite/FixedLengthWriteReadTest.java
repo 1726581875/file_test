@@ -2,7 +2,7 @@ package test.readwrite;
 
 import test.readwrite.entity.Chunk;
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtil;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -32,7 +32,7 @@ public class FixedLengthWriteReadTest {
             for (int i = 0; i < chunkList.size(); i++) {
                 String data = chunkList.get(i).getData();
                 ByteBuffer byteBuffer = ByteBuffer.allocate(chunkLen);
-                DataUtils.writeStringData(byteBuffer, data, data.length());
+                DataByteUtils.writeStringData(byteBuffer, data, data.length());
                 byteBuffer.rewind();
                 fileAccessor.write(byteBuffer, chunkLen * i);
             }

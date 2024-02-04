@@ -1,6 +1,6 @@
 package test.readwrite.entity;
 
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
 
@@ -45,20 +45,20 @@ public class FileHeader {
 
 
     public FileHeader(ByteBuffer byteBuffer) {
-        this.firstChunkStartPos = DataUtils.readLong(byteBuffer);
-        this.lastChunkStartPos = DataUtils.readLong(byteBuffer);
-        this.totalChunkNum = DataUtils.readInt(byteBuffer);
-        this.fileEndPos = DataUtils.readLong(byteBuffer);
+        this.firstChunkStartPos = DataByteUtils.readLong(byteBuffer);
+        this.lastChunkStartPos = DataByteUtils.readLong(byteBuffer);
+        this.totalChunkNum = DataByteUtils.readInt(byteBuffer);
+        this.fileEndPos = DataByteUtils.readLong(byteBuffer);
     }
 
 
 
     public ByteBuffer getByteBuff() {
         ByteBuffer byteBuffer = ByteBuffer.allocate(HEADER_LENGTH);
-        DataUtils.writeLong(byteBuffer, firstChunkStartPos);
-        DataUtils.writeLong(byteBuffer, lastChunkStartPos);
-        DataUtils.writeInt(byteBuffer, totalChunkNum);
-        DataUtils.writeLong(byteBuffer, fileEndPos);
+        DataByteUtils.writeLong(byteBuffer, firstChunkStartPos);
+        DataByteUtils.writeLong(byteBuffer, lastChunkStartPos);
+        DataByteUtils.writeInt(byteBuffer, totalChunkNum);
+        DataByteUtils.writeLong(byteBuffer, fileEndPos);
         byteBuffer.rewind();
         return byteBuffer;
     }

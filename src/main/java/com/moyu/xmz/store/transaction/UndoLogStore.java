@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.transaction;
 
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.util.DataUtils;
+import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.PathUtil;
 
 import java.io.File;
@@ -50,8 +50,8 @@ public class UndoLogStore {
             fileAccessor = new FileAccessor(databasePath);
             long endPosition = fileAccessor.getEndPosition();
             if (endPosition >= Transaction.BLOCK_SIZE) {
-                this.transactionNum = DataUtils.readInt(fileAccessor.read(0, 4));
-                this.maxTransactionId = DataUtils.readInt(fileAccessor.read(4, 8));
+                this.transactionNum = DataByteUtils.readInt(fileAccessor.read(0, 4));
+                this.maxTransactionId = DataByteUtils.readInt(fileAccessor.read(4, 8));
             } else {
                 this.transactionNum = 0;
                 this.maxTransactionId = 0;
@@ -117,7 +117,7 @@ public class UndoLogStore {
     private void updateMaxTransactionId() {
         synchronized (UndoLogStore.class) {
             ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-            DataUtils.writeInt(byteBuffer, this.maxTransactionId);
+            DataByteUtils.writeInt(byteBuffer, this.maxTransactionId);
             byteBuffer.rewind();
             fileAccessor.write(byteBuffer, 0);
         }
