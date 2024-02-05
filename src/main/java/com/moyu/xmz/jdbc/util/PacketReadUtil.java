@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/9/28
  */
-public class ReadPacketUtil {
+public class PacketReadUtil {
 
     public static Packet readPacket(DataInputStream dataInputStream) throws IOException {
 

@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.value;
 
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.IntColumnType;
+import com.moyu.xmz.store.type.dbtype.IntType;
 
 import java.nio.ByteBuffer;
 
@@ -20,7 +20,7 @@ public class IntegerValue extends Value {
 
     @Override
     public DataType getDataTypeObj() {
-        return new IntColumnType();
+        return new IntType();
     }
 
     @Override

@@ -30,7 +30,7 @@ public class InsertCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
-        StoreEngine engineOperation = StoreEngine.getEngineOperation(tableInfo);
+        StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int num = 0;
         synchronized (table) {
@@ -42,7 +42,7 @@ public class InsertCommand extends AbstractCommand {
 
 
     public String batchFastInsert(List<RowEntity> rowEntityList) {
-        StoreEngine engineOperation = StoreEngine.getEngineOperation(tableInfo);
+        StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         int num = engineOperation.batchFastInsert(rowEntityList);
         return num == 1 ? "ok" : "error";
     }

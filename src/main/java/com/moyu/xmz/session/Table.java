@@ -1,6 +1,5 @@
 package com.moyu.xmz.session;
 
-import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.store.accessor.ColumnMetaFileAccessor;

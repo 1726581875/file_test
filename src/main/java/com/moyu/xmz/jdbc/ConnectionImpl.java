@@ -2,7 +2,7 @@ package com.moyu.xmz.jdbc;
 
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.jdbc.util.ReadPacketUtil;
+import com.moyu.xmz.jdbc.util.PacketReadUtil;
 import com.moyu.xmz.net.constant.CommandTypeConstant;
 import com.moyu.xmz.net.model.terminal.DatabaseInfo;
 import com.moyu.xmz.net.packet.ErrPacket;
@@ -59,7 +59,7 @@ public class ConnectionImpl implements Connection {
             // 数据库名称
             ReadWriteUtil.writeString(dataOutputStream, databaseName);
             // 获取结果
-            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            Packet packet = PacketReadUtil.readPacket(dataInputStream);
             if (packet.getPacketType() == Packet.PACKET_TYPE_OK) {
                 OkPacket okPacket = (OkPacket) packet;
                 return (DatabaseInfo) okPacket.getContent();

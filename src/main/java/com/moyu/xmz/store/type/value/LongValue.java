@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.value;
 
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.LongColumnType;
+import com.moyu.xmz.store.type.dbtype.LongType;
 
 import java.nio.ByteBuffer;
 
@@ -19,7 +19,7 @@ public class LongValue extends Value {
 
     @Override
     public DataType getDataTypeObj() {
-        return new LongColumnType();
+        return new LongType();
     }
 
     @Override

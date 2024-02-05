@@ -4,7 +4,7 @@ import com.moyu.xmz.net.constant.CommandTypeConstant;
 import com.moyu.xmz.net.packet.ErrPacket;
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.jdbc.util.ReadPacketUtil;
+import com.moyu.xmz.jdbc.util.PacketReadUtil;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
 import com.moyu.xmz.net.packet.OkPacket;
@@ -68,7 +68,7 @@ public class StatementImpl implements Statement {
             // SQL
             ReadWriteUtil.writeString(dataOutputStream, sql);
             // 获取结果
-            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            Packet packet = PacketReadUtil.readPacket(dataInputStream);
             return packet;
         } catch (IOException e) {
             e.printStackTrace();

@@ -8,7 +8,6 @@ import com.moyu.xmz.store.cursor.RowEntity;
  */
 public abstract class AbstractCondition extends Expression {
 
-
     @Override
     public Object getValue(RowEntity rowEntity) {
         return null;

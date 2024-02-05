@@ -2,7 +2,10 @@ package com.moyu.xmz.store.cursor;
 
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlIllegalException;
+import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.type.ColumnTypeFactory;
+import com.moyu.xmz.store.type.DataType;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -110,6 +113,19 @@ public class RowEntity {
 
     public void setRowId(Long rowId) {
         this.rowId = rowId;
+    }
+
+
+    public byte[] getColumnDataBytes() {
+        WriteBuffer writeBuffer = new WriteBuffer(16);
+        for (Column column : this.columns) {
+            DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            columnType.write(writeBuffer, column.getValue());
+        }
+        writeBuffer.getBuffer().flip();
+        byte[] result = new byte[writeBuffer.limit()];
+        writeBuffer.get(result);
+        return result;
     }
 
     @Override

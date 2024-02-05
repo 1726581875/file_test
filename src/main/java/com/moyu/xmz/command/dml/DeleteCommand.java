@@ -21,7 +21,7 @@ public class DeleteCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
-        StoreEngine engineOperation = StoreEngine.getEngineOperation(tableInfo);
+        StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int deleteRowNum = 0;
         synchronized (table) {

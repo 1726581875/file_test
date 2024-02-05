@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
  */
 public class ArrayDataType extends AbstractObjDataType<ArrayValue> {
 
-
     @Override
     public ArrayValue read(ByteBuffer byteBuffer) {
         return new ArrayValue(byteBuffer);

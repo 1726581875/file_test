@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/9/12
  */
-public class TinyIntColumnType extends AbstractColumnType<Byte> {
+public class TinyIntType extends AbstractColumnType<Byte> {
 
 
 

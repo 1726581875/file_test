@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.type.value;
 
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.StringColumnType;
+import com.moyu.xmz.store.type.dbtype.StringType;
 
 import java.nio.ByteBuffer;
 
@@ -19,7 +19,7 @@ public final class StringValue extends Value {
 
     @Override
     public DataType getDataTypeObj() {
-        return new StringColumnType();
+        return new StringType();
     }
 
     @Override

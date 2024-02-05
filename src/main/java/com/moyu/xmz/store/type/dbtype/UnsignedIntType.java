@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/10/17
  */
-public class UnsignedIntColumnType extends AbstractColumnType<Long> {
+public class UnsignedIntType extends AbstractColumnType<Long> {
 
     @Override
     int getMaxByteLen(Long value) {

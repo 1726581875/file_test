@@ -56,7 +56,7 @@ public abstract class StoreEngine {
     public abstract Cursor getQueryCursor(QueryTable table) throws IOException;
 
 
-    public static StoreEngine getEngineOperation(OperateTableInfo tableInfo) {
+    public static StoreEngine getEngine(OperateTableInfo tableInfo) {
         if(tableInfo.getEngineType() == null) {
             throw new IllegalArgumentException("引擎类型不能为空");
         }

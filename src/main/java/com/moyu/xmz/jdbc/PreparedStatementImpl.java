@@ -5,7 +5,7 @@ import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.common.constant.ColumnTypeConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
-import com.moyu.xmz.jdbc.util.ReadPacketUtil;
+import com.moyu.xmz.jdbc.util.PacketReadUtil;
 import com.moyu.xmz.net.constant.CommandTypeConstant;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.model.jdbc.PreparedParamDto;
@@ -113,7 +113,7 @@ public class PreparedStatementImpl implements PreparedStatement {
                 dataOutputStream.write(byteBuffer.get());
             }
             // 获取结果
-            Packet packet = ReadPacketUtil.readPacket(dataInputStream);
+            Packet packet = PacketReadUtil.readPacket(dataInputStream);
             return packet;
         } catch (IOException e) {
             e.printStackTrace();

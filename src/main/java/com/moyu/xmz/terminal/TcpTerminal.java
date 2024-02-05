@@ -103,7 +103,7 @@ public class TcpTerminal {
                     // 退出命令
                     if (inputWords.length > 0 && ("EXIT".equals(inputWords[0].toUpperCase())
                             || "QUIT".equals(inputWords[0].toUpperCase()))) {
-                        break;
+                        return;
                     }
 
                     if ("".equals(inputStr.trim())) {

@@ -25,7 +25,7 @@ public class CreateIndexCommand extends AbstractCommand {
 
     @Override
     public QueryResult execCommand() {
-        StoreEngine engineOperation = StoreEngine.getEngineOperation(tableInfo);
+        StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         engineOperation.createIndex(tableInfo.getTable().getTableId(), indexName, columnName, indexType);
         return QueryResult.simpleResult(RESULT_OK);
     }

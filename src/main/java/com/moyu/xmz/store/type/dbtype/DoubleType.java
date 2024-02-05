@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/9/11
  */
-public class DoubleColumnType extends AbstractColumnType<Double> {
+public class DoubleType extends AbstractColumnType<Double> {
 
     @Override
     protected Double readValue(ByteBuffer byteBuffer) {

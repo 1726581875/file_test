@@ -70,22 +70,22 @@ public abstract class AbstractColumnType<T> implements DataType<T> {
     public static DataType getDataType(byte columnType) {
         switch (columnType) {
             case ColumnTypeConstant.TINY_INT:
-                return new TinyIntColumnType();
+                return new TinyIntType();
             case ColumnTypeConstant.INT_4:
-                return new IntColumnType();
+                return new IntType();
             case ColumnTypeConstant.INT_8:
-                return new LongColumnType();
+                return new LongType();
             case ColumnTypeConstant.VARCHAR:
             case ColumnTypeConstant.CHAR:
-                return new StringColumnType();
+                return new StringType();
             case ColumnTypeConstant.TIMESTAMP:
-                return new TimeColumnType();
+                return new TimeType();
             case ColumnTypeConstant.DOUBLE:
-                return new DoubleColumnType();
+                return new DoubleType();
             case ColumnTypeConstant.UNSIGNED_INT_4:
-                return new UnsignedIntColumnType();
+                return new UnsignedIntType();
             case ColumnTypeConstant.UNSIGNED_INT_8:
-                return new UnsignedLongColumnType();
+                return new UnsignedLongType();
             default:
                 throw new DbException("不支持数据类型:" + columnType);
         }

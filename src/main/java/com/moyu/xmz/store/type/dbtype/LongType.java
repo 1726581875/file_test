@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public class LongColumnType extends AbstractColumnType<Long> {
+public class LongType extends AbstractColumnType<Long> {
 
     @Override
     protected Long readValue(ByteBuffer byteBuffer) {

@@ -5,7 +5,7 @@ import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.tree.BTreeStore;
 import com.moyu.xmz.store.type.value.RowValue;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.type.dbtype.IntColumnType;
+import com.moyu.xmz.store.type.dbtype.IntType;
 import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.common.util.PathUtil;
@@ -33,7 +33,7 @@ public class BpTreeTest4 {
 
         BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {
-            BTreeMap<Integer, RowValue> bTreeMap = new BTreeMap<>(new IntColumnType(), new RowDataType(), bpTreeStore, true);
+            BTreeMap<Integer, RowValue> bTreeMap = new BTreeMap<>(new IntType(), new RowDataType(), bpTreeStore, true);
             bTreeMap.initRootNode();
 
             int count = 10000;

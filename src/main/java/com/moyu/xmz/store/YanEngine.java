@@ -13,7 +13,7 @@ import com.moyu.xmz.store.tree.BTreeStore;
 import com.moyu.xmz.store.tree.Page;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.dbtype.AbstractColumnType;
-import com.moyu.xmz.store.type.dbtype.LongColumnType;
+import com.moyu.xmz.store.type.dbtype.LongType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.store.type.value.ArrayValue;
@@ -268,7 +268,7 @@ public class YanEngine extends StoreEngine {
                 // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
                 Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
                 DataType valueArrItemType = primaryKey != null
-                        ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
+                        ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongType();
                 // 把一级索引的键插入叶子节点作为二级索引的值
                 keyArrayValue = insertNodeArray(value, valueArrItemType, keyArrayValue);
                 bTreeIndexMap.putUnSaveDisk(indexColumnValue.getValue(), keyArrayValue);
@@ -301,7 +301,7 @@ public class YanEngine extends StoreEngine {
             // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
             Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
             DataType valueArrItemType = primaryKey != null
-                    ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
+                    ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongType();
 
             Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
             ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
@@ -330,7 +330,7 @@ public class YanEngine extends StoreEngine {
             // 有主键则使用主键作为b-tree叶子节点的值，没有则使用行id作为值
             Value value = primaryKey != null ? getIndexValueObject(primaryKey) : new LongValue(row.getRowId());
             DataType valueArrItemType = primaryKey != null
-                    ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongColumnType();
+                    ? AbstractColumnType.getDataType(primaryKey.getColumnType()) : new LongType();
 
             Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
             ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
@@ -425,7 +425,7 @@ public class YanEngine extends StoreEngine {
         try {
             Column primaryKey = getPrimaryKey(tableColumns);
             if (primaryKey == null) {
-                bTreeMap = new BTreeMap(new LongColumnType(), new RowDataType(), bTreeStore, true);
+                bTreeMap = new BTreeMap(new LongType(), new RowDataType(), bTreeStore, true);
             } else {
                 DataType primaryType = AbstractColumnType.getDataType(primaryKey.getColumnType());
                 bTreeMap = new BTreeMap(primaryType, new RowDataType(), bTreeStore, true);

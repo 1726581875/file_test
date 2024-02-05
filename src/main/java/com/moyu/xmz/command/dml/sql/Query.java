@@ -692,7 +692,7 @@ public class Query {
     public Cursor getQueryCursor(QueryTable table) throws IOException {
         OperateTableInfo tableInfo = new OperateTableInfo(session, table.getTableName(), table.getTableColumns(), null);
         tableInfo.setEngineType(table.getEngineType());
-        StoreEngine engineOperation = StoreEngine.getEngineOperation(tableInfo);
+        StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         Cursor queryCursor = engineOperation.getQueryCursor(table);
         cursorList.add(queryCursor);
         return queryCursor;

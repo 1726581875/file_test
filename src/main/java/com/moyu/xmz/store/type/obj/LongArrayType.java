@@ -1,4 +1,4 @@
-package com.moyu.xmz.store.type.dbtype;
+package com.moyu.xmz.store.type.obj;
 import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.store.type.DataType;
 

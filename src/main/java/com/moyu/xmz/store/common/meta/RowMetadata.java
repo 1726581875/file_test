@@ -101,6 +101,19 @@ public class RowMetadata {
         return result;
     }
 
+    public static byte[] convertToByteData(RowEntity rowEntity) {
+        WriteBuffer writeBuffer = new WriteBuffer(16);
+        for (Column column : rowEntity.getColumns()) {
+            DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
+            columnType.write(writeBuffer, column.getValue());
+        }
+        writeBuffer.getBuffer().flip();
+        byte[] result = new byte[writeBuffer.limit()];
+        writeBuffer.get(result);
+        return result;
+    }
+
+
     public List<Column> getColumnList(List<Column> columnList) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(this.row);
         for (Column column : columnList) {

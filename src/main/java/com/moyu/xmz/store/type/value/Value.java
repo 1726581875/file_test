@@ -1,9 +1,9 @@
 package com.moyu.xmz.store.type.value;
 
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.IntColumnType;
-import com.moyu.xmz.store.type.dbtype.LongColumnType;
-import com.moyu.xmz.store.type.dbtype.StringColumnType;
+import com.moyu.xmz.store.type.dbtype.IntType;
+import com.moyu.xmz.store.type.dbtype.LongType;
+import com.moyu.xmz.store.type.dbtype.StringType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.common.constant.ColumnTypeConstant;
@@ -72,11 +72,11 @@ public abstract class Value implements SerializableByte {
     public static DataType getDataTypeObj(int type) {
         switch (type) {
             case TYPE_INT:
-                return new IntColumnType();
+                return new IntType();
             case TYPE_LONG:
-                return new LongColumnType();
+                return new LongType();
             case TYPE_STRING:
-                return new StringColumnType();
+                return new StringType();
             case TYPE_ROW_VALUE:
                 return new RowDataType();
             case TYPE_VALUE_ARR:
@@ -87,11 +87,11 @@ public abstract class Value implements SerializableByte {
     }
 
     public static int getDataType(DataType type) {
-        if(type instanceof IntColumnType){
+        if(type instanceof IntType){
             return TYPE_INT;
-        }else if(type instanceof LongColumnType){
+        }else if(type instanceof LongType){
             return TYPE_LONG;
-        }else if(type instanceof StringColumnType){
+        }else if(type instanceof StringType){
             return TYPE_STRING;
         } else if (type instanceof RowDataType) {
             return TYPE_ROW_VALUE;

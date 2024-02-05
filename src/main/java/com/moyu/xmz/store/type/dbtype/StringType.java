@@ -2,14 +2,13 @@ package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.common.util.DataByteUtils;
-
 import java.nio.ByteBuffer;
 
 /**
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public class StringColumnType extends AbstractColumnType<String> {
+public class StringType extends AbstractColumnType<String> {
 
 
     @Override

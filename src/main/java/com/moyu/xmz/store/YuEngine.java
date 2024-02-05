@@ -22,7 +22,7 @@ import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.tree.BTreeStore;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.dbtype.AbstractColumnType;
-import com.moyu.xmz.store.type.dbtype.LongColumnType;
+import com.moyu.xmz.store.type.dbtype.LongType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 import com.moyu.xmz.store.type.value.ArrayValue;
 import com.moyu.xmz.store.type.value.LongValue;
@@ -107,10 +107,8 @@ public class YuEngine extends StoreEngine {
             String fileFullPath = PathUtil.getDataFilePath(session.getDatabaseId(), tableName);
             dataChunkFileAccessor = new DataChunkFileAccessor(fileFullPath);
             List<byte[]> list = new ArrayList<>();
-            for (int i = 0; i < rowList.size(); i++) {
-                Column[] columns = rowList.get(i).getColumns();
-                byte[] rowBytes = RowMetadata.toRowByteData(columns);
-                list.add(rowBytes);
+            for (RowEntity row : rowList) {
+                list.add(row.getColumnDataBytes());
             }
             dataChunkFileAccessor.writeRow(list);
             num = list.size();
@@ -133,7 +131,7 @@ public class YuEngine extends StoreEngine {
             bTreeStore = new BTreeStore(indexPath);
             BTreeMap<Comparable, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore, true);
             ArrayValue array = bpTreeMap.get((Comparable) indexColumn.getValue());
-            ArrayValue arrayValue = insertNodeArray(new LongValue(chunkPos), new LongColumnType(), array);
+            ArrayValue arrayValue = insertNodeArray(new LongValue(chunkPos), new LongType(), array);
             bpTreeMap.put((Comparable) indexColumn.getValue(), arrayValue);
         } catch (Exception e) {
             e.printStackTrace();
@@ -280,7 +278,7 @@ public class YuEngine extends StoreEngine {
                     Column indexColumnValue = getIndexColumnByColumnName(columnName, columnData);
                     if (indexColumnValue != null) {
                         ArrayValue array = bpTreeMap.get((T) indexColumnValue.getValue());
-                        ArrayValue arrayValue = insertNodeArray(new LongValue(chunk.getStartPos()),  new LongColumnType(), array);
+                        ArrayValue arrayValue = insertNodeArray(new LongValue(chunk.getStartPos()),  new LongType(), array);
                         bpTreeMap.putUnSaveDisk((T) indexColumnValue.getValue(), arrayValue);
                     }
                 }
@@ -437,7 +435,7 @@ public class YuEngine extends StoreEngine {
                         valueList.add(v);
                     }
                 }
-                ArrayValue<Value> arrayValue = new ArrayValue<>(valueList.toArray(new Value[0]), new LongColumnType());
+                ArrayValue<Value> arrayValue = new ArrayValue<>(valueList.toArray(new Value[0]), new LongType());
                 bpTreeMap.put((Comparable) indexColumn.getValue(), arrayValue);
             }
 

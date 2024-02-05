@@ -9,9 +9,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public class IntColumnType extends AbstractColumnType<Integer> {
-
-
+public class IntType extends AbstractColumnType<Integer> {
 
     @Override
     protected Integer readValue(ByteBuffer byteBuffer) {

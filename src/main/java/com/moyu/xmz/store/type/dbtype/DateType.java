@@ -10,7 +10,7 @@ import java.util.Date;
  * @author xiaomingzhang
  * @date 2023/5/19
  */
-public class DateColumnType extends AbstractColumnType<Date> {
+public class DateType extends AbstractColumnType<Date> {
 
     @Override
     protected Date readValue(ByteBuffer byteBuffer) {

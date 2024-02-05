@@ -2,8 +2,8 @@ package test.tree;
 
 import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.tree.BTreeStore;
-import com.moyu.xmz.store.type.dbtype.IntColumnType;
-import com.moyu.xmz.store.type.dbtype.StringColumnType;
+import com.moyu.xmz.store.type.dbtype.IntType;
+import com.moyu.xmz.store.type.dbtype.StringType;
 import com.moyu.xmz.common.util.FileUtil;
 import com.moyu.xmz.common.util.PathUtil;
 
@@ -29,8 +29,8 @@ public class BpTreeTest3 {
         BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {
             BTreeMap<Integer, String> bTreeMap = null;
-            bTreeMap = new BTreeMap<>(new IntColumnType(),
-                    new StringColumnType(),
+            bTreeMap = new BTreeMap<>(new IntType(),
+                    new StringType(),
                     bpTreeStore, false);
             bTreeMap.initRootNode();
 
