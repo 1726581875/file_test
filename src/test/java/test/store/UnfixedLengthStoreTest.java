@@ -2,7 +2,7 @@ package test.store;
 
 import test.readwrite.entity.Chunk;
 import test.readwrite.UnfixedLengthStore;
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 
 import java.io.IOException;
 
@@ -15,7 +15,7 @@ public class UnfixedLengthStoreTest {
     private static final String filePath = "D:\\mytest\\fileTest\\unfixLen_test.xmz";
 
     public static void main(String[] args) throws IOException {
-        if (!FileUtil.exists(filePath)) {
+        if (!FileUtils.exists(filePath)) {
             UnfixedLengthStore.createAndInitFile(filePath);
         }
         testWriteChunk();

@@ -2,7 +2,7 @@ package com.moyu.xmz.store.transaction;
 
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.session.ConnectSession;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class TransactionManager {
         Transaction transaction = null;
         UndoLogStore undoLogStore = null;
         try {
-            undoLogStore = new UndoLogStore(PathUtil.getLogDirPath());
+            undoLogStore = new UndoLogStore(PathUtils.getLogDirPath());
             int transactionId = undoLogStore.getNextTransactionId();
             long startTime = System.currentTimeMillis();
             transaction = new Transaction(transactionId, Transaction.STATUS_ACTIVITY, startTime);
@@ -39,7 +39,7 @@ public class TransactionManager {
     public static Transaction recordTransaction(Transaction transaction) {
         UndoLogStore undoLogStore = null;
         try {
-            undoLogStore = new UndoLogStore(PathUtil.getLogDirPath());
+            undoLogStore = new UndoLogStore(PathUtils.getLogDirPath());
             undoLogStore.saveTransaction(transaction);
             return transaction;
         } catch (Exception e) {
@@ -59,7 +59,7 @@ public class TransactionManager {
 
         UndoLogStore undoLogStore = null;
         try {
-            undoLogStore = new UndoLogStore(PathUtil.getLogDirPath());
+            undoLogStore = new UndoLogStore(PathUtils.getLogDirPath());
             Transaction transaction = undoLogStore.getTransaction(transactionId);
             if (transaction == null) {
                 throw new DbException("获取不到事务信息");

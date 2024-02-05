@@ -1,9 +1,9 @@
 package test.parser;
 
-import com.moyu.xmz.command.AbstractCommand;
+import com.moyu.xmz.command.AbstractCmd;
 import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCommand;
-import com.moyu.xmz.command.ddl.DropDatabaseCommand;
+import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
+import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.command.dml.sql.Parameter;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
@@ -28,10 +28,10 @@ public class ParameterSqlTest {
     private static Database database = null;
 
     static {
-        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execCommand();
-        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execCommand();
+        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
+        dropDatabaseCmd.execCommand();
+        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
+        createDatabaseCmd.execCommand();
         database = Database.getDatabase(databaseName);
     }
 
@@ -87,7 +87,7 @@ public class ParameterSqlTest {
         System.out.println("====================================");
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
-        AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
+        AbstractCmd command = (AbstractCmd) connectSession.prepareCommand(sql);
         command.setParameterValues(parameterList);
         QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");

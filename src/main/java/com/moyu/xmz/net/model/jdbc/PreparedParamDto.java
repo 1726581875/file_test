@@ -2,7 +2,7 @@ package com.moyu.xmz.net.model.jdbc;
 
 import com.moyu.xmz.store.common.WriteBuffer;
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.AbstractColumnType;
+import com.moyu.xmz.store.type.dbtype.AbstractDbType;
 
 import java.nio.ByteBuffer;
 
@@ -50,7 +50,7 @@ public class PreparedParamDto {
                 if(this.typeArr[i] == -1) {
                     this.valueArr[i] = null;
                 } else {
-                    DataType dataType = AbstractColumnType.getDataType(this.typeArr[i]);
+                    DataType dataType = AbstractDbType.getDataType(this.typeArr[i]);
                     this.valueArr[i] = dataType.read(byteBuffer);
                 }
             }
@@ -67,7 +67,7 @@ public class PreparedParamDto {
                 writeBuffer.put(this.typeArr[i]);
             }
             for (int i = 0; i < this.size; i++) {
-                DataType dataType = AbstractColumnType.getDataType(this.typeArr[i]);
+                DataType dataType = AbstractDbType.getDataType(this.typeArr[i]);
                 dataType.write(writeBuffer, this.valueArr[i]);
             }
         }

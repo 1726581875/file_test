@@ -2,8 +2,8 @@ package com.moyu.xmz.store.cursor;
 
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.tree.BTreeStore;
 import com.moyu.xmz.store.type.value.ArrayValue;
@@ -11,7 +11,7 @@ import com.moyu.xmz.store.type.value.LongValue;
 import com.moyu.xmz.store.type.value.Value;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.AbstractColumnType;
+import com.moyu.xmz.store.type.dbtype.AbstractDbType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ public class IndexCursor extends AbstractCursor {
 
     private Column[] columns;
 
-    private DataChunkFileAccessor dataChunkFileAccessor;
+    private DataChunkAccessor dataChunkAccessor;
 
     private Column indexColumn;
 
@@ -44,15 +44,15 @@ public class IndexCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public IndexCursor(DataChunkFileAccessor dataChunkFileAccessor, Column[] columns, Column indexColumn, String indexPath) throws IOException {
-        this.dataChunkFileAccessor = dataChunkFileAccessor;
+    public IndexCursor(DataChunkAccessor dataChunkAccessor, Column[] columns, Column indexColumn, String indexPath) throws IOException {
+        this.dataChunkAccessor = dataChunkAccessor;
         this.columns = columns;
         this.indexColumn = indexColumn;
         this.indexPath = indexPath;
         this.nextPosIndex = 0;
         this.currChunkNextRowIndex = 0;
 
-        DataType keyDataType = AbstractColumnType.getDataType(indexColumn.getColumnType());
+        DataType keyDataType = AbstractDbType.getDataType(indexColumn.getColumnType());
         BTreeStore bTreeStore = new BTreeStore(indexPath);
         BTreeMap<Comparable, ArrayValue> bpTreeMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeStore, true);
         ArrayValue array = bpTreeMap.get((Comparable) indexColumn.getValue());
@@ -76,7 +76,7 @@ public class IndexCursor extends AbstractCursor {
             throw new DbException("游标已关闭");
         }
 
-        int dataChunkNum = dataChunkFileAccessor.getDataChunkNum();
+        int dataChunkNum = dataChunkAccessor.getDataChunkNum();
         if (dataChunkNum == 0) {
             return null;
         }
@@ -92,7 +92,7 @@ public class IndexCursor extends AbstractCursor {
 
         if(currChunk == null) {
             Long pos = posArr[nextPosIndex];
-            currChunk = dataChunkFileAccessor.getChunkByPos(pos);
+            currChunk = dataChunkAccessor.getChunkByPos(pos);
             nextPosIndex++;
         }
 
@@ -101,11 +101,11 @@ public class IndexCursor extends AbstractCursor {
         }
 
         // 从当前块拿
-        List<RowMetadata> dataRowList = currChunk.getDataRowList();
+        List<RowMeta> dataRowList = currChunk.getDataRowList();
         if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
             while (currChunkNextRowIndex < dataRowList.size()) {
-                RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-                Column[] columnData = rowMetadata.getColumnData(columns);
+                RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+                Column[] columnData = rowMeta.getColumnData(columns);
                 RowEntity dbRow = new RowEntity(columnData);
                 currChunkNextRowIndex++;
                 if (isIndexRow(dbRow)) {
@@ -121,7 +121,7 @@ public class IndexCursor extends AbstractCursor {
                 return null;
             }
             Long pos = posArr[i];
-            currChunk = dataChunkFileAccessor.getChunkByPos(pos);
+            currChunk = dataChunkAccessor.getChunkByPos(pos);
             currChunkNextRowIndex = 0;
             if(currChunk == null) {
                 return null;
@@ -129,8 +129,8 @@ public class IndexCursor extends AbstractCursor {
             dataRowList = currChunk.getDataRowList();
             if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
                 while (currChunkNextRowIndex < dataRowList.size()) {
-                    RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-                    Column[] columnData = rowMetadata.getColumnData(columns);
+                    RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+                    Column[] columnData = rowMeta.getColumnData(columns);
                     RowEntity dbRow = new RowEntity(columnData);
                     currChunkNextRowIndex++;
                     if (isIndexRow(dbRow)) {
@@ -158,7 +158,7 @@ public class IndexCursor extends AbstractCursor {
 
     @Override
     void closeCursor() {
-        dataChunkFileAccessor.close();
+        dataChunkAccessor.close();
     }
 
 

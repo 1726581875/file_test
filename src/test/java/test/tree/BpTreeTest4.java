@@ -7,8 +7,8 @@ import com.moyu.xmz.store.type.value.RowValue;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.type.dbtype.IntType;
 import com.moyu.xmz.store.type.obj.RowDataType;
-import com.moyu.xmz.common.util.FileUtil;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.FileUtils;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class BpTreeTest4 {
 
-    private static final String testPath = PathUtil.getBaseDirPath() + File.separator + "b3.data";
+    private static final String testPath = PathUtils.getBaseDirPath() + File.separator + "b3.data";
     /**
      * 写入磁盘测试
      * @param args
@@ -29,7 +29,7 @@ public class BpTreeTest4 {
      */
     public static void main(String[] args) throws IOException {
 
-        FileUtil.deleteOnExists(testPath);
+        FileUtils.deleteOnExists(testPath);
 
         BTreeStore bpTreeStore = new BTreeStore(testPath);
         try {

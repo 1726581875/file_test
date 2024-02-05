@@ -10,19 +10,19 @@ import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.common.exception.SqlIllegalException;
-import com.moyu.xmz.common.util.AssertUtil;
-import com.moyu.xmz.common.util.SqlParserUtil;
-import com.moyu.xmz.common.util.TypeConvertUtil;
+import com.moyu.xmz.common.util.AssertUtils;
+import com.moyu.xmz.common.util.SqlParserUtils;
+import com.moyu.xmz.common.util.TypeConvertUtils;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Table;
-import com.moyu.xmz.store.accessor.IndexMetaFileAccessor;
-import com.moyu.xmz.store.accessor.TableMetaFileAccessor;
+import com.moyu.xmz.store.accessor.IndexMetaAccessor;
+import com.moyu.xmz.store.accessor.TableMetaAccessor;
 import com.moyu.xmz.store.common.block.TableIndexBlock;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.store.common.dto.SelectColumn;
-import com.moyu.xmz.store.common.meta.IndexMetadata;
-import com.moyu.xmz.store.common.meta.TableMetadata;
+import com.moyu.xmz.store.common.meta.IndexMeta;
+import com.moyu.xmz.store.common.meta.TableMeta;
 
 import java.math.BigInteger;
 import java.text.ParseException;
@@ -114,7 +114,7 @@ public class SqlParser implements Parser {
                     case DATABASE:
                         skipSpace();
                         String databaseName = getNextOriginalWord();
-                        CreateDatabaseCommand command = new CreateDatabaseCommand(databaseName);
+                        CreateDatabaseCmd command = new CreateDatabaseCmd(databaseName);
                         return command;
                     // create table
                     case TABLE:
@@ -148,32 +148,32 @@ public class SqlParser implements Parser {
                     case DATABASE:
                         skipSpace();
                         String databaseName = getNextOriginalWord();
-                        DropDatabaseCommand command = new DropDatabaseCommand();
+                        DropDatabaseCmd command = new DropDatabaseCmd();
                         command.setDatabaseName(databaseName);
                         return command;
                         // drop table
                     case TABLE:
                         skipSpace();
                         String keyword99 = getNextKeyWordUnMove();
-                        DropTableCommand dropTableCommand = null;
+                        DropTableCmd dropTableCmd = null;
                         if("IF".equals(keyword99)) {
                             assertNextKeywordIs("IF");
                             assertNextKeywordIs("EXISTS");
                             String tableName = getNextOriginalWord();
-                            dropTableCommand = new DropTableCommand(this.connectSession.getDatabase(), tableName, true);
+                            dropTableCmd = new DropTableCmd(this.connectSession.getDatabase(), tableName, true);
                         } else {
                             String tableName = getNextOriginalWord();
-                            dropTableCommand =  new DropTableCommand(this.connectSession.getDatabase(), tableName, false);
+                            dropTableCmd =  new DropTableCmd(this.connectSession.getDatabase(), tableName, false);
                         }
-                        return dropTableCommand;
+                        return dropTableCmd;
                     case INDEX:
                         skipSpace();
                         String indexName = getNextOriginalWord();
                         assertNextKeywordIs(ON);
                         skipSpace();
                         String tableName11 = getNextOriginalWord();
-                        TableMetadata tableMeta = getTableMeta(tableName11);
-                        return new DropIndexCommand(this.connectSession.getDatabaseId(), tableMeta.getTableId(), tableMeta.getTableName(), indexName);
+                        TableMeta tableMeta = getTableMeta(tableName11);
+                        return new DropIndexCmd(this.connectSession.getDatabaseId(), tableMeta.getTableId(), tableMeta.getTableName(), indexName);
                     default:
                         throw new SqlIllegalException("sql语法有误");
                 }
@@ -184,23 +184,23 @@ public class SqlParser implements Parser {
                 String word11 = getNextKeyWord();
                 // show databases
                 if ("DATABASES".equals(word11)) {
-                    return new ShowDatabasesCommand();
+                    return new ShowDatabasesCmd();
                     // show tables
                 } else if ("TABLES".equals(word11)) {
-                    return new ShowTablesCommand(this.connectSession.getDatabaseId());
+                    return new ShowTablesCmd(this.connectSession.getDatabaseId());
                 } else {
                     ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
                 }
             case DESC:
                 skipSpace();
                 String word12 = getNextOriginalWord();
-                return new DescTableCommand(this.connectSession.getDatabaseId(), word12);
+                return new DescTableCmd(this.connectSession.getDatabaseId(), word12);
             case TRUNCATE:
                 assertNextKeywordIs(TABLE);
                 skipSpace();
                 // tableName
                 String word13 = getNextOriginalWord();
-                return new TruncateTableCommand(connectSession.getDatabaseId() ,word13);
+                return new TruncateTableCmd(connectSession.getDatabaseId() ,word13);
             default:
                 ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
         }
@@ -282,20 +282,20 @@ public class SqlParser implements Parser {
     }
 
 
-    private CreateIndexCommand parseIndexCommand(String tableName, byte indexType){
+    private CreateIndexCmd parseIndexCommand(String tableName, byte indexType){
         skipSpace();
         String indexName = parseTableNameOrIndexName();
         StartEndIndex startEnd = getNextBracketStartEnd();
         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
-        CreateIndexCommand command = buildCreateIndexCommand(tableName, columnName, indexName, indexType);
+        CreateIndexCmd command = buildCreateIndexCommand(tableName, columnName, indexName, indexType);
         return command;
     }
 
 
 
-    private CreateIndexCommand buildCreateIndexCommand(String tableName, String columnName, String indexName, byte indexType){
+    private CreateIndexCmd buildCreateIndexCommand(String tableName, String columnName, String indexName, byte indexType){
         Table table = connectSession.getDatabase().getTable(tableName);
-        CreateIndexCommand command = new CreateIndexCommand(new OperateTableInfo(connectSession, table, null));
+        CreateIndexCmd command = new CreateIndexCmd(new TableInfo(connectSession, table, null));
         command.setIndexName(indexName);
         command.setColumnName(columnName);
         command.setIndexType(indexType);
@@ -305,7 +305,7 @@ public class SqlParser implements Parser {
 
 
 
-    private UpdateCommand getUpdateCommand() {
+    private UpdateCmd getUpdateCommand() {
         skipSpace();
         String tableName = getNextOriginalWord();
         if(tableName == null) {
@@ -377,15 +377,15 @@ public class SqlParser implements Parser {
         if (WHERE.equals(nextKeyWord)) {
             condition = parseWhereCondition(columnMap);
         }
-        OperateTableInfo operateTableInfo = getOperateTableInfo(tableName, columns, condition);
-        UpdateCommand updateCommand = new UpdateCommand(operateTableInfo,updateColumnList.toArray(new Column[0]));
-        updateCommand.addParameters(parameterList);
-        return updateCommand;
+        TableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
+        UpdateCmd updateCmd = new UpdateCmd(tableInfo,updateColumnList.toArray(new Column[0]));
+        updateCmd.addParameters(parameterList);
+        return updateCmd;
     }
 
 
 
-    private DeleteCommand getDeleteCommand() {
+    private DeleteCmd getDeleteCommand() {
         skipSpace();
         String tableName = null;
         while (true) {
@@ -414,30 +414,30 @@ public class SqlParser implements Parser {
             condition = parseWhereCondition(columnMap);
         }
 
-        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
-        DeleteCommand deleteCommand = new DeleteCommand(tableInfo);
-        return deleteCommand;
+        TableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
+        DeleteCmd deleteCmd = new DeleteCmd(tableInfo);
+        return deleteCmd;
     }
 
 
-    private OperateTableInfo getOperateTableInfo(String tableName, Column[] columns, Expression condition) {
-        List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-        TableMetadata tableMeta = getTableMeta(tableName);
-        OperateTableInfo tableInfo = new OperateTableInfo(this.connectSession, tableName, columns, condition);
-        tableInfo.setAllIndexList(indexMetadataList);
+    private TableInfo getOperateTableInfo(String tableName, Column[] columns, Expression condition) {
+        List<IndexMeta> indexMetaList = getIndexList(tableName);
+        TableMeta tableMeta = getTableMeta(tableName);
+        TableInfo tableInfo = new TableInfo(this.connectSession, tableName, columns, condition);
+        tableInfo.setAllIndexList(indexMetaList);
         tableInfo.setEngineType(tableMeta.getEngineType());
         return tableInfo;
     }
 
 
 
-    private SelectCommand getSelectCommand() {
+    private SelectCmd getSelectCommand() {
         // 解析查询sql
         Query query = parseQuery(null);
 
         query.setSession(connectSession);
         // 对查询进行优化
-        SelectCommand selectCommand = new SelectCommand(query);
+        SelectCmd selectCmd = new SelectCmd(query);
         if(query.getCondition() != null) {
             // 选择可用索引
             query.getCondition().setSelectIndexes(query);
@@ -455,7 +455,7 @@ public class SqlParser implements Parser {
         // 下推条件，把where后面条件下推到连接条件(即在进行连接时候尽可能筛选掉不符合条件的行，而不是等到连接完再筛选)
         QueryTable mainTable = query.getMainTable();
         if(mainTable == null) {
-            return selectCommand;
+            return selectCmd;
         }
         Expression condition = query.getCondition();
         if (mainTable.getJoinTables() != null && mainTable.getJoinTables().size() > 0
@@ -476,9 +476,9 @@ public class SqlParser implements Parser {
             }
         }
 
-        selectCommand.addParameters(parameterList);
+        selectCmd.addParameters(parameterList);
 
-        return selectCommand;
+        return selectCmd;
     }
 
 
@@ -611,10 +611,10 @@ public class SqlParser implements Parser {
 
         // 当前索引列表
         if(mainTable.getSubQuery() == null) {
-            List<IndexMetadata> indexMetadataList = getIndexList(tableName);
-            Map<String, IndexMetadata> indexMap = new HashMap<>();
-            if(indexMetadataList != null) {
-                for (IndexMetadata idx : indexMetadataList) {
+            List<IndexMeta> indexMetaList = getIndexList(tableName);
+            Map<String, IndexMeta> indexMap = new HashMap<>();
+            if(indexMetaList != null) {
+                for (IndexMeta idx : indexMetaList) {
                     indexMap.put(idx.getColumnName(), idx);
                 }
             }
@@ -971,7 +971,7 @@ public class SqlParser implements Parser {
         }
 
         Column[] columns = getColumns(tableName);
-        TableMetadata tableMeta = getTableMeta(tableName);
+        TableMeta tableMeta = getTableMeta(tableName);
         QueryTable table = new QueryTable(tableName, columns);
         table.setEngineType(tableMeta.getEngineType());
 
@@ -1012,19 +1012,19 @@ public class SqlParser implements Parser {
     private void assertNextKeywordIs(String keyword) {
         skipSpace();
         String nextKeyWord = getNextKeyWord();
-        AssertUtil.assertTrue(keyword.equals(nextKeyWord), "Sql语法有误,在附近" + nextKeyWord);
+        AssertUtils.assertTrue(keyword.equals(nextKeyWord), "Sql语法有误,在附近" + nextKeyWord);
     }
 
 
-    private List<IndexMetadata> getIndexList(String tableName) {
-        IndexMetaFileAccessor metadataStore = null;
+    private List<IndexMeta> getIndexList(String tableName) {
+        IndexMetaAccessor metadataStore = null;
         try {
-            TableMetadata tableMeta = getTableMeta(tableName);
-            metadataStore = new IndexMetaFileAccessor(connectSession.getDatabaseId());
+            TableMeta tableMeta = getTableMeta(tableName);
+            metadataStore = new IndexMetaAccessor(connectSession.getDatabaseId());
             Map<Integer, TableIndexBlock> columnMap = metadataStore.getIndexMap();
             TableIndexBlock tableIndexBlock = columnMap.get(tableMeta.getTableId());
             if (tableIndexBlock != null) {
-                return tableIndexBlock.getIndexMetadataList();
+                return tableIndexBlock.getIndexMetaList();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1151,7 +1151,7 @@ public class SqlParser implements Parser {
 
 
     private boolean isFunctionColumn(String functionStr) {
-        return FunctionNameEnum.isFunction(functionStr);
+        return FuncNameEnum.isFunction(functionStr);
     }
 
 
@@ -1173,8 +1173,8 @@ public class SqlParser implements Parser {
         SelectColumn selectColumn = null;
         Byte resultType = null;
         switch (functionName) {
-            case FunctionConstant.FUNC_COUNT:
-                resultType = ColumnTypeConstant.INT_8;
+            case FuncConstant.FUNC_COUNT:
+                resultType = DbTypeConstant.INT_8;
                 args = new String[1];
                 String arg = getFunctionArg(functionStr);
                 if ("*".equals(arg)) {
@@ -1191,11 +1191,11 @@ public class SqlParser implements Parser {
                 }
                 args[0] = columnName0;
                 break;
-            case FunctionConstant.FUNC_MAX:
-            case FunctionConstant.FUNC_MIN:
-            case FunctionConstant.FUNC_SUM:
-            case FunctionConstant.FUNC_AVG:
-                resultType = FunctionConstant.FUNC_AVG.equals(functionName) ? ColumnTypeConstant.DOUBLE : ColumnTypeConstant.INT_8;
+            case FuncConstant.FUNC_MAX:
+            case FuncConstant.FUNC_MIN:
+            case FuncConstant.FUNC_SUM:
+            case FuncConstant.FUNC_AVG:
+                resultType = FuncConstant.FUNC_AVG.equals(functionName) ? DbTypeConstant.DOUBLE : DbTypeConstant.INT_8;
                 args = new String[1];
                 String columnName = getFunctionArg(functionStr);
                 column = columnInfo.getColumn(columnName);
@@ -1204,15 +1204,15 @@ public class SqlParser implements Parser {
                 }
                 args[0] = columnName;
                 break;
-            case FunctionConstant.FUNC_UUID:
-                SelectColumnExpression uuidFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_UUID, null);
-                selectColumn = new SelectColumn(selectColumnName, functionName, uuidFunc, ColumnTypeConstant.CHAR);
+            case FuncConstant.FUNC_UUID:
+                SelectColumnExpr uuidFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FUNC_UUID, null);
+                selectColumn = new SelectColumn(selectColumnName, functionName, uuidFunc, DbTypeConstant.CHAR);
                return selectColumn;
-            case FunctionConstant.FUNC_NOW:
-                SelectColumnExpression nowFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FUNC_NOW, null);
-                selectColumn = new SelectColumn(selectColumnName, functionName, nowFunc, ColumnTypeConstant.TIMESTAMP);
+            case FuncConstant.FUNC_NOW:
+                SelectColumnExpr nowFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FUNC_NOW, null);
+                selectColumn = new SelectColumn(selectColumnName, functionName, nowFunc, DbTypeConstant.TIMESTAMP);
                 return selectColumn;
-            case FunctionConstant.UNIX_TIMESTAMP:
+            case FuncConstant.UNIX_TIMESTAMP:
                 String timeStr = getFunctionArg(functionStr);
                 if(timeStr.startsWith("'") && timeStr.endsWith("'")) {
                     timeStr = timeStr.substring(1, timeStr.length() - 1);
@@ -1220,17 +1220,17 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("函数{}参数不合法, 参数必须为字符串,参数{}", functionName, timeStr);
                 }
                 funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timeStr));
-                SelectColumnExpression unixTimestampFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.UNIX_TIMESTAMP, funcArgList);
-                selectColumn = new SelectColumn(selectColumnName, functionName, unixTimestampFunc, ColumnTypeConstant.INT_8);
+                SelectColumnExpr unixTimestampFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.UNIX_TIMESTAMP, funcArgList);
+                selectColumn = new SelectColumn(selectColumnName, functionName, unixTimestampFunc, DbTypeConstant.INT_8);
                 return selectColumn;
-            case FunctionConstant.FROM_UNIXTIME:
+            case FuncConstant.FROM_UNIXTIME:
                 String timestampStr = getFunctionArg(functionStr);
                 if(timestampStr.startsWith("'") && timestampStr.endsWith("'")) {
                     timestampStr = timestampStr.substring(1, timestampStr.length() - 1);
                 }
                 funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timestampStr));
-                SelectColumnExpression formUnixtimeFunc = SelectColumnExpression.newFuncColumnExpr(FunctionConstant.FROM_UNIXTIME, funcArgList);
-                selectColumn = new SelectColumn(selectColumnName, functionName, formUnixtimeFunc, ColumnTypeConstant.CHAR);
+                SelectColumnExpr formUnixtimeFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FROM_UNIXTIME, funcArgList);
+                selectColumn = new SelectColumn(selectColumnName, functionName, formUnixtimeFunc, DbTypeConstant.CHAR);
                 return selectColumn;
             default:
                 ExceptionUtil.throwSqlIllegalException("sql不合法，不支持函数{}", functionName);
@@ -1268,7 +1268,7 @@ public class SqlParser implements Parser {
             do {
                 // 读左边条件表达式
                 left = readLeftExpression(columnMap);
-                if(left instanceof ColumnExpression || left instanceof ConstantValue) {
+                if(left instanceof ConditionColumnExpr || left instanceof ConstantValue) {
                     left = readRightExpression(columnMap, left);
                 }
 
@@ -1380,7 +1380,7 @@ public class SqlParser implements Parser {
                         ExceptionUtil.throwSqlIllegalException("sql语法有误，字段不存在：{}", columnName);
                     }
                     column = column.copy();
-                    columnExpression = new ColumnExpression(column);
+                    columnExpression = new ConditionColumnExpr(column);
                 }
 
                 skipSpace();
@@ -1532,7 +1532,7 @@ public class SqlParser implements Parser {
             assertNextKeywordIs(SELECT);
             // 解析子查询
             Query subQuery = parseQuery(subStartEnd);
-            right = new SubQueryValue((ColumnExpression) left, subQuery);
+            right = new SubQueryValue((ConditionColumnExpr) left, subQuery);
         } else {
             String nextValue = getNextOriginalWordUnMove();
             Column rightColumn = columnMap.get(nextValue);
@@ -1558,7 +1558,7 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("sql语法有误，字段不存在:{}", columnName);
                 }
                 column = column.copy();
-                right = new ColumnExpression(column);
+                right = new ConditionColumnExpr(column);
             }
         }
         condition = new SingleComparison(operator, left, right);
@@ -1568,10 +1568,10 @@ public class SqlParser implements Parser {
 
     private Object getTypeValueObj(Expression left, String value){
         Object obj = null;
-        if(left instanceof ColumnExpression) {
-            ColumnExpression c = (ColumnExpression) left;
+        if(left instanceof ConditionColumnExpr) {
+            ConditionColumnExpr c = (ConditionColumnExpr) left;
             Column column = c.getColumn();
-            obj = TypeConvertUtil.convertValueType(value, column.getColumnType());
+            obj = TypeConvertUtils.convertValueType(value, column.getColumnType());
         } else {
             obj = value;
         }
@@ -1604,10 +1604,10 @@ public class SqlParser implements Parser {
                 }
                 // 转换值为对应类型对象
                 Object obj = null;
-                if(left instanceof ColumnExpression) {
-                    ColumnExpression c = (ColumnExpression) left;
+                if(left instanceof ConditionColumnExpr) {
+                    ConditionColumnExpr c = (ConditionColumnExpr) left;
                     Column column = c.getColumn();
-                    obj = TypeConvertUtil.convertValueType(value, column.getColumnType());
+                    obj = TypeConvertUtils.convertValueType(value, column.getColumnType());
                 } else {
                     obj = value;
                 }
@@ -1675,7 +1675,7 @@ public class SqlParser implements Parser {
      * insert into xmz_table(id, name) value (1, 'xmz');
      * @return
      */
-    private InsertCommand getInsertCommand() {
+    private InsertCmd getInsertCommand() {
 
         skipSpace();
 
@@ -1685,7 +1685,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析tableName
-        String tableName = SqlParserUtil.getUnquotedStr(parseTableNameOrIndexName());
+        String tableName = SqlParserUtils.getUnquotedStr(parseTableNameOrIndexName());
 
         Column[] tableColumns = getColumns(tableName);
 
@@ -1762,10 +1762,10 @@ public class SqlParser implements Parser {
             dataColumns[i] = column;
         }
 
-        OperateTableInfo tableInfo = getOperateTableInfo(tableName, columns, null);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, dataColumns);
-        insertCommand.addParameters(parameterList);
-        return insertCommand;
+        TableInfo tableInfo = getOperateTableInfo(tableName, columns, null);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, dataColumns);
+        insertCmd.addParameters(parameterList);
+        return insertCmd;
     }
 
 
@@ -1780,25 +1780,25 @@ public class SqlParser implements Parser {
         }
 
         switch (column.getColumnType()) {
-            case ColumnTypeConstant.TINY_INT:
+            case DbTypeConstant.TINY_INT:
                 Byte byteValue = isNullValue(value) ? null : Byte.valueOf(value);
                 column.setValue(byteValue);
                 break;
-            case ColumnTypeConstant.INT_4:
+            case DbTypeConstant.INT_4:
                 Integer intValue =isNullValue(value) ? null : Integer.valueOf(value);
                 column.setValue(intValue);
                 break;
-            case ColumnTypeConstant.INT_8:
+            case DbTypeConstant.INT_8:
                 Long longValue = isNullValue(value) ? null : Long.valueOf(value);
                 column.setValue(longValue);
                 break;
-            case ColumnTypeConstant.UNSIGNED_INT_4:
-            case ColumnTypeConstant.UNSIGNED_INT_8:
+            case DbTypeConstant.UNSIGNED_INT_4:
+            case DbTypeConstant.UNSIGNED_INT_8:
                 BigInteger bigIntValue = isNullValue(value) ? null : new BigInteger(value);
                 column.setValue(bigIntValue);
                 break;
-            case ColumnTypeConstant.VARCHAR:
-            case ColumnTypeConstant.CHAR:
+            case DbTypeConstant.VARCHAR:
+            case DbTypeConstant.CHAR:
                 if(isNullValue(value)) {
                     column.setValue(null);
                 } else if (value.startsWith("'") && value.endsWith("'")) {
@@ -1807,7 +1807,7 @@ public class SqlParser implements Parser {
                     throw new SqlIllegalException("sql不合法，" + value);
                 }
                 break;
-            case ColumnTypeConstant.TIMESTAMP:
+            case DbTypeConstant.TIMESTAMP:
                 if (isNullValue(value)) {
                     column.setValue(null);
                 } else if (value.startsWith("'") && value.endsWith("'")) {
@@ -1853,11 +1853,11 @@ public class SqlParser implements Parser {
     }
 
 
-    private TableMetadata getTableMeta(String tableName){
-        TableMetaFileAccessor tableMetadata = null;
+    private TableMeta getTableMeta(String tableName){
+        TableMetaAccessor tableMetadata = null;
         try {
-            tableMetadata = new TableMetaFileAccessor(connectSession.getDatabaseId());
-            TableMetadata table = tableMetadata.getTable(tableName);
+            tableMetadata = new TableMetaAccessor(connectSession.getDatabaseId());
+            TableMeta table = tableMetadata.getTable(tableName);
             if(table == null) {
                 ExceptionUtil.throwSqlExecutionException("表{}不存在", tableName);
             }
@@ -1880,10 +1880,10 @@ public class SqlParser implements Parser {
      * create table xmz_table (id int, name varchar(10));
      * @return
      */
-    private CreateTableCommand getCreateTableCommand() {
+    private CreateTableCmd getCreateTableCommand() {
         // 解析tableName
         String tableName = parseTableNameOrIndexName();
-        tableName = SqlParserUtil.getUnquotedStr(tableName);
+        tableName = SqlParserUtils.getUnquotedStr(tableName);
 
         // 解析建表字段
         skipSpace();
@@ -1915,7 +1915,7 @@ public class SqlParser implements Parser {
             engineType = CommonConstant.ENGINE_TYPE_YAN;
         }
         // 构造创建表命令
-        CreateTableCommand command = new CreateTableCommand();
+        CreateTableCmd command = new CreateTableCmd();
         command.setDatabaseId(connectSession.getDatabaseId());
         command.setTableName(tableName);
         command.setColumnList(columnList);
@@ -1968,7 +1968,7 @@ public class SqlParser implements Parser {
         }
 
         // 解析字段名
-        String columnName = SqlParserUtil.getUnquotedStr(columnKeyWords[0]);
+        String columnName = SqlParserUtils.getUnquotedStr(columnKeyWords[0]);
         if((columnName.startsWith("`") && columnName.endsWith("`"))
                 || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
             columnName = columnStr.substring(1, columnName.length() - 1);
@@ -2006,20 +2006,20 @@ public class SqlParser implements Parser {
         int nextWordIdx = 2;
         // 判断是否有unsigned关键字修饰
         if (columnKeyWords.length > nextWordIdx && "UNSIGNED".equals(columnKeyWords[nextWordIdx].toUpperCase())) {
-            if (type == ColumnTypeConstant.INT_4) {
-                type = ColumnTypeConstant.UNSIGNED_INT_4;
-            } else if (type == ColumnTypeConstant.INT_8) {
-                type = ColumnTypeConstant.UNSIGNED_INT_8;
+            if (type == DbTypeConstant.INT_4) {
+                type = DbTypeConstant.UNSIGNED_INT_4;
+            } else if (type == DbTypeConstant.INT_8) {
+                type = DbTypeConstant.UNSIGNED_INT_8;
             }
             nextWordIdx++;
         }
 
         // 如果没有指定字段长度像int、bigint等，要自动给长度
         if(columnLength == -1) {
-            if(ColumnTypeConstant.INT_4 == type) {
+            if(DbTypeConstant.INT_4 == type) {
                 columnLength = 4;
             }
-            if(ColumnTypeConstant.INT_8 == type) {
+            if(DbTypeConstant.INT_8 == type) {
                 columnLength = 8;
             }
         }

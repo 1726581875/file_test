@@ -3,7 +3,7 @@ package com.moyu.xmz.jdbc;
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.jdbc.util.PacketReadUtil;
-import com.moyu.xmz.net.constant.CommandTypeConstant;
+import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.model.terminal.DatabaseInfo;
 import com.moyu.xmz.net.packet.ErrPacket;
 import com.moyu.xmz.net.packet.OkPacket;
@@ -55,7 +55,7 @@ public class ConnectionImpl implements Connection {
              DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
              DataInputStream dataInputStream = new DataInputStream(inputStream)) {
             // 命令类型
-            dataOutputStream.writeByte(CommandTypeConstant.DB_INFO);
+            dataOutputStream.writeByte(CmdTypeConstant.DB_INFO);
             // 数据库名称
             ReadWriteUtil.writeString(dataOutputStream, databaseName);
             // 获取结果

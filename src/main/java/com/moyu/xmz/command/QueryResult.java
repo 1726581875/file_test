@@ -1,6 +1,6 @@
 package com.moyu.xmz.command;
 
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.SelectColumn;
@@ -52,7 +52,7 @@ public class QueryResult {
     }
 
     public static QueryResult simpleResult(Object resultValue) {
-        SelectColumn nameColumn = SelectColumn.newColumn("执行结果", ColumnTypeConstant.CHAR);
+        SelectColumn nameColumn = SelectColumn.newColumn("执行结果", DbTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
         queryResult.setSelectColumns(new SelectColumn[]{nameColumn});
         queryResult.addRow(new Object[]{resultValue});

@@ -4,7 +4,7 @@ import com.moyu.xmz.command.dml.sql.Query;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.store.cursor.Cursor;
 import com.moyu.xmz.store.cursor.RowEntity;
-import com.moyu.xmz.common.util.TypeConvertUtil;
+import com.moyu.xmz.common.util.TypeConvertUtils;
 
 /**
  * @author xiaomingzhang
@@ -12,7 +12,7 @@ import com.moyu.xmz.common.util.TypeConvertUtil;
  */
 public class SubQueryValue extends Expression {
 
-    private ColumnExpression leftColumn;
+    private ConditionColumnExpr leftColumn;
     /**
      * 子查询对象
      */
@@ -26,7 +26,7 @@ public class SubQueryValue extends Expression {
      */
     private Object subQueryValue;
 
-    public SubQueryValue(ColumnExpression leftColumn, Query subQuery) {
+    public SubQueryValue(ConditionColumnExpr leftColumn, Query subQuery) {
         this.leftColumn = leftColumn;
         this.subQuery = subQuery;
     }
@@ -40,7 +40,7 @@ public class SubQueryValue extends Expression {
             throw new SqlExecutionException("等于条件判断异常，子查询有多个值");
         }
         if (subQueryValue != null) {
-            subQueryValue = TypeConvertUtil.convertValueType(String.valueOf(subQueryValue), leftColumn.getColumn().getColumnType());
+            subQueryValue = TypeConvertUtils.convertValueType(String.valueOf(subQueryValue), leftColumn.getColumn().getColumnType());
         }
         return subQueryValue;
     }

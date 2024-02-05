@@ -1,17 +1,17 @@
 package com.moyu.xmz.net;
 
-import com.moyu.xmz.command.AbstractCommand;
+import com.moyu.xmz.command.AbstractCmd;
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
 import com.moyu.xmz.command.SqlParser;
-import com.moyu.xmz.command.dml.SelectCommand;
+import com.moyu.xmz.command.dml.SelectCmd;
 import com.moyu.xmz.command.dml.sql.Parameter;
 import com.moyu.xmz.net.model.terminal.DatabaseInfo;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
 import com.moyu.xmz.net.model.terminal.QueryResultStrDto;
 import com.moyu.xmz.net.util.WritePacketUtil;
 import com.moyu.xmz.common.exception.ExceptionUtil;
-import com.moyu.xmz.net.constant.CommandTypeConstant;
+import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.model.jdbc.PreparedParamDto;
 import com.moyu.xmz.net.packet.ErrPacket;
@@ -56,14 +56,14 @@ public class TcpServerThread implements Runnable {
             BaseResultDto resultDto = null;
             try {
                 switch (commandType) {
-                    case CommandTypeConstant.DB_INFO:
+                    case CmdTypeConstant.DB_INFO:
                         // 获取数据库名称
                         String databaseName = ReadWriteUtil.readString(in);
                         System.out.println("获取数据库信息，数据库名称:" + databaseName);
                         Database database = Database.getDatabase(databaseName);
                         resultDto = new DatabaseInfo(database);
                         break;
-                    case CommandTypeConstant.DB_QUERY:
+                    case CmdTypeConstant.DB_QUERY:
                         Integer databaseId = in.readInt();
                         Database dbObj = null;
                         String dbName = null;
@@ -82,7 +82,7 @@ public class TcpServerThread implements Runnable {
                         // 执行sql并获取结果
                         resultDto = execSqlGetResult(sql, dbObj);
                         break;
-                    case CommandTypeConstant.DB_QUERY_RES_STR:
+                    case CmdTypeConstant.DB_QUERY_RES_STR:
                         Integer databaseId2 = in.readInt();
                         Database dbObj2 = null;
                         String dbName2 = null;
@@ -111,10 +111,10 @@ public class TcpServerThread implements Runnable {
                         System.out.println(formatResult);
                         resultDto = new QueryResultStrDto(formatResult);
                         break;
-                    case CommandTypeConstant.DB_QUERY_PAGE:
+                    case CmdTypeConstant.DB_QUERY_PAGE:
                         handleQueryPage();
                         return;
-                    case CommandTypeConstant.DB_PREPARED_QUERY:
+                    case CmdTypeConstant.DB_PREPARED_QUERY:
                         resultDto = preparedQuery();
                         break;
                     default:
@@ -166,13 +166,13 @@ public class TcpServerThread implements Runnable {
         ConnectSession connectSession = new ConnectSession(dbObj);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        if (command instanceof SelectCommand) {
-            SelectCommand selectCommand = (SelectCommand) command;
+        if (command instanceof SelectCmd) {
+            SelectCmd selectCmd = (SelectCmd) command;
             // 获取一页数据
-            QueryResult pageResult = selectCommand.getNextPageResult();
+            QueryResult pageResult = selectCmd.getNextPageResult();
             // 数据转换
             QueryResultDto queryResultDto = QueryResultDto.valueOf(pageResult);
-            OkPacket okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
+            OkPacket okPacket = new OkPacket(0, queryResultDto, CmdTypeConstant.DB_QUERY_PAGE);
             // 数据发送
             WritePacketUtil.writeOkPacket(out, okPacket);
             while (pageResult.getHasNext() == (byte) 1) {
@@ -181,10 +181,10 @@ public class TcpServerThread implements Runnable {
                     break;
                 }
                 System.out.println(Thread.currentThread().getName() + "获取下一批数据, flag=" + flag);
-                pageResult = selectCommand.getNextPageResult();
+                pageResult = selectCmd.getNextPageResult();
                 // 数据转换
                 queryResultDto = QueryResultDto.valueOf(pageResult);
-                okPacket = new OkPacket(0, queryResultDto, CommandTypeConstant.DB_QUERY_PAGE);
+                okPacket = new OkPacket(0, queryResultDto, CmdTypeConstant.DB_QUERY_PAGE);
                 // 数据发送
                 WritePacketUtil.writeOkPacket(out, okPacket);
             }
@@ -242,7 +242,7 @@ public class TcpServerThread implements Runnable {
             }
         }
         System.out.println("参数：" + paramPrintStr.toString());
-        AbstractCommand command = (AbstractCommand) connectSession.prepareCommand(sql);
+        AbstractCmd command = (AbstractCmd) connectSession.prepareCommand(sql);
         command.setParameterValues(queryParams);
         QueryResult queryResult = command.execCommand();
         QueryResultDto queryResultDto = QueryResultDto.valueOf(queryResult);

@@ -24,6 +24,10 @@ public interface CommonConstant {
     String ENGINE_TYPE_YU = "yuStore";
     String ENGINE_TYPE_YAN = "yanStore";
 
+    int INT_LENGTH = 4;
+
+    int LONG_LENGTH = 8;
+
 
 
 }

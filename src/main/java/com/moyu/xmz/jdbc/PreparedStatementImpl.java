@@ -2,11 +2,11 @@ package com.moyu.xmz.jdbc;
 
 import com.moyu.xmz.command.dml.sql.Parameter;
 import com.moyu.xmz.net.util.ReadWriteUtil;
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.jdbc.util.PacketReadUtil;
-import com.moyu.xmz.net.constant.CommandTypeConstant;
+import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.model.jdbc.PreparedParamDto;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
@@ -84,7 +84,7 @@ public class PreparedStatementImpl implements PreparedStatement {
              DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
              DataInputStream dataInputStream = new DataInputStream(inputStream)) {
             // 命令类型
-            dataOutputStream.writeByte(CommandTypeConstant.DB_PREPARED_QUERY);
+            dataOutputStream.writeByte(CmdTypeConstant.DB_PREPARED_QUERY);
             // 数据库名称
             ReadWriteUtil.writeString(dataOutputStream, databaseName);
             // SQL
@@ -144,19 +144,19 @@ public class PreparedStatementImpl implements PreparedStatement {
             return -1;
         }
         if (value instanceof Integer) {
-            return ColumnTypeConstant.INT_4;
+            return DbTypeConstant.INT_4;
         } else if (value instanceof Long) {
-            return ColumnTypeConstant.INT_8;
+            return DbTypeConstant.INT_8;
         } else if (value instanceof BigInteger) {
-            return ColumnTypeConstant.UNSIGNED_INT_8;
+            return DbTypeConstant.UNSIGNED_INT_8;
         } else if (value instanceof String) {
-            return ColumnTypeConstant.VARCHAR;
+            return DbTypeConstant.VARCHAR;
         } else if (value instanceof java.util.Date) {
-            return ColumnTypeConstant.TIMESTAMP;
+            return DbTypeConstant.TIMESTAMP;
         } else if (value instanceof LocalDateTime) {
-            return ColumnTypeConstant.TIMESTAMP;
+            return DbTypeConstant.TIMESTAMP;
         } else if (value instanceof Byte) {
-            return ColumnTypeConstant.TINY_INT;
+            return DbTypeConstant.TINY_INT;
         } else {
             throw new IllegalArgumentException("不支持类型" + value.getClass().getName());
         }

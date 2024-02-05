@@ -1,7 +1,7 @@
 package test.readwrite;
 
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 
 import java.nio.ByteBuffer;
 
@@ -15,7 +15,7 @@ public class FileStoreReadWriteTest {
     private static String filePath = "D:\\mytest\\fileTest\\moyu.xmz";
 
     public static void main(String[] args) {
-        FileUtil.createFileIfNotExists(filePath);
+        FileUtils.createFileIfNotExists(filePath);
         FileAccessor fileAccessor = null;
         try {
             fileAccessor = new FileAccessor(filePath);

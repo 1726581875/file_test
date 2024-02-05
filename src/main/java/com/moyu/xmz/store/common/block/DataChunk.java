@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.block;
 
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.common.util.DataByteUtils;
 
@@ -44,7 +44,7 @@ public class DataChunk {
     /**
      * 行数据
      */
-    private List<RowMetadata> dataRowList;
+    private List<RowMeta> dataRowList;
 
     public DataChunk(int chunkIndex, long startPos) {
         initDataChunk(chunkIndex, startPos);
@@ -71,7 +71,7 @@ public class DataChunk {
 
         this.dataRowList = new ArrayList<>();
         for (int i = 0; i < this.rowNum; i++) {
-            this.dataRowList.add(new RowMetadata(byteBuffer));
+            this.dataRowList.add(new RowMeta(byteBuffer));
         }
     }
 
@@ -105,18 +105,18 @@ public class DataChunk {
     }
 
 
-    public void addRow(RowMetadata dataRow) {
+    public void addRow(RowMeta dataRow) {
         this.rowNum++;
         this.usedByteLen += dataRow.getTotalByteLen();
         this.nextRowStartPos = this.nextRowStartPos + dataRow.getTotalByteLen();
         this.dataRowList.add(dataRow);
     }
 
-    public void updateRow(int index, RowMetadata newRow) {
+    public void updateRow(int index, RowMeta newRow) {
         if(index >= dataRowList.size()) {
             throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
         }
-        RowMetadata oldRow = dataRowList.get(index);
+        RowMeta oldRow = dataRowList.get(index);
         long needLen = newRow.getTotalByteLen() - oldRow.getTotalByteLen();
         this.usedByteLen += needLen;
         this.nextRowStartPos = needLen;
@@ -128,10 +128,10 @@ public class DataChunk {
         if(index >= dataRowList.size()) {
            throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
         }
-        RowMetadata rowMetadata = dataRowList.get(index);
+        RowMeta rowMeta = dataRowList.get(index);
         this.rowNum--;
-        this.usedByteLen = this.usedByteLen - (int) rowMetadata.getTotalByteLen();
-        this.nextRowStartPos = this.nextRowStartPos - (int) rowMetadata.getTotalByteLen();
+        this.usedByteLen = this.usedByteLen - (int) rowMeta.getTotalByteLen();
+        this.nextRowStartPos = this.nextRowStartPos - (int) rowMeta.getTotalByteLen();
         this.dataRowList.remove(index);
     }
 
@@ -139,8 +139,8 @@ public class DataChunk {
         if(index >= dataRowList.size()) {
             throw new SqlExecutionException("超出下标,size: " + dataRowList.size() + ",index:" + index);
         }
-        RowMetadata rowMetadata = dataRowList.get(index);
-        rowMetadata.setIsDeleted((byte) 1);
+        RowMeta rowMeta = dataRowList.get(index);
+        rowMeta.setIsDeleted((byte) 1);
     }
 
     public void clear() {
@@ -192,11 +192,11 @@ public class DataChunk {
         this.rowStartPos = rowStartPos;
     }
 
-    public List<RowMetadata> getDataRowList() {
+    public List<RowMeta> getDataRowList() {
         return dataRowList;
     }
 
-    public void setDataRowList(List<RowMetadata> dataRowList) {
+    public void setDataRowList(List<RowMeta> dataRowList) {
         this.dataRowList = dataRowList;
     }
 

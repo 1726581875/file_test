@@ -3,7 +3,7 @@ package com.moyu.xmz.command.dml.sql;
 import com.moyu.xmz.command.dml.plan.SelectIndex;
 import com.moyu.xmz.command.dml.expression.Expression;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.meta.IndexMetadata;
+import com.moyu.xmz.store.common.meta.IndexMeta;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class QueryTable {
     /**
      * 当前表所有索引map
      */
-    private Map<String, IndexMetadata> indexMap;
+    private Map<String, IndexMeta> indexMap;
     /**
      * 存储引擎类型
      */
@@ -160,11 +160,11 @@ public class QueryTable {
         return indexList;
     }
 
-    public void setIndexMap(Map<String, IndexMetadata> indexMap) {
+    public void setIndexMap(Map<String, IndexMeta> indexMap) {
         this.indexMap = indexMap;
     }
 
-    public Map<String, IndexMetadata> getIndexMap() {
+    public Map<String, IndexMeta> getIndexMap() {
         return indexMap;
     }
 }

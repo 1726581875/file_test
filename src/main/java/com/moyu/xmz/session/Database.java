@@ -1,9 +1,9 @@
 package com.moyu.xmz.session;
 
-import com.moyu.xmz.command.ddl.ShowDatabasesCommand;
-import com.moyu.xmz.command.ddl.ShowTablesCommand;
-import com.moyu.xmz.store.common.meta.DatabaseMetadata;
-import com.moyu.xmz.store.common.meta.TableMetadata;
+import com.moyu.xmz.command.ddl.ShowDatabasesCmd;
+import com.moyu.xmz.command.ddl.ShowTablesCmd;
+import com.moyu.xmz.store.common.meta.DatabaseMeta;
+import com.moyu.xmz.store.common.meta.TableMeta;
 import com.moyu.xmz.common.exception.DbException;
 
 import java.util.List;
@@ -28,18 +28,18 @@ public class Database {
     private Map<String, Table> tableMap = new ConcurrentHashMap<>();
 
     static {
-        ShowDatabasesCommand showDbCommand = new ShowDatabasesCommand();
+        ShowDatabasesCmd showDbCommand = new ShowDatabasesCmd();
         showDbCommand.execCommand();
-        List<DatabaseMetadata> resultList = showDbCommand.getResultList();
+        List<DatabaseMeta> resultList = showDbCommand.getResultList();
         if (resultList != null) {
-            for (DatabaseMetadata metadata : resultList) {
+            for (DatabaseMeta metadata : resultList) {
                 Database database = new Database(metadata.getDatabaseId(), metadata.getName());
                 databaseMap.put(metadata.getDatabaseId(), database);
-                ShowTablesCommand showTablesCommand = new ShowTablesCommand(metadata.getDatabaseId());
-                showTablesCommand.execCommand();
-                List<TableMetadata> tableMetadataList = showTablesCommand.getResultList();
-                for (TableMetadata tableMetadata : tableMetadataList) {
-                    database.addTable(new Table(tableMetadata));
+                ShowTablesCmd showTablesCmd = new ShowTablesCmd(metadata.getDatabaseId());
+                showTablesCmd.execCommand();
+                List<TableMeta> tableMetaList = showTablesCmd.getResultList();
+                for (TableMeta tableMeta : tableMetaList) {
+                    database.addTable(new Table(tableMeta));
                 }
             }
         }

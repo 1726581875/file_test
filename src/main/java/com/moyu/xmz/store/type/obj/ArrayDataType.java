@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/7/8
  */
-public class ArrayDataType extends AbstractObjDataType<ArrayValue> {
+public class ArrayDataType extends AbstractObjType<ArrayValue> {
 
     @Override
     public ArrayValue read(ByteBuffer byteBuffer) {

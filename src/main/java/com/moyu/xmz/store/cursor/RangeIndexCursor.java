@@ -6,8 +6,8 @@ import com.moyu.xmz.common.constant.OperatorConstant;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.SqlIllegalException;
 import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.tree.Page;
 import com.moyu.xmz.store.type.value.ArrayValue;
@@ -27,7 +27,7 @@ public class RangeIndexCursor extends AbstractCursor {
 
     private Column[] columns;
 
-    private DataChunkFileAccessor dataChunkFileAccessor;
+    private DataChunkAccessor dataChunkAccessor;
 
     private String indexPath;
 
@@ -43,8 +43,8 @@ public class RangeIndexCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public RangeIndexCursor(DataChunkFileAccessor dataChunkFileAccessor, Column[] columns, Expression range, String indexPath) {
-        this.dataChunkFileAccessor = dataChunkFileAccessor;
+    public RangeIndexCursor(DataChunkAccessor dataChunkAccessor, Column[] columns, Expression range, String indexPath) {
+        this.dataChunkAccessor = dataChunkAccessor;
         this.columns = columns;
         this.indexPath = indexPath;
     }
@@ -121,7 +121,7 @@ public class RangeIndexCursor extends AbstractCursor {
             throw new DbException("游标已关闭");
         }
 
-        int dataChunkNum = dataChunkFileAccessor.getDataChunkNum();
+        int dataChunkNum = dataChunkAccessor.getDataChunkNum();
         if (dataChunkNum == 0) {
             return null;
         }
@@ -137,7 +137,7 @@ public class RangeIndexCursor extends AbstractCursor {
 
         if(currChunk == null) {
             Long pos = posArr[nextPosIndex];
-            currChunk = dataChunkFileAccessor.getChunkByPos(pos);
+            currChunk = dataChunkAccessor.getChunkByPos(pos);
             nextPosIndex++;
         }
 
@@ -146,11 +146,11 @@ public class RangeIndexCursor extends AbstractCursor {
         }
 
         // 从当前块拿
-        List<RowMetadata> dataRowList = currChunk.getDataRowList();
+        List<RowMeta> dataRowList = currChunk.getDataRowList();
         if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
             while (currChunkNextRowIndex < dataRowList.size()) {
-                RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-                Column[] columnData = rowMetadata.getColumnData(columns);
+                RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+                Column[] columnData = rowMeta.getColumnData(columns);
                 RowEntity dbRow = new RowEntity(columnData);
                 currChunkNextRowIndex++;
                 return dbRow;
@@ -164,7 +164,7 @@ public class RangeIndexCursor extends AbstractCursor {
                 return null;
             }
             Long pos = posArr[i];
-            currChunk = dataChunkFileAccessor.getChunkByPos(pos);
+            currChunk = dataChunkAccessor.getChunkByPos(pos);
             currChunkNextRowIndex = 0;
             if(currChunk == null) {
                 return null;
@@ -172,8 +172,8 @@ public class RangeIndexCursor extends AbstractCursor {
             dataRowList = currChunk.getDataRowList();
             if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
                 while (currChunkNextRowIndex < dataRowList.size()) {
-                    RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-                    Column[] columnData = rowMetadata.getColumnData(columns);
+                    RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+                    Column[] columnData = rowMeta.getColumnData(columns);
                     RowEntity dbRow = new RowEntity(columnData);
                     currChunkNextRowIndex++;
                     nextPosIndex = i + 1;
@@ -201,7 +201,7 @@ public class RangeIndexCursor extends AbstractCursor {
 
     @Override
     void closeCursor() {
-        dataChunkFileAccessor.close();
+        dataChunkAccessor.close();
     }
 
 

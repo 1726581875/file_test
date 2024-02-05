@@ -6,7 +6,7 @@ import com.moyu.xmz.store.type.dbtype.LongType;
 import com.moyu.xmz.store.type.dbtype.StringType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 import com.moyu.xmz.store.type.obj.RowDataType;
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.SerializableByte;
 
@@ -42,14 +42,14 @@ public abstract class Value implements SerializableByte {
 
     public static int getValueTypeByColumnType(byte columnType) {
         switch (columnType) {
-            case ColumnTypeConstant.INT_4:
+            case DbTypeConstant.INT_4:
                 return TYPE_INT;
-            case ColumnTypeConstant.INT_8:
+            case DbTypeConstant.INT_8:
                 return TYPE_LONG;
-            case ColumnTypeConstant.CHAR:
-            case ColumnTypeConstant.VARCHAR:
+            case DbTypeConstant.CHAR:
+            case DbTypeConstant.VARCHAR:
                 return TYPE_STRING;
-            case ColumnTypeConstant.TIMESTAMP:
+            case DbTypeConstant.TIMESTAMP:
                 return TYPE_LONG;
             default:
                 throw new DbException("不支持读取类型:" + columnType);

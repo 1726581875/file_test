@@ -2,8 +2,8 @@ package test.parser;
 
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCommand;
-import com.moyu.xmz.command.ddl.DropDatabaseCommand;
+import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
+import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
@@ -23,10 +23,10 @@ public class ColumnTypeTest {
 
 
     static {
-        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execCommand();
-        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execCommand();
+        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
+        dropDatabaseCmd.execCommand();
+        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
+        createDatabaseCmd.execCommand();
         database = Database.getDatabase(databaseName);
     }
 

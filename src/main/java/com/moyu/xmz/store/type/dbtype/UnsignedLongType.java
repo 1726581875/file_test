@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/10/17
  */
-public class UnsignedLongType extends AbstractColumnType<BigInteger> {
+public class UnsignedLongType extends AbstractDbType<BigInteger> {
 
     @Override
     int getMaxByteLen(BigInteger value) {

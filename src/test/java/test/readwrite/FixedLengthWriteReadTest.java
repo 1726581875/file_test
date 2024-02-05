@@ -3,7 +3,7 @@ package test.readwrite;
 import test.readwrite.entity.Chunk;
 import com.moyu.xmz.store.accessor.FileAccessor;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ public class FixedLengthWriteReadTest {
 
     public static void main(String[] args) {
         String filePath = "D:\\mytest\\fileTest\\fixLen.xmz";
-        FileUtil.createFileIfNotExists(filePath);
+        FileUtils.createFileIfNotExists(filePath);
         FileAccessor fileAccessor = null;
 
         List<Chunk> chunkList = new ArrayList<>();

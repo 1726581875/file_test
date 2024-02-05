@@ -1,6 +1,6 @@
 package test.utils;
 
-import com.moyu.xmz.common.util.AssertUtil;
+import com.moyu.xmz.common.util.AssertUtils;
 import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
@@ -27,7 +27,7 @@ public class DataUtilsTest {
             intBufferTest.rewind();
             int result = DataByteUtils.readInt(intBufferTest);
             System.out.println("int原值:" + randomInt + ",经过转换再恢复的值:" + result);
-            AssertUtil.assertTrue(randomInt == result, "转换后的int的值必须和原值相等");
+            AssertUtils.assertTrue(randomInt == result, "转换后的int的值必须和原值相等");
         }
     }
 
@@ -41,7 +41,7 @@ public class DataUtilsTest {
             long longResult = DataByteUtils.readLong(longBufferTest);
             System.out.println(randomLong);
             System.out.println("long原值:" + randomLong + ",经过转换再恢复的值:" + longResult);
-            AssertUtil.assertTrue(randomLong == longResult, "转换后的long的值必须和原值相等");
+            AssertUtils.assertTrue(randomLong == longResult, "转换后的long的值必须和原值相等");
         }
 
     }

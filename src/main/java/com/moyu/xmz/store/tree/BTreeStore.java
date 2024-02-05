@@ -1,10 +1,10 @@
 package com.moyu.xmz.store.tree;
 
+import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.store.accessor.FileAccessor;
-import com.moyu.xmz.common.constant.JavaTypeConstant;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.FileUtil;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.FileUtils;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.nio.ByteBuffer;
  */
 public class BTreeStore {
 
-    private static final String defaultPath = PathUtil.getBaseDirPath();
+    private static final String defaultPath = PathUtils.getBaseDirPath();
 
     private static final String fileName = "tree2.d";
 
@@ -38,13 +38,13 @@ public class BTreeStore {
     }
 
     public BTreeStore(String fileFullPath) throws IOException {
-        FileUtil.createFileIfNotExists(fileFullPath);
+        FileUtils.createFileIfNotExists(fileFullPath);
         this.fileAccessor = new FileAccessor(fileFullPath);
         long endPosition = fileAccessor.getEndPosition();
         // 前8字节是记录根节点位置
         if(endPosition >= PAGE_START_POS) {
-            this.rootStartPos = DataByteUtils.readLong(fileAccessor.read(0, JavaTypeConstant.LONG_LENGTH));
-            this.nextRowId = DataByteUtils.readLong(fileAccessor.read(8, JavaTypeConstant.LONG_LENGTH));
+            this.rootStartPos = DataByteUtils.readLong(fileAccessor.read(0, CommonConstant.LONG_LENGTH));
+            this.nextRowId = DataByteUtils.readLong(fileAccessor.read(8, CommonConstant.LONG_LENGTH));
             this.pageCount = (int) ((endPosition - PAGE_START_POS) / Page.PAGE_SIZE);
 
         } else {
@@ -63,7 +63,7 @@ public class BTreeStore {
     }
 
     public void updateRootPos(long rootPos) {
-        ByteBuffer buffer = ByteBuffer.allocate(JavaTypeConstant.LONG_LENGTH);
+        ByteBuffer buffer = ByteBuffer.allocate(CommonConstant.LONG_LENGTH);
         DataByteUtils.writeLong(buffer, rootPos);
         buffer.rewind();
         fileAccessor.write(buffer, 0);
@@ -112,7 +112,7 @@ public class BTreeStore {
     }
 
     public void updateNextRowId() {
-        ByteBuffer buffer = ByteBuffer.allocate(JavaTypeConstant.LONG_LENGTH);
+        ByteBuffer buffer = ByteBuffer.allocate(CommonConstant.LONG_LENGTH);
         DataByteUtils.writeLong(buffer, nextRowId);
         buffer.rewind();
         fileAccessor.write(buffer, 8);

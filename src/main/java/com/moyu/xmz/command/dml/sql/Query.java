@@ -1,24 +1,24 @@
 package com.moyu.xmz.command.dml.sql;
 
-import com.moyu.xmz.command.dml.InsertCommand;
-import com.moyu.xmz.command.dml.expression.ColumnExpression;
+import com.moyu.xmz.command.dml.InsertCmd;
+import com.moyu.xmz.command.dml.expression.ConditionColumnExpr;
 import com.moyu.xmz.command.dml.expression.Expression;
-import com.moyu.xmz.command.dml.expression.SelectColumnExpression;
+import com.moyu.xmz.command.dml.expression.SelectColumnExpr;
 import com.moyu.xmz.command.dml.expression.SingleComparison;
 import com.moyu.xmz.command.dml.function.*;
 import com.moyu.xmz.command.dml.plan.SelectIndex;
 import com.moyu.xmz.common.config.CommonConfig;
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.common.constant.FunctionConstant;
+import com.moyu.xmz.common.constant.FuncConstant;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.common.exception.SqlIllegalException;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.PathUtils;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.store.StoreEngine;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.store.common.dto.SelectColumn;
 import com.moyu.xmz.store.cursor.*;
 import com.moyu.xmz.store.tree.BTreeMap;
@@ -254,13 +254,13 @@ public class Query {
                 resultRowList.clear();
             }
             try {
-                String tmpTablePath = PathUtil.getDataFilePath(session.getDatabaseId(), diskTemTableName);
+                String tmpTablePath = PathUtils.getDataFilePath(session.getDatabaseId(), diskTemTableName);
                 resultCursor = new DiskTemTableCursor(tmpTablePath, columns);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
-            resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+            resultCursor = new MemoryTableCursor(resultRowList, columns);
         }
         return resultCursor;
     }
@@ -274,10 +274,10 @@ public class Query {
                     + "_" +System.currentTimeMillis();
         }
         // 保存到磁盘
-        OperateTableInfo tableInfo = new OperateTableInfo(session, tmpTableName, null, null);
+        TableInfo tableInfo = new TableInfo(session, tmpTableName, null, null);
         tableInfo.setEngineType(CommonConstant.ENGINE_TYPE_YU);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
-        insertCommand.batchFastInsert(resultRowList);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, null);
+        insertCmd.batchFastInsert(resultRowList);
         return tmpTableName;
     }
 
@@ -307,7 +307,7 @@ public class Query {
         resultRowList.add(new RowEntity(resultColumns));
 
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        Cursor resultCursor = new MemoryTableCursor(resultRowList,columns);
         return resultCursor;
     }
 
@@ -315,14 +315,14 @@ public class Query {
         SelectColumn[] selectColumns = query.getSelectColumns();
         Column[] resultColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++){
-            SelectColumnExpression columnExpression = selectColumns[i].getColumnExpression();
+            SelectColumnExpr columnExpression = selectColumns[i].getColumnExpression();
             resultColumns[i] = (Column)columnExpression.getValue(null);
         }
         List<RowEntity> resultRowList = new ArrayList<>();
         resultRowList.add(new RowEntity(resultColumns));
         // 字段元数据信息
         Column[] metaColumns = resultRowList.get(0).getColumns();
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList, metaColumns);
+        Cursor resultCursor = new MemoryTableCursor(resultRowList, metaColumns);
         return resultCursor;
     }
 
@@ -380,7 +380,7 @@ public class Query {
 
         }
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        Cursor resultCursor = new MemoryTableCursor(resultRowList,columns);
         return resultCursor;
     }
 
@@ -426,7 +426,7 @@ public class Query {
             memorySort(resultRowList, columnIndexMap);
 
             Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-            resultCursor = new MemoryTemTableCursor(resultRowList, columns);
+            resultCursor = new MemoryTableCursor(resultRowList, columns);
             // 如果有limit语句，需要进行筛选
             if (query.getLimit() != null) {
                 List<RowEntity> rowList = new ArrayList<>(query.getLimit());
@@ -441,7 +441,7 @@ public class Query {
                     }
                     i++;
                 }
-                resultCursor = new MemoryTemTableCursor(rowList, columns);
+                resultCursor = new MemoryTableCursor(rowList, columns);
             }
         }
 
@@ -502,7 +502,7 @@ public class Query {
             }
         }
         Column[] columns = SelectColumn.getColumnBySelectColumn(query);
-        Cursor resultCursor = new MemoryTemTableCursor(resultRowList,columns);
+        Cursor resultCursor = new MemoryTableCursor(resultRowList,columns);
         return resultCursor;
     }
 
@@ -520,7 +520,7 @@ public class Query {
                 throw new SqlIllegalException("sql语法错误，column应当不为空");
             }
             switch (functionName) {
-                case FunctionConstant.FUNC_COUNT:
+                case FuncConstant.FUNC_COUNT:
                     String[] split = columnName.split("\\s+");
                     if(split.length > 1) {
                         statFunctions.add(new CountFunction(split[1], true));
@@ -528,16 +528,16 @@ public class Query {
                         statFunctions.add(new CountFunction(split[0]));
                     }
                     break;
-                case FunctionConstant.FUNC_SUM:
+                case FuncConstant.FUNC_SUM:
                     statFunctions.add(new SumFunction(columnName));
                     break;
-                case FunctionConstant.FUNC_MIN:
+                case FuncConstant.FUNC_MIN:
                     statFunctions.add(new MinFunction(columnName));
                     break;
-                case FunctionConstant.FUNC_MAX:
+                case FuncConstant.FUNC_MAX:
                     statFunctions.add(new MaxFunction(columnName));
                     break;
-                case FunctionConstant.FUNC_AVG:
+                case FuncConstant.FUNC_AVG:
                     statFunctions.add(new AvgFunction(columnName));
                     break;
                 default:
@@ -563,20 +563,20 @@ public class Query {
             Long statResult = statFunction.getValue();
 
             // 日期类型
-            if (!FunctionConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
-                    && c != null && c.getColumnType() == ColumnTypeConstant.TIMESTAMP) {
-                resultColumn = new Column(columnName, ColumnTypeConstant.TIMESTAMP, columnIndex, 8);
+            if (!FuncConstant.FUNC_COUNT.equals(selectColumn.getFunctionName())
+                    && c != null && c.getColumnType() == DbTypeConstant.TIMESTAMP) {
+                resultColumn = new Column(columnName, DbTypeConstant.TIMESTAMP, columnIndex, 8);
                 resultColumn.setValue(statResult == null ? null : new Date(statResult));
             } else {
                 // 数字类型
-                resultColumn = new Column(columnName, ColumnTypeConstant.INT_8, columnIndex, 8);
+                resultColumn = new Column(columnName, DbTypeConstant.INT_8, columnIndex, 8);
                 resultColumn.setValue(statResult);
             }
         } else if (AvgFunction.class.equals(fClass)) {
             AvgFunction avgFunction = (AvgFunction) statFunction;
             Double avgValue = avgFunction.getAvgValue();
             // TODO 应当为Double类型
-            resultColumn = new Column(columnName, ColumnTypeConstant.INT_8, columnIndex, 8);
+            resultColumn = new Column(columnName, DbTypeConstant.INT_8, columnIndex, 8);
             resultColumn.setValue(avgValue);
         } else {
             throw new SqlIllegalException("sql语法错误，不支持该函数" + statFunction);
@@ -618,7 +618,7 @@ public class Query {
         Column[] resultColumns = new Column[selectColumns.length];
         for (int i = 0; i < selectColumns.length; i++) {
             SelectColumn selectColumn = selectColumns[i];
-            SelectColumnExpression columnExpression = selectColumn.getColumnExpression();
+            SelectColumnExpr columnExpression = selectColumn.getColumnExpression();
             Column columnValue = (Column) columnExpression.getValue(rowEntity);
             resultColumns[i] = columnValue;
         }
@@ -690,7 +690,7 @@ public class Query {
 
 
     public Cursor getQueryCursor(QueryTable table) throws IOException {
-        OperateTableInfo tableInfo = new OperateTableInfo(session, table.getTableName(), table.getTableColumns(), null);
+        TableInfo tableInfo = new TableInfo(session, table.getTableName(), table.getTableColumns(), null);
         tableInfo.setEngineType(table.getEngineType());
         StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         Cursor queryCursor = engineOperation.getQueryCursor(table);
@@ -728,7 +728,7 @@ public class Query {
                 rightCursor.reset();
                 resultList.addAll(rows);
             }
-            return new MemoryTemTableCursor(resultList, columns);
+            return new MemoryTableCursor(resultList, columns);
             // 右连接
         } else if (CommonConstant.JOIN_TYPE_RIGHT.equals(joinType)) {
             RowEntity rightRow = null;
@@ -750,7 +750,7 @@ public class Query {
                 resultList.addAll(rows);
                 leftCursor.reset();
             }
-            return new MemoryTemTableCursor(resultList, columns);
+            return new MemoryTableCursor(resultList, columns);
         } else {
             throw new SqlIllegalException("不支持连接类型:" + joinType);
         }
@@ -789,7 +789,7 @@ public class Query {
                 rightCursor.reset();
                 resultList.addAll(rows);
             }
-            return new MemoryTemTableCursor(resultList, columns);
+            return new MemoryTableCursor(resultList, columns);
             // 右连接
         } else if (CommonConstant.JOIN_TYPE_RIGHT.equals(joinType)) {
             RowEntity rightRow = null;
@@ -811,7 +811,7 @@ public class Query {
                 resultList.addAll(rows);
                 leftCursor.reset();
             }
-            return new MemoryTemTableCursor(resultList, columns);
+            return new MemoryTableCursor(resultList, columns);
         } else {
             throw new SqlIllegalException("不支持连接类型:" + joinType);
         }
@@ -823,7 +823,7 @@ public class Query {
         if(joinCondition instanceof SingleComparison) {
             SingleComparison leftRight = (SingleComparison) condition;
             // 左表字段
-            Expression left = (ColumnExpression)leftRight.getLeft();
+            Expression left = (ConditionColumnExpr)leftRight.getLeft();
             return left.getValue(leftRow);
         } else {
             throw new DbException("不支持连接条件");

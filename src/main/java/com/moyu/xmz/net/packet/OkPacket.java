@@ -1,6 +1,6 @@
 package com.moyu.xmz.net.packet;
 
-import com.moyu.xmz.net.constant.CommandTypeConstant;
+import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.model.terminal.DatabaseInfo;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.net.model.BaseResultDto;
@@ -54,15 +54,15 @@ public class OkPacket extends Packet {
         this.contentLen = buffer.getInt();
         if (this.contentLen > 0) {
             switch (commandType) {
-                case CommandTypeConstant.DB_INFO:
+                case CmdTypeConstant.DB_INFO:
                     this.content = new DatabaseInfo(buffer);
                     break;
-                case CommandTypeConstant.DB_QUERY:
-                case CommandTypeConstant.DB_PREPARED_QUERY:
-                case CommandTypeConstant.DB_QUERY_PAGE:
+                case CmdTypeConstant.DB_QUERY:
+                case CmdTypeConstant.DB_PREPARED_QUERY:
+                case CmdTypeConstant.DB_QUERY_PAGE:
                     this.content = new QueryResultDto(buffer);
                     break;
-                case CommandTypeConstant.DB_QUERY_RES_STR:
+                case CmdTypeConstant.DB_QUERY_RES_STR:
                     this.content = new QueryResultStrDto(buffer);
                     break;
                 default:

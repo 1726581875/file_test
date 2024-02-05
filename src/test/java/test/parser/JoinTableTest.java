@@ -2,15 +2,15 @@ package test.parser;
 
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCommand;
-import com.moyu.xmz.command.ddl.DropDatabaseCommand;
-import com.moyu.xmz.command.dml.InsertCommand;
+import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
+import com.moyu.xmz.command.ddl.DropDatabaseCmd;
+import com.moyu.xmz.command.dml.InsertCmd;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
@@ -31,10 +31,10 @@ public class JoinTableTest {
 
 
     static {
-        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execCommand();
-        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execCommand();
+        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
+        dropDatabaseCmd.execCommand();
+        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
+        createDatabaseCmd.execCommand();
         database = Database.getDatabase(databaseName);
     }
 
@@ -101,21 +101,21 @@ public class JoinTableTest {
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession(database);
         Column[] tableColumns = database.getTable(tableName).getColumns();
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, tableName, tableColumns, null);
+        TableInfo tableInfo = new TableInfo(connectSession, tableName, tableColumns, null);
         tableInfo.setEngineType(engineType);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, null);
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.batchWriteList(columnList);
+                insertCmd.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
             }
         }
 
-        insertCommand.batchWriteList(columnList);
+        insertCmd.batchWriteList(columnList);
         columnList.clear();
 
         testExecSQL("select count(*) from " + tableName);

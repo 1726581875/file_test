@@ -1,6 +1,6 @@
 package test.readwrite;
 
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 
 /**
  * @author xiaomingzhang
@@ -10,7 +10,7 @@ public class WriteTest {
 
     public static void main(String[] args) {
         String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
-        FileUtil.createFileIfNotExists(filePath);
+        FileUtils.createFileIfNotExists(filePath);
     }
 
 

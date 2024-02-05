@@ -2,7 +2,7 @@ package com.moyu.xmz.store.transaction;
 
 import com.moyu.xmz.store.accessor.FileAccessor;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class UndoLogStore {
 
-    private static final String DEFAULT_META_PATH =  PathUtil.getMetaDirPath();
+    private static final String DEFAULT_META_PATH =  PathUtils.getMetaDirPath();
 
     private String filePath;
 

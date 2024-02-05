@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.common.dto;
 
 import com.moyu.xmz.command.dml.sql.Parameter;
-import com.moyu.xmz.store.common.meta.ColumnMetadata;
+import com.moyu.xmz.store.common.meta.ColumnMeta;
 
 /**
  * @author xiaomingzhang
@@ -64,7 +64,7 @@ public class Column {
         this.isNotNull = 0;
     }
 
-    public Column(ColumnMetadata metadata) {
+    public Column(ColumnMeta metadata) {
         this.columnName = metadata.getColumnName();
         this.columnType = metadata.getColumnType();
         this.columnIndex = metadata.getColumnIndex();

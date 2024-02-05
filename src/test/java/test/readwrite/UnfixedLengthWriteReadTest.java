@@ -4,7 +4,7 @@ import test.readwrite.entity.Chunk;
 import test.readwrite.entity.FileHeader;
 import com.moyu.xmz.store.accessor.FileAccessor;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ public class UnfixedLengthWriteReadTest {
 
     public static void main(String[] args) {
         String filePath = "D:\\mytest\\fileTest\\unfixLen.xmz";
-        FileUtil.createFileIfNotExists(filePath);
+        FileUtils.createFileIfNotExists(filePath);
         FileAccessor fileAccessor = null;
 
         // header

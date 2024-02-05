@@ -4,7 +4,7 @@ import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.SelectColumn;
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.store.common.WriteBuffer;
 
 import java.nio.ByteBuffer;
@@ -63,7 +63,7 @@ public class QueryResultDto implements BaseResultDto {
             // 如果没有指数据库字段对象，默认为字符类型
             if(selectColumns[i].getColumnType() == null) {
                 if (column == null) {
-                    columnType = ColumnTypeConstant.VARCHAR;
+                    columnType = DbTypeConstant.VARCHAR;
                 } else {
                     columnType = column.getColumnType();
                 }

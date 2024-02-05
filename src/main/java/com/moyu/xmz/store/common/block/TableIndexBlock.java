@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.block;
 
-import com.moyu.xmz.store.common.meta.IndexMetadata;
+import com.moyu.xmz.store.common.meta.IndexMeta;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.common.util.DataByteUtils;
 
@@ -29,7 +29,7 @@ public class TableIndexBlock implements SerializableByte {
 
     private long indexStartPos;
 
-    private List<IndexMetadata> indexMetadataList;
+    private List<IndexMeta> indexMetaList;
 
     public TableIndexBlock(int blockIndex, long startPos, int tableId) {
         this.usedByteLen = 32;
@@ -38,7 +38,7 @@ public class TableIndexBlock implements SerializableByte {
         this.tableId = tableId;
         this.indexNum = 0;
         this.indexStartPos = startPos + 32L;
-        this.indexMetadataList = new ArrayList<>();
+        this.indexMetaList = new ArrayList<>();
     }
 
 
@@ -49,9 +49,9 @@ public class TableIndexBlock implements SerializableByte {
         this.tableId = DataByteUtils.readInt(byteBuffer);
         this.indexNum = DataByteUtils.readInt(byteBuffer);
         this.indexStartPos = DataByteUtils.readLong(byteBuffer);
-        this.indexMetadataList = new ArrayList<>(indexNum);
+        this.indexMetaList = new ArrayList<>(indexNum);
         for (int i = 1; i <= indexNum; i++) {
-            this.indexMetadataList.add(new IndexMetadata(byteBuffer));
+            this.indexMetaList.add(new IndexMeta(byteBuffer));
         }
     }
 
@@ -65,8 +65,8 @@ public class TableIndexBlock implements SerializableByte {
         DataByteUtils.writeInt(byteBuffer, tableId);
         DataByteUtils.writeInt(byteBuffer, indexNum);
         DataByteUtils.writeLong(byteBuffer, indexStartPos);
-        for (int i = 0; i < this.indexMetadataList.size(); i++) {
-            IndexMetadata index = this.indexMetadataList.get(i);
+        for (int i = 0; i < this.indexMetaList.size(); i++) {
+            IndexMeta index = this.indexMetaList.get(i);
             byteBuffer.put(index.getByteBuffer());
         }
 
@@ -78,12 +78,12 @@ public class TableIndexBlock implements SerializableByte {
     /**
      * @param index
      */
-    public void addIndex(IndexMetadata index) {
+    public void addIndex(IndexMeta index) {
         this.indexNum++;
         // 更新长度
         index.getByteBuffer();
         this.usedByteLen += index.getTotalByteLen();
-        this.indexMetadataList.add(index);
+        this.indexMetaList.add(index);
     }
 
     public static int getTableColumnBlockSize() {
@@ -139,12 +139,12 @@ public class TableIndexBlock implements SerializableByte {
         this.indexStartPos = indexStartPos;
     }
 
-    public List<IndexMetadata> getIndexMetadataList() {
-        return indexMetadataList;
+    public List<IndexMeta> getIndexMetaList() {
+        return indexMetaList;
     }
 
-    public void setIndexMetadataList(List<IndexMetadata> indexMetadataList) {
-        this.indexMetadataList = indexMetadataList;
+    public void setIndexMetaList(List<IndexMeta> indexMetaList) {
+        this.indexMetaList = indexMetaList;
     }
 
 
@@ -157,7 +157,7 @@ public class TableIndexBlock implements SerializableByte {
                 ", tableId=" + tableId +
                 ", columnNum=" + indexNum +
                 ", columnStartPos=" + indexStartPos +
-                ", indexMetadataList=" + indexMetadataList +
+                ", indexMetadataList=" + indexMetaList +
                 '}';
     }
 }

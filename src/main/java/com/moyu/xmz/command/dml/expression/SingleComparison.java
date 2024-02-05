@@ -7,7 +7,7 @@ import com.moyu.xmz.common.constant.OperatorConstant;
 import com.moyu.xmz.common.exception.SqlIllegalException;
 import com.moyu.xmz.store.cursor.RowEntity;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.meta.IndexMetadata;
+import com.moyu.xmz.store.common.meta.IndexMeta;
 
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 /**
  * @author xiaomingzhang
  * @date 2023/7/17
+ * 常用的比较单个值表达式，入column=1、column like '%%' 、column is not null
  */
 public class SingleComparison extends AbstractCondition {
 
@@ -152,8 +153,8 @@ public class SingleComparison extends AbstractCondition {
 
     @Override
     public void setSelectIndexes(Query query) {
-        if(left instanceof ColumnExpression && !(right instanceof ColumnExpression)) {
-            ColumnExpression leftColumn = (ColumnExpression) left;
+        if(left instanceof ConditionColumnExpr && !(right instanceof ConditionColumnExpr)) {
+            ConditionColumnExpr leftColumn = (ConditionColumnExpr) left;
             Object rightValue = right.getValue(new RowEntity(null));
             switch (operator) {
                 case OperatorConstant.EQUAL:
@@ -174,18 +175,18 @@ public class SingleComparison extends AbstractCondition {
     }
 
     private SelectIndex getSelectIndex(Column column,
-                                       Map<String, IndexMetadata> indexMap,
+                                       Map<String, IndexMeta> indexMap,
                                        Object value) {
-        IndexMetadata indexMetadata = indexMap != null ? indexMap.get(column.getColumnName()) : null;
-        if(indexMetadata != null) {
+        IndexMeta indexMeta = indexMap != null ? indexMap.get(column.getColumnName()) : null;
+        if(indexMeta != null) {
             column.setValue(value);
             SelectIndex selectPlan = new SelectIndex();
             selectPlan.setTableName(column.getColumnName());
             selectPlan.setUseIndex(true);
-            selectPlan.setIndexType(indexMetadata.getIndexType());
+            selectPlan.setIndexType(indexMeta.getIndexType());
             selectPlan.setIndexColumn(column);
-            selectPlan.setTableId(indexMetadata.getTableId());
-            selectPlan.setIndexName(indexMetadata.getIndexName());
+            selectPlan.setTableId(indexMeta.getTableId());
+            selectPlan.setIndexName(indexMeta.getIndexName());
             return selectPlan;
         }
         return null;
@@ -206,14 +207,14 @@ public class SingleComparison extends AbstractCondition {
 
     @Override
     public Expression getJoinCondition(QueryTable mainTable, QueryTable joinTable) {
-        if (left instanceof ColumnExpression) {
-            ColumnExpression lExp = (ColumnExpression) left;
+        if (left instanceof ConditionColumnExpr) {
+            ConditionColumnExpr lExp = (ConditionColumnExpr) left;
             if (mainTable.getAlias().equals(lExp.getColumn().getTableAlias())) {
                 return this;
             }
         }
-        if (right instanceof ColumnExpression) {
-            ColumnExpression rExp = (ColumnExpression) right;
+        if (right instanceof ConditionColumnExpr) {
+            ConditionColumnExpr rExp = (ConditionColumnExpr) right;
             if (mainTable.getAlias().equals(rExp.getColumn().getTableAlias())) {
                 return this;
             }

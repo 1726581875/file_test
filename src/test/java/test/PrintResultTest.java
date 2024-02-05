@@ -2,9 +2,9 @@ package test;
 
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCommand;
-import com.moyu.xmz.command.ddl.DropDatabaseCommand;
-import com.moyu.xmz.command.dml.SelectCommand;
+import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
+import com.moyu.xmz.command.ddl.DropDatabaseCmd;
+import com.moyu.xmz.command.dml.SelectCmd;
 import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
@@ -31,10 +31,10 @@ public class PrintResultTest {
     private static Database database = null;
 
     static {
-        DropDatabaseCommand dropDatabaseCommand = new DropDatabaseCommand(databaseName, true);
-        dropDatabaseCommand.execCommand();
-        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execCommand();
+        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
+        dropDatabaseCmd.execCommand();
+        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
+        createDatabaseCmd.execCommand();
         database = Database.getDatabase(databaseName);
     }
 
@@ -76,7 +76,7 @@ public class PrintResultTest {
 
         String sql = "select * from print_test";
         ConnectSession connectSession = new ConnectSession(database);
-        SelectCommand command = (SelectCommand) connectSession.prepareCommand(sql);
+        SelectCmd command = (SelectCmd) connectSession.prepareCommand(sql);
         QueryResult queryResult = command.execCommand();
         System.out.println("执行结果:");
 

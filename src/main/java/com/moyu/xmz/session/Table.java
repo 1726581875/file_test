@@ -2,12 +2,12 @@ package com.moyu.xmz.session;
 
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
-import com.moyu.xmz.store.accessor.ColumnMetaFileAccessor;
-import com.moyu.xmz.store.accessor.TableMetaFileAccessor;
+import com.moyu.xmz.store.accessor.ColumnMetaAccessor;
+import com.moyu.xmz.store.accessor.TableMetaAccessor;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.meta.ColumnMetadata;
+import com.moyu.xmz.store.common.meta.ColumnMeta;
 import com.moyu.xmz.store.common.block.TableColumnBlock;
-import com.moyu.xmz.store.common.meta.TableMetadata;
+import com.moyu.xmz.store.common.meta.TableMeta;
 import com.moyu.xmz.common.util.CollectionUtils;
 
 import java.util.List;
@@ -29,11 +29,11 @@ public class Table {
     private String engineType;
 
 
-    public Table(TableMetadata tableMetadata) {
-        this.tableId = tableMetadata.getTableId();
-        this.tableName = tableMetadata.getTableName();
-        this.databaseId = tableMetadata.getDatabaseId();
-        this.engineType = tableMetadata.getEngineType();
+    public Table(TableMeta tableMeta) {
+        this.tableId = tableMeta.getTableId();
+        this.tableName = tableMeta.getTableName();
+        this.databaseId = tableMeta.getDatabaseId();
+        this.engineType = tableMeta.getEngineType();
     }
 
     public Table(Integer databaseId, String tableName) {
@@ -54,19 +54,19 @@ public class Table {
 
     private void init(Integer databaseId, String tableName) {
 
-        TableMetadata tableMetadata = null;
-        List<ColumnMetadata> columnMetadataList = null;
-        TableMetaFileAccessor tableMetaFileAccessor = null;
-        ColumnMetaFileAccessor columnStore = null;
+        TableMeta tableMeta = null;
+        List<ColumnMeta> columnMetaList = null;
+        TableMetaAccessor tableMetaAccessor = null;
+        ColumnMetaAccessor columnStore = null;
         try {
-            tableMetaFileAccessor = new TableMetaFileAccessor(databaseId);
-            columnStore = new ColumnMetaFileAccessor(databaseId);
-            tableMetadata = tableMetaFileAccessor.getTable(tableName);
-            if(tableMetadata == null) {
+            tableMetaAccessor = new TableMetaAccessor(databaseId);
+            columnStore = new ColumnMetaAccessor(databaseId);
+            tableMeta = tableMetaAccessor.getTable(tableName);
+            if(tableMeta == null) {
                 ExceptionUtil.throwSqlExecutionException("数据库id{}的表{}不存在", databaseId, tableName);
             }
-            TableColumnBlock columnBlock = columnStore.getColumnBlock(tableMetadata.getTableId());
-            columnMetadataList = columnBlock.getColumnMetadataList();
+            TableColumnBlock columnBlock = columnStore.getColumnBlock(tableMeta.getTableId());
+            columnMetaList = columnBlock.getColumnMetaList();
         } catch (SqlExecutionException e) {
             throw e;
         } catch (Exception e) {
@@ -76,25 +76,25 @@ public class Table {
             if(columnStore != null) {
                 columnStore.close();
             }
-            if(tableMetaFileAccessor != null) {
-                tableMetaFileAccessor.close();
+            if(tableMetaAccessor != null) {
+                tableMetaAccessor.close();
             }
         }
 
-        if(CollectionUtils.isEmpty(columnMetadataList)) {
+        if(CollectionUtils.isEmpty(columnMetaList)) {
             ExceptionUtil.throwDbException("表{}缺少字段", tableName);
         }
 
-        Column[] columns = new Column[columnMetadataList.size()];
-        for (int i = 0; i < columnMetadataList.size(); i++) {
-            columns[i] = new Column(columnMetadataList.get(i));
+        Column[] columns = new Column[columnMetaList.size()];
+        for (int i = 0; i < columnMetaList.size(); i++) {
+            columns[i] = new Column(columnMetaList.get(i));
         }
 
         this.columns = columns;
-        this.engineType = tableMetadata.getEngineType();
+        this.engineType = tableMeta.getEngineType();
         this.databaseId = databaseId;
         this.tableName = tableName;
-        this.tableId = tableMetadata.getTableId();
+        this.tableId = tableMeta.getTableId();
     }
 
     public Integer getDatabaseId() {

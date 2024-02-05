@@ -1,6 +1,6 @@
 package com.moyu.xmz.jdbc;
 
-import com.moyu.xmz.net.constant.CommandTypeConstant;
+import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.packet.ErrPacket;
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.common.exception.DbException;
@@ -62,7 +62,7 @@ public class StatementImpl implements Statement {
              DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
              DataInputStream dataInputStream = new DataInputStream(inputStream)) {
             // 命令类型
-            dataOutputStream.writeByte(CommandTypeConstant.DB_QUERY);
+            dataOutputStream.writeByte(CmdTypeConstant.DB_QUERY);
             // 数据库id
             dataOutputStream.writeInt(databaseId);
             // SQL

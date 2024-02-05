@@ -3,15 +3,15 @@ package com.moyu.xmz.store;
 import com.moyu.xmz.command.dml.expression.Expression;
 import com.moyu.xmz.command.dml.sql.QueryTable;
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.store.cursor.Cursor;
 import com.moyu.xmz.store.cursor.RowEntity;
 import com.moyu.xmz.store.tree.BTreeMap;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.meta.IndexMetadata;
-import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.meta.IndexMeta;
+import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.value.*;
 
@@ -32,7 +32,7 @@ public abstract class StoreEngine {
 
     protected Expression condition;
 
-    protected List<IndexMetadata> allIndexList;
+    protected List<IndexMeta> allIndexList;
 
 
     public StoreEngine(ConnectSession session, String tableName, Column[] tableColumns, Expression condition) {
@@ -56,7 +56,7 @@ public abstract class StoreEngine {
     public abstract Cursor getQueryCursor(QueryTable table) throws IOException;
 
 
-    public static StoreEngine getEngine(OperateTableInfo tableInfo) {
+    public static StoreEngine getEngine(TableInfo tableInfo) {
         if(tableInfo.getEngineType() == null) {
             throw new IllegalArgumentException("引擎类型不能为空");
         }
@@ -78,12 +78,12 @@ public abstract class StoreEngine {
 
     protected Value getIndexValueObject(Column column) {
         switch (column.getColumnType()) {
-            case ColumnTypeConstant.INT_4:
+            case DbTypeConstant.INT_4:
                 return new IntegerValue((Integer) column.getValue());
-            case ColumnTypeConstant.INT_8:
+            case DbTypeConstant.INT_8:
                 return new LongValue((Long) column.getValue());
-            case ColumnTypeConstant.VARCHAR:
-            case ColumnTypeConstant.CHAR:
+            case DbTypeConstant.VARCHAR:
+            case DbTypeConstant.CHAR:
                 return new StringValue(String.valueOf(column.getValue()));
             default:
                 throw new DbException("不支持数据类型:" + column.getColumnType());

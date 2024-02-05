@@ -1,11 +1,11 @@
 package test.store.data;
 
-import com.moyu.xmz.common.constant.ColumnTypeConstant;
+import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.common.util.FileUtil;
+import com.moyu.xmz.common.util.FileUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,22 +26,22 @@ public class DataChunkStoreTest {
 
         String filePath = "D:\\mytest\\fileTest\\test2.d";
 
-        FileUtil.deleteOnExists(filePath);
+        FileUtils.deleteOnExists(filePath);
 
-        DataChunkFileAccessor dataChunkFileAccessor = null;
+        DataChunkAccessor dataChunkAccessor = null;
         try {
-            dataChunkFileAccessor = new DataChunkFileAccessor(filePath);
+            dataChunkAccessor = new DataChunkAccessor(filePath);
             // create a chunk
-            dataChunkFileAccessor.createChunk();
+            dataChunkAccessor.createChunk();
 
 
             List<Column> columnList = new ArrayList<>();
             List<Column> columnList2 = new ArrayList<>();
 
             // 字段信息有值，用于写
-            Column column0 = new Column("a", ColumnTypeConstant.INT_4, 0, 4);
+            Column column0 = new Column("a", DbTypeConstant.INT_4, 0, 4);
             column0.setValue(99);
-            Column column1 = new Column("b", ColumnTypeConstant.VARCHAR, 1, 10);
+            Column column1 = new Column("b", DbTypeConstant.VARCHAR, 1, 10);
             column1.setValue("520");
 
             columnList.add(column0);
@@ -49,8 +49,8 @@ public class DataChunkStoreTest {
 
 
             // 字段信息没有值，用于查询
-            Column column3 = new Column("a", ColumnTypeConstant.INT_4, 0, 4);
-            Column column4 = new Column("b", ColumnTypeConstant.VARCHAR, 1, 10);
+            Column column3 = new Column("a", DbTypeConstant.INT_4, 0, 4);
+            Column column4 = new Column("b", DbTypeConstant.VARCHAR, 1, 10);
             columnList2.add(column3);
             columnList2.add(column4);
 
@@ -58,8 +58,8 @@ public class DataChunkStoreTest {
             // write data
             for (int i = 0; i < 1; i++) {
                 try {
-                    byte[] bytes = RowMetadata.toRowByteData(columnList);
-                    dataChunkFileAccessor.storeRow(bytes,false);
+                    byte[] bytes = RowMeta.toRowByteData(columnList);
+                    dataChunkAccessor.storeRow(bytes,false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -68,7 +68,7 @@ public class DataChunkStoreTest {
             }
 
             // print
-            DataChunk chunk = dataChunkFileAccessor.getChunk(0);
+            DataChunk chunk = dataChunkAccessor.getChunk(0);
             System.out.println(chunk);
             chunk.getDataRowList().forEach(row -> {
                 System.out.println(row);
@@ -80,8 +80,8 @@ public class DataChunkStoreTest {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (dataChunkFileAccessor != null) {
-                dataChunkFileAccessor.close();
+            if (dataChunkAccessor != null) {
+                dataChunkAccessor.close();
             }
         }
 
@@ -90,18 +90,18 @@ public class DataChunkStoreTest {
     private static void testWriteRow() {
         String filePath = "D:\\mytest\\fileTest\\test.d";
 
-        FileUtil.deleteOnExists(filePath);
+        FileUtils.deleteOnExists(filePath);
 
-        DataChunkFileAccessor dataChunkFileAccessor = null;
+        DataChunkAccessor dataChunkAccessor = null;
         try {
-            dataChunkFileAccessor = new DataChunkFileAccessor(filePath);
+            dataChunkAccessor = new DataChunkAccessor(filePath);
             // create a chunk
-            dataChunkFileAccessor.createChunk();
+            dataChunkAccessor.createChunk();
 
             // write data
             for (int i = 0; i < 1024; i++) {
                 try {
-                    dataChunkFileAccessor.storeRow("hello world!hello world!啊啊啊啊".getBytes(), false);
+                    dataChunkAccessor.storeRow("hello world!hello world!啊啊啊啊".getBytes(), false);
                     System.out.println("currNum=" + i);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -110,7 +110,7 @@ public class DataChunkStoreTest {
             }
 
             // print
-            DataChunk chunk = dataChunkFileAccessor.getChunk(0);
+            DataChunk chunk = dataChunkAccessor.getChunk(0);
             System.out.println(chunk);
             chunk.getDataRowList().forEach(row -> {
                 System.out.println(row);
@@ -120,8 +120,8 @@ public class DataChunkStoreTest {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (dataChunkFileAccessor != null) {
-                dataChunkFileAccessor.close();
+            if (dataChunkAccessor != null) {
+                dataChunkAccessor.close();
             }
         }
     }

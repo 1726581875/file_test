@@ -1,7 +1,7 @@
 package com.moyu.xmz.store.transaction;
 
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
@@ -59,10 +59,10 @@ public class RowLogRecord implements SerializableByte {
     /**
      * 旧数据
      */
-    private RowMetadata oldRow;
+    private RowMeta oldRow;
 
 
-    public RowLogRecord(String tableName, RowMetadata oldRow, byte type) {
+    public RowLogRecord(String tableName, RowMeta oldRow, byte type) {
         this.tableName = tableName;
         this.oldRow = oldRow;
         this.type = type;
@@ -83,7 +83,7 @@ public class RowLogRecord implements SerializableByte {
         this.version = DataByteUtils.readInt(byteBuffer);
         this.type = byteBuffer.get();
         if (this.type != RowLogRecord.TYPE_INSERT) {
-            this.oldRow = new RowMetadata(byteBuffer);
+            this.oldRow = new RowMeta(byteBuffer);
         }
     }
 
@@ -153,11 +153,11 @@ public class RowLogRecord implements SerializableByte {
         this.version = version;
     }
 
-    public RowMetadata getOldRow() {
+    public RowMeta getOldRow() {
         return oldRow;
     }
 
-    public void setOldRow(RowMetadata oldRow) {
+    public void setOldRow(RowMeta oldRow) {
         this.oldRow = oldRow;
     }
 

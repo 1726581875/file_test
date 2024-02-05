@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.block;
 
-import com.moyu.xmz.store.common.meta.ColumnMetadata;
+import com.moyu.xmz.store.common.meta.ColumnMeta;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.common.util.DataByteUtils;
 
@@ -29,7 +29,7 @@ public class TableColumnBlock implements SerializableByte {
 
     private long columnStartPos;
 
-    private List<ColumnMetadata> columnMetadataList;
+    private List<ColumnMeta> columnMetaList;
 
     public TableColumnBlock(int blockIndex, long startPos, int tableId) {
         this.usedByteLen = 32;
@@ -38,7 +38,7 @@ public class TableColumnBlock implements SerializableByte {
         this.tableId = tableId;
         this.columnNum = 0;
         this.columnStartPos = startPos + 32L;
-        this.columnMetadataList = new ArrayList<>();
+        this.columnMetaList = new ArrayList<>();
     }
 
 
@@ -49,9 +49,9 @@ public class TableColumnBlock implements SerializableByte {
         this.tableId = DataByteUtils.readInt(byteBuffer);
         this.columnNum = DataByteUtils.readInt(byteBuffer);
         this.columnStartPos = DataByteUtils.readLong(byteBuffer);
-        this.columnMetadataList = new ArrayList<>(columnNum);
+        this.columnMetaList = new ArrayList<>(columnNum);
         for (int i = 1; i <= columnNum; i++) {
-            this.columnMetadataList.add(new ColumnMetadata(byteBuffer));
+            this.columnMetaList.add(new ColumnMeta(byteBuffer));
         }
     }
 
@@ -65,8 +65,8 @@ public class TableColumnBlock implements SerializableByte {
         DataByteUtils.writeInt(byteBuffer, tableId);
         DataByteUtils.writeInt(byteBuffer, columnNum);
         DataByteUtils.writeLong(byteBuffer, columnStartPos);
-        for (int i = 0; i < this.columnMetadataList.size(); i++) {
-            ColumnMetadata column = this.columnMetadataList.get(i);
+        for (int i = 0; i < this.columnMetaList.size(); i++) {
+            ColumnMeta column = this.columnMetaList.get(i);
             byteBuffer.put(column.getByteBuffer());
         }
 
@@ -78,10 +78,10 @@ public class TableColumnBlock implements SerializableByte {
     /**
      * @param column
      */
-    public void addColumn(ColumnMetadata column) {
+    public void addColumn(ColumnMeta column) {
         this.columnNum++;
         this.usedByteLen += column.getTotalByteLen();
-        this.columnMetadataList.add(column);
+        this.columnMetaList.add(column);
     }
 
     public static int getTableColumnBlockSize() {
@@ -137,12 +137,12 @@ public class TableColumnBlock implements SerializableByte {
         this.columnStartPos = columnStartPos;
     }
 
-    public List<ColumnMetadata> getColumnMetadataList() {
-        return columnMetadataList;
+    public List<ColumnMeta> getColumnMetaList() {
+        return columnMetaList;
     }
 
-    public void setColumnMetadataList(List<ColumnMetadata> columnMetadataList) {
-        this.columnMetadataList = columnMetadataList;
+    public void setColumnMetaList(List<ColumnMeta> columnMetaList) {
+        this.columnMetaList = columnMetaList;
     }
 
 
@@ -155,7 +155,7 @@ public class TableColumnBlock implements SerializableByte {
                 ", tableId=" + tableId +
                 ", columnNum=" + columnNum +
                 ", columnStartPos=" + columnStartPos +
-                ", columnMetadataList=" + columnMetadataList +
+                ", columnMetadataList=" + columnMetaList +
                 '}';
     }
 }

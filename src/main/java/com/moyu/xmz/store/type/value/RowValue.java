@@ -3,7 +3,7 @@ package com.moyu.xmz.store.type.value;
 import com.moyu.xmz.store.cursor.RowEntity;
 import com.moyu.xmz.store.type.ColumnTypeFactory;
 import com.moyu.xmz.store.type.DataType;
-import com.moyu.xmz.store.type.dbtype.AbstractColumnType;
+import com.moyu.xmz.store.type.dbtype.AbstractDbType;
 import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.WriteBuffer;
@@ -114,7 +114,7 @@ public class RowValue extends Value {
         WriteBuffer writeBuffer = new WriteBuffer(16);
         for (Column column : columns) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
-            Object value = convertValue((AbstractColumnType) columnType, column.getValue());
+            Object value = convertValue((AbstractDbType) columnType, column.getValue());
             columnType.write(writeBuffer, value);
         }
         writeBuffer.getBuffer().flip();
@@ -123,7 +123,7 @@ public class RowValue extends Value {
         return result;
     }
 
-    private Object convertValue(AbstractColumnType columnType, Object value) {
+    private Object convertValue(AbstractDbType columnType, Object value) {
         if(value == null) {
             return value;
         }

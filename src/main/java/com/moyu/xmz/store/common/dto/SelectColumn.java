@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.dto;
 
-import com.moyu.xmz.command.dml.expression.SelectColumnExpression;
+import com.moyu.xmz.command.dml.expression.SelectColumnExpr;
 import com.moyu.xmz.command.dml.sql.Query;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 
@@ -44,7 +44,7 @@ public class SelectColumn {
      */
     private String[] args;
 
-    private SelectColumnExpression columnExpression;
+    private SelectColumnExpr columnExpression;
 
 
     public SelectColumn(String columnName, Byte columnType) {
@@ -62,12 +62,12 @@ public class SelectColumn {
     public SelectColumn(Column column, String selectColumnName) {
         this.column = column;
         this.selectColumnName = selectColumnName;
-        this.columnExpression = SelectColumnExpression.newSimpleTableColumnExpr(column);
+        this.columnExpression = SelectColumnExpr.newSimpleTableColumnExpr(column);
     }
 
     public SelectColumn(String selectColumnName,
                         String functionName,
-                        SelectColumnExpression functionExpr,
+                        SelectColumnExpr functionExpr,
                         Byte columnType) {
         this.selectColumnName = selectColumnName;
         this.functionName = functionName;
@@ -169,11 +169,11 @@ public class SelectColumn {
         return columnType;
     }
 
-    public void setColumnExpression(SelectColumnExpression columnExpression) {
+    public void setColumnExpression(SelectColumnExpr columnExpression) {
         this.columnExpression = columnExpression;
     }
 
-    public SelectColumnExpression getColumnExpression() {
+    public SelectColumnExpr getColumnExpression() {
         return columnExpression;
     }
 }

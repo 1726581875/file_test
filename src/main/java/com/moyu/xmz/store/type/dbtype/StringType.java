@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public class StringType extends AbstractColumnType<String> {
+public class StringType extends AbstractDbType<String> {
 
 
     @Override

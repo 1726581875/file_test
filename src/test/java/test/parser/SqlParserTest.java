@@ -3,11 +3,11 @@ package test.parser;
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
 import com.moyu.xmz.command.SqlParser;
-import com.moyu.xmz.command.dml.InsertCommand;
+import com.moyu.xmz.command.dml.InsertCmd;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.store.common.dto.Column;
-import com.moyu.xmz.store.common.dto.OperateTableInfo;
+import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.terminal.util.PrintResultUtil;
 
 import java.util.ArrayList;
@@ -106,14 +106,14 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 1);
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "xmz_5", null, null);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
+        TableInfo tableInfo = new TableInfo(connectSession, "xmz_5", null, null);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.batchWriteList(columnList);
+                insertCmd.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
@@ -155,14 +155,14 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 0);
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "xmz_3", null, null);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
+        TableInfo tableInfo = new TableInfo(connectSession, "xmz_3", null, null);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, null);
         int rowNum = 10000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.batchWriteList(columnList);
+                insertCmd.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();
@@ -205,14 +205,14 @@ public class SqlParserTest {
 
         List<Column[]> columnList = new ArrayList<>();
         ConnectSession connectSession = new ConnectSession("xmz", 0);
-        OperateTableInfo tableInfo = new OperateTableInfo(connectSession, "table_1", null, null);
-        InsertCommand insertCommand = new InsertCommand(tableInfo, null);
+        TableInfo tableInfo = new TableInfo(connectSession, "table_1", null, null);
+        InsertCmd insertCmd = new InsertCmd(tableInfo, null);
         int rowNum = 10000000;
         for (int i = 1; i <= rowNum; i++) {
             Column[] columns = getColumns(i, "name_" + i);
             columnList.add(columns);
             if (i % 10000 == 0) {
-                insertCommand.batchWriteList(columnList);
+                insertCmd.batchWriteList(columnList);
                 System.out.println("插入一万条记录耗时:" + (System.currentTimeMillis() - time) + "ms");
                 time = System.currentTimeMillis();
                 columnList.clear();

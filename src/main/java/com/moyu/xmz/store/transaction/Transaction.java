@@ -3,10 +3,10 @@ package com.moyu.xmz.store.transaction;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -198,26 +198,26 @@ public class Transaction implements TxOperator, SerializableByte {
         do {
             for (int i = rowLogRecords.size() - 1; i >= 0; i--) {
                 RowLogRecord record = rowLogRecords.get(i);
-                DataChunkFileAccessor dataChunkFileAccessor = null;
+                DataChunkAccessor dataChunkAccessor = null;
                 try {
-                    dataChunkFileAccessor = new DataChunkFileAccessor(PathUtil.getDataFilePath(record.getDatabaseId(), record.getTableName()));
+                    dataChunkAccessor = new DataChunkAccessor(PathUtils.getDataFilePath(record.getDatabaseId(), record.getTableName()));
                     // 找到行所在数据块
-                    DataChunk chunk = record.getBlockPos() > 0 ? dataChunkFileAccessor.getChunkByPos(record.getBlockPos())
-                            : getRowDataChunk(dataChunkFileAccessor, record.getRowId());
+                    DataChunk chunk = record.getBlockPos() > 0 ? dataChunkAccessor.getChunkByPos(record.getBlockPos())
+                            : getRowDataChunk(dataChunkAccessor, record.getRowId());
                     // 找到对应行
                     int index = findRow(chunk, record.getRowId());
                     // 回滚insert操作
                     if(RowLogRecord.TYPE_INSERT == record.getType()) {
                         if(index != -1) {
                             chunk.removeRow(index);
-                            dataChunkFileAccessor.updateChunk(chunk);
+                            dataChunkAccessor.updateChunk(chunk);
                         }
                     } else if /* 回滚update操作 */ (RowLogRecord.TYPE_UPDATE == record.getType()) {
                         if (index == -1) {
                             throw new DbException("回滚失败，数据不存在");
                         }
                         chunk.updateRow(index, record.getOldRow());
-                        dataChunkFileAccessor.updateChunk(chunk);
+                        dataChunkAccessor.updateChunk(chunk);
                     } else if /* 回滚delete操作 */(RowLogRecord.TYPE_DELETE == record.getType()) {
                         // 数据存在，替换为旧数据
                         if (index != -1) {
@@ -226,7 +226,7 @@ public class Transaction implements TxOperator, SerializableByte {
                         // 数据不存在，新增
                             chunk.addRow(record.getOldRow());
                         }
-                        dataChunkFileAccessor.updateChunk(chunk);
+                        dataChunkAccessor.updateChunk(chunk);
 
                     }
                     success = true;
@@ -236,7 +236,7 @@ public class Transaction implements TxOperator, SerializableByte {
                     failNum++;
                     e.printStackTrace();
                 } finally {
-                    dataChunkFileAccessor.close();
+                    dataChunkAccessor.close();
                 }
             }
         } while (!success && failNum > 5);
@@ -247,14 +247,14 @@ public class Transaction implements TxOperator, SerializableByte {
 
     /**
      * 获取数据行所在的数据块
-     * @param dataChunkFileAccessor
+     * @param dataChunkAccessor
      * @param rowId
      * @return
      */
-    private static DataChunk getRowDataChunk(DataChunkFileAccessor dataChunkFileAccessor, long rowId) {
-        int dataChunkNum = dataChunkFileAccessor.getDataChunkNum();
+    private static DataChunk getRowDataChunk(DataChunkAccessor dataChunkAccessor, long rowId) {
+        int dataChunkNum = dataChunkAccessor.getDataChunkNum();
         for (int i = 1; i <=dataChunkNum; i++) {
-            DataChunk chunk = dataChunkFileAccessor.getChunk(i);
+            DataChunk chunk = dataChunkAccessor.getChunk(i);
             if(chunk == null) {
                 continue;
             }
@@ -278,8 +278,8 @@ public class Transaction implements TxOperator, SerializableByte {
         }
 
         for (int j = 0; j < chunk.getDataRowList().size(); j++) {
-            RowMetadata rowMetadata = chunk.getDataRowList().get(j);
-            if (rowMetadata.getRowId() == rowId) {
+            RowMeta rowMeta = chunk.getDataRowList().get(j);
+            if (rowMeta.getRowId() == rowId) {
                 return j;
             }
         }

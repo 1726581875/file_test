@@ -1,9 +1,9 @@
 package com.moyu.xmz.store.buffer;
 
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
 import com.moyu.xmz.store.common.block.DataChunk;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.common.util.PathUtil;
+import com.moyu.xmz.common.util.PathUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,10 +49,10 @@ public class BufferPoolManager {
     }
 
     private static BufferDataChunk getDiskDataChunk(Integer databaseId, String tableName, Long pos) {
-        DataChunkFileAccessor dataChunkFileAccessor = null;
+        DataChunkAccessor dataChunkAccessor = null;
         try {
-            dataChunkFileAccessor = new DataChunkFileAccessor(PathUtil.getDataFilePath(databaseId, tableName));
-            DataChunk chunk = dataChunkFileAccessor.getChunkByPos(pos);
+            dataChunkAccessor = new DataChunkAccessor(PathUtils.getDataFilePath(databaseId, tableName));
+            DataChunk chunk = dataChunkAccessor.getChunkByPos(pos);
             if (chunk == null) {
                 throw new DbException("获取数据块发生异常,块不存在pos:" + pos);
             }
@@ -62,7 +62,7 @@ public class BufferPoolManager {
             e.printStackTrace();
             throw new DbException("获取数据块发生异常");
         } finally {
-            dataChunkFileAccessor.close();
+            dataChunkAccessor.close();
         }
     }
 

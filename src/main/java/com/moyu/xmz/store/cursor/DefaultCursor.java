@@ -2,8 +2,8 @@ package com.moyu.xmz.store.cursor;
 
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.accessor.DataChunkFileAccessor;
-import com.moyu.xmz.store.common.meta.RowMetadata;
+import com.moyu.xmz.store.accessor.DataChunkAccessor;
+import com.moyu.xmz.store.common.meta.RowMeta;
 import com.moyu.xmz.store.common.dto.Column;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public class DefaultCursor extends AbstractCursor {
 
     private Column[] columns;
 
-    private DataChunkFileAccessor dataChunkFileAccessor;
+    private DataChunkAccessor dataChunkAccessor;
 
     private DataChunk currChunk;
 
@@ -25,10 +25,10 @@ public class DefaultCursor extends AbstractCursor {
     private int currChunkNextRowIndex;
 
 
-    public DefaultCursor(DataChunkFileAccessor dataChunkFileAccessor, Column[] columns) {
-        this.dataChunkFileAccessor = dataChunkFileAccessor;
+    public DefaultCursor(DataChunkAccessor dataChunkAccessor, Column[] columns) {
+        this.dataChunkAccessor = dataChunkAccessor;
         this.columns = columns;
-        this.nextChunkIndex = DataChunkFileAccessor.FIRST_BLOCK_INDEX;
+        this.nextChunkIndex = DataChunkAccessor.FIRST_BLOCK_INDEX;
         this.currChunkNextRowIndex = 0;
     }
 
@@ -39,13 +39,13 @@ public class DefaultCursor extends AbstractCursor {
             throw new DbException("游标已关闭");
         }
 
-        int dataChunkNum = dataChunkFileAccessor.getDataChunkNum();
+        int dataChunkNum = dataChunkAccessor.getDataChunkNum();
         if (dataChunkNum == 0) {
             return null;
         }
 
         if(currChunk == null) {
-            currChunk = dataChunkFileAccessor.getChunk(nextChunkIndex);
+            currChunk = dataChunkAccessor.getChunk(nextChunkIndex);
             nextChunkIndex++;
         }
 
@@ -54,10 +54,10 @@ public class DefaultCursor extends AbstractCursor {
         }
 
         // 从当前块拿
-        List<RowMetadata> dataRowList = currChunk.getDataRowList();
+        List<RowMeta> dataRowList = currChunk.getDataRowList();
         if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
-            RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-            RowEntity dbRow = rowMetadata.getRowEntity(columns);
+            RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+            RowEntity dbRow = rowMeta.getRowEntity(columns);
             currChunkNextRowIndex++;
             return dbRow;
         }
@@ -68,15 +68,15 @@ public class DefaultCursor extends AbstractCursor {
             if(i > dataChunkNum) {
                 return null;
             }
-            currChunk = dataChunkFileAccessor.getChunk(i);
+            currChunk = dataChunkAccessor.getChunk(i);
             currChunkNextRowIndex = 0;
             if(currChunk == null) {
                 return null;
             }
             dataRowList = currChunk.getDataRowList();
             if (dataRowList != null && dataRowList.size() > 0 && dataRowList.size() > currChunkNextRowIndex) {
-                RowMetadata rowMetadata = dataRowList.get(currChunkNextRowIndex);
-                RowEntity dbRow = rowMetadata.getRowEntity(columns);
+                RowMeta rowMeta = dataRowList.get(currChunkNextRowIndex);
+                RowEntity dbRow = rowMeta.getRowEntity(columns);
                 currChunkNextRowIndex++;
                 nextChunkIndex = i + 1;
                 return dbRow;
@@ -89,7 +89,7 @@ public class DefaultCursor extends AbstractCursor {
     @Override
     public void reset() {
         this.currChunk = null;
-        this.nextChunkIndex = DataChunkFileAccessor.FIRST_BLOCK_INDEX;
+        this.nextChunkIndex = DataChunkAccessor.FIRST_BLOCK_INDEX;
         this.currChunkNextRowIndex = 0;
     }
 
@@ -101,7 +101,7 @@ public class DefaultCursor extends AbstractCursor {
 
     @Override
     void closeCursor() {
-        dataChunkFileAccessor.close();
+        dataChunkAccessor.close();
     }
 
 }
