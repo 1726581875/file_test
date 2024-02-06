@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.obj;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.type.value.ArrayValue;
 
 import java.nio.ByteBuffer;
@@ -17,8 +17,8 @@ public class ArrayDataType extends AbstractObjType<ArrayValue> {
     }
 
     @Override
-    public void write(WriteBuffer writeBuffer, ArrayValue value) {
-        writeBuffer.put(value.getByteBuffer());
+    public void write(DynByteBuffer buffer, ArrayValue value) {
+        buffer.put(value.getByteBuffer());
     }
 
     @Override

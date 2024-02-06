@@ -1,6 +1,6 @@
 package com.moyu.xmz.net.util;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -13,16 +13,16 @@ import java.nio.charset.Charset;
  */
 public class ReadWriteUtil {
 
-    public static void writeString(WriteBuffer writeBuffer, String str) {
+    public static void writeString(DynByteBuffer dynByteBuffer, String str) {
         if (str == null) {
-            writeBuffer.putInt(-1);
+            dynByteBuffer.putInt(-1);
         } else if (str.length() == 0) {
             byte[] bytes = str.getBytes();
-            writeBuffer.putInt(bytes.length);
+            dynByteBuffer.putInt(bytes.length);
         } else {
             byte[] bytes = str.getBytes(Charset.forName("UTF-8"));
-            writeBuffer.putInt(bytes.length);
-            writeBuffer.put(bytes);
+            dynByteBuffer.putInt(bytes.length);
+            dynByteBuffer.put(bytes);
         }
     }
 

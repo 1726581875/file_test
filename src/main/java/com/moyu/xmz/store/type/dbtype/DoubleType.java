@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.dbtype;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -16,8 +16,8 @@ public class DoubleType extends AbstractDbType<Double> {
     }
 
     @Override
-    protected void writeValue(WriteBuffer writeBuffer, Double value) {
-        writeBuffer.putDouble(value);
+    protected void writeValue(DynByteBuffer buffer, Double value) {
+        buffer.putDouble(value);
     }
 
     @Override

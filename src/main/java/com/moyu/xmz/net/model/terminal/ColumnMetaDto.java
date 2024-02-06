@@ -1,7 +1,7 @@
 package com.moyu.xmz.net.model.terminal;
 
 import com.moyu.xmz.net.util.ReadWriteUtil;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -40,15 +40,15 @@ public class ColumnMetaDto {
 
 
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(totalByteLen);
-        ReadWriteUtil.writeString(writeBuffer, columnName);
-        ReadWriteUtil.writeString(writeBuffer, alias);
-        ReadWriteUtil.writeString(writeBuffer, tableAlias);
-        writeBuffer.put(columnType);
-        totalByteLen = writeBuffer.position();
-        writeBuffer.putInt(0, totalByteLen);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.putInt(totalByteLen);
+        ReadWriteUtil.writeString(dynByteBuffer, columnName);
+        ReadWriteUtil.writeString(dynByteBuffer, alias);
+        ReadWriteUtil.writeString(dynByteBuffer, tableAlias);
+        dynByteBuffer.put(columnType);
+        totalByteLen = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, totalByteLen);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

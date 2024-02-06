@@ -3,7 +3,7 @@ package com.moyu.xmz.store.type.value;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.obj.ArrayDataType;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -62,21 +62,21 @@ public class ArrayValue<V extends Value> extends Value {
 
     @Override
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
         int dataType = getDataType(itemDataType);
         if (arr == null) {
-            writeBuffer.put((byte) 0);
-            writeBuffer.putInt(dataType);
+            dynByteBuffer.put((byte) 0);
+            dynByteBuffer.putInt(dataType);
         } else {
-            writeBuffer.put((byte) 1);
-            writeBuffer.putInt(dataType);
-            writeBuffer.putInt(arr.length);
+            dynByteBuffer.put((byte) 1);
+            dynByteBuffer.putInt(dataType);
+            dynByteBuffer.putInt(arr.length);
             int i = 0;
             while (i < arr.length) {
-                itemDataType.write(writeBuffer, arr[i++].getObjValue());
+                itemDataType.write(dynByteBuffer, arr[i++].getObjValue());
             }
         }
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

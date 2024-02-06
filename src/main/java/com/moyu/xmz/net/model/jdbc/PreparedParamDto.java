@@ -1,6 +1,6 @@
 package com.moyu.xmz.net.model.jdbc;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.dbtype.AbstractDbType;
 
@@ -59,21 +59,21 @@ public class PreparedParamDto {
 
 
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(this.totalByteLen);
-        writeBuffer.putInt(this.size);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.putInt(this.totalByteLen);
+        dynByteBuffer.putInt(this.size);
         if (this.size > 0) {
             for (int i = 0; i < this.size; i++) {
-                writeBuffer.put(this.typeArr[i]);
+                dynByteBuffer.put(this.typeArr[i]);
             }
             for (int i = 0; i < this.size; i++) {
                 DataType dataType = AbstractDbType.getDataType(this.typeArr[i]);
-                dataType.write(writeBuffer, this.valueArr[i]);
+                dataType.write(dynByteBuffer, this.valueArr[i]);
             }
         }
-        this.totalByteLen = writeBuffer.position();
-        writeBuffer.putInt(0, this.totalByteLen);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        this.totalByteLen = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, this.totalByteLen);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

@@ -2,7 +2,7 @@ package com.moyu.xmz.net.model.terminal;
 
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.dbtype.AbstractDbType;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -34,16 +34,16 @@ public class RowDto {
 
 
     public ByteBuffer getByteBuffer(ColumnMetaDto[] columns) {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(this.totalByteLen);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.putInt(this.totalByteLen);
         for (int i = 0; i < columns.length; i++) {
             byte columnType = columns[i].getColumnType();
             DataType dataType = AbstractDbType.getDataType(columnType);
-            dataType.write(writeBuffer, this.columnValues[i]);
+            dataType.write(dynByteBuffer, this.columnValues[i]);
         }
-        this.totalByteLen = writeBuffer.position();
-        writeBuffer.putInt(0, this.totalByteLen);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        this.totalByteLen = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, this.totalByteLen);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

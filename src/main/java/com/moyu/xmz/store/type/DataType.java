@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -12,7 +12,7 @@ public interface DataType<T> {
 
     T read(ByteBuffer byteBuffer);
 
-    void write(WriteBuffer writeBuffer, T value);
+    void write(DynByteBuffer buffer, T value);
 
     int compare(T a, T b);
 

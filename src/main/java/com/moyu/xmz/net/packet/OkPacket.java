@@ -6,7 +6,7 @@ import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
 import com.moyu.xmz.net.model.terminal.QueryResultStrDto;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -74,23 +74,23 @@ public class OkPacket extends Packet {
 
 
     public byte[] getBytes() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.put(opType);
-        writeBuffer.putInt(affRows);
-        writeBuffer.putInt(resRows);
-        writeBuffer.put(commandType);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.put(opType);
+        dynByteBuffer.putInt(affRows);
+        dynByteBuffer.putInt(resRows);
+        dynByteBuffer.put(commandType);
         // 查询结果序列化
         if (content == null) {
             this.contentLen = 0;
-            writeBuffer.putInt(this.contentLen);
+            dynByteBuffer.putInt(this.contentLen);
         } else {
             ByteBuffer bf = content.getByteBuffer();
             this.contentLen = bf.limit();
-            writeBuffer.putInt(this.contentLen);
-            writeBuffer.put(bf);
+            dynByteBuffer.putInt(this.contentLen);
+            dynByteBuffer.put(bf);
         }
 
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         int packetLength = buffer.position();
         buffer.flip();
         byte[] bytes = new byte[packetLength];

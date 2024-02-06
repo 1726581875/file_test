@@ -1,8 +1,7 @@
 package com.moyu.xmz.store.common.meta;
 
-import com.moyu.xmz.common.DynamicByteBuffer;
 import com.moyu.xmz.store.cursor.RowEntity;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.ColumnTypeFactory;
@@ -71,7 +70,7 @@ public class RowMeta {
 
 
     public ByteBuffer getByteBuff() {
-        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
+        DynByteBuffer byteBuffer = new DynByteBuffer();
         byteBuffer.putLong(this.totalByteLen);
         byteBuffer.putLong(this.startPos);
         byteBuffer.putInt(this.rowByteLen);
@@ -90,27 +89,22 @@ public class RowMeta {
     }
 
     public static byte[] toRowByteData(Column[] columns) {
-        WriteBuffer writeBuffer = new WriteBuffer(16);
+        DynByteBuffer buffer = new DynByteBuffer(16);
         for (Column column : columns) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
-            columnType.write(writeBuffer, column.getValue());
+            columnType.write(buffer, column.getValue());
         }
-        writeBuffer.getBuffer().flip();
-        byte[] result = new byte[writeBuffer.limit()];
-        writeBuffer.get(result);
-        return result;
+        return buffer.flipAndGetBytes();
     }
 
     public static byte[] convertToByteData(RowEntity rowEntity) {
-        WriteBuffer writeBuffer = new WriteBuffer(16);
+        DynByteBuffer buffer = new DynByteBuffer(16);
         for (Column column : rowEntity.getColumns()) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
-            columnType.write(writeBuffer, column.getValue());
+            columnType.write(buffer, column.getValue());
         }
-        writeBuffer.getBuffer().flip();
-        byte[] result = new byte[writeBuffer.limit()];
-        writeBuffer.get(result);
-        return result;
+        buffer.getBuffer().flip();
+        return buffer.flipAndGetBytes();
     }
 
 

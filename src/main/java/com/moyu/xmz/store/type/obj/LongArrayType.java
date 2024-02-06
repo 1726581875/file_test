@@ -1,5 +1,5 @@
 package com.moyu.xmz.store.type.obj;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.type.DataType;
 
 import java.nio.ByteBuffer;
@@ -21,11 +21,11 @@ public class LongArrayType implements DataType<Long[]> {
     }
 
     @Override
-    public void write(WriteBuffer writeBuffer, Long[] value) {
+    public void write(DynByteBuffer buffer, Long[] value) {
         int size = value.length;
-        writeBuffer.putInt(size);
+        buffer.putInt(size);
         for (int i = 0; i < size; i++) {
-            writeBuffer.putLong(value[i]);
+            buffer.putLong(value[i]);
         }
     }
 

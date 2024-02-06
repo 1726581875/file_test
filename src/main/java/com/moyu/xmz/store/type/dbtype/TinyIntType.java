@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.dbtype;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -23,8 +23,8 @@ public class TinyIntType extends AbstractDbType<Byte> {
     }
 
     @Override
-    protected void writeValue(WriteBuffer writeBuffer, Byte value) {
-        writeBuffer.put(value);
+    protected void writeValue(DynByteBuffer buffer, Byte value) {
+        buffer.put(value);
     }
 
     @Override

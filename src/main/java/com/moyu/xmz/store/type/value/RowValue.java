@@ -6,7 +6,7 @@ import com.moyu.xmz.store.type.DataType;
 import com.moyu.xmz.store.type.dbtype.AbstractDbType;
 import com.moyu.xmz.store.type.obj.RowDataType;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.common.util.DataByteUtils;
 
@@ -111,16 +111,13 @@ public class RowValue extends Value {
     }
 
     private byte[] columnDataToBytes(Column[] columns) {
-        WriteBuffer writeBuffer = new WriteBuffer(16);
+        DynByteBuffer buffer = new DynByteBuffer();
         for (Column column : columns) {
             DataType columnType = ColumnTypeFactory.getColumnType(column.getColumnType());
             Object value = convertValue((AbstractDbType) columnType, column.getValue());
-            columnType.write(writeBuffer, value);
+            columnType.write(buffer, value);
         }
-        writeBuffer.getBuffer().flip();
-        byte[] result = new byte[writeBuffer.limit()];
-        writeBuffer.get(result);
-        return result;
+        return buffer.flipAndGetBytes();
     }
 
     private Object convertValue(AbstractDbType columnType, Object value) {

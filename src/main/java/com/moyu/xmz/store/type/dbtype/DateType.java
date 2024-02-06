@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.dbtype;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
@@ -19,8 +19,8 @@ public class DateType extends AbstractDbType<Date> {
     }
 
     @Override
-    protected void writeValue(WriteBuffer writeBuffer, Date value) {
-        writeBuffer.putLong(value.getTime());
+    protected void writeValue(DynByteBuffer buffer, Date value) {
+        buffer.putLong(value.getTime());
     }
 
     @Override

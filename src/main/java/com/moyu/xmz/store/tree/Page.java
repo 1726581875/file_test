@@ -2,7 +2,7 @@ package com.moyu.xmz.store.tree;
 
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.store.common.SerializableByte;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -160,25 +160,25 @@ public abstract class Page<K, V> implements SerializableByte {
 
     @Override
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
         // usedByteLen 实际占用字节长度,后面会复写
-        writeBuffer.putInt(0);
-        writeBuffer.putLong(this.startPos);
-        writeBuffer.putInt(this.pageIndex);
-        writeBuffer.putInt(this.keywordCount);
-        writeBuffer.put(this.pageType);
-        writeBuffer.putLong(this.rightPos == null ? -1L : this.rightPos);
+        dynByteBuffer.putInt(0);
+        dynByteBuffer.putLong(this.startPos);
+        dynByteBuffer.putInt(this.pageIndex);
+        dynByteBuffer.putInt(this.keywordCount);
+        dynByteBuffer.put(this.pageType);
+        dynByteBuffer.putLong(this.rightPos == null ? -1L : this.rightPos);
         // 关键字
         for (int i = 0; i < this.keywordCount; i++) {
-            map.getKeyType().write(writeBuffer, this.keywordList.get(i));
+            map.getKeyType().write(dynByteBuffer, this.keywordList.get(i));
         }
         // 写入节点包含的值/指针
-        writeValue(writeBuffer);
+        writeValue(dynByteBuffer);
 
         // 复写占用字节长度
-        int position = writeBuffer.position();
-        writeBuffer.putInt(0, position);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        int position = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, position);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
 
         if(buffer.limit() > getCurrMaxByteLen()) {
@@ -199,7 +199,7 @@ public abstract class Page<K, V> implements SerializableByte {
     }
 
 
-    protected abstract void writeValue(WriteBuffer writeBuffer);
+    protected abstract void writeValue(DynByteBuffer dynByteBuffer);
 
     public abstract Page<K, V> split(int index);
 
@@ -280,10 +280,10 @@ public abstract class Page<K, V> implements SerializableByte {
         }
 
         @Override
-        protected void writeValue(WriteBuffer writeBuffer) {
+        protected void writeValue(DynByteBuffer dynByteBuffer) {
             // 写入叶子节点的值
             for (int i = 0; i < this.keywordCount; i++) {
-                map.getValueType().write(writeBuffer, this.valueList.get(i));
+                map.getValueType().write(dynByteBuffer, this.valueList.get(i));
             }
         }
 
@@ -408,14 +408,14 @@ public abstract class Page<K, V> implements SerializableByte {
 
 
         @Override
-        protected void writeValue(WriteBuffer writeBuffer) {
+        protected void writeValue(DynByteBuffer dynByteBuffer) {
             if(this.keywordCount != this.childPageList.size() - 1) {
                 throw new DbException("非叶子节点指针数不正确");
             }
             // 写入非叶子节点包含的指针(子页的文件内开始位置)
             for (int i = 0; i <= this.keywordCount; i++) {
                 PageReference<K, V> pageReference = this.childPageList.get(i);
-                writeBuffer.putLong(pageReference.getPos());
+                dynByteBuffer.putLong(pageReference.getPos());
             }
         }
 

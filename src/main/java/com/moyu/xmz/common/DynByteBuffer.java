@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  * @date 2024/1/29
  * 一个动态扩容的ByteBuffer
  */
-public class DynamicByteBuffer {
+public class DynByteBuffer {
 
     private ByteBuffer buffer;
 
@@ -17,26 +17,31 @@ public class DynamicByteBuffer {
 
     private static final int MAX_SIZE = Integer.MAX_VALUE - 8;
 
-    public DynamicByteBuffer() {
+    public DynByteBuffer() {
         this.buffer = ByteBuffer.allocate(DEFAULT_CAPACITY);
     }
 
-    public DynamicByteBuffer(int capacity) {
+    public DynByteBuffer(int capacity) {
         this.buffer = ByteBuffer.allocate(capacity);
     }
 
     public void put(byte value) {
-        ensureCapacityInternal(buffer.capacity() + 1);
+        ensureCapacityInternal(getMinCapacity(1));
         buffer.put(value);
     }
 
     public void put(byte[] value) {
-        ensureCapacityInternal(buffer.capacity() + value.length);
+        ensureCapacityInternal(getMinCapacity(value.length));
         buffer.put(value);
     }
 
+    public void put(ByteBuffer byteBuffer) {
+        ensureCapacityInternal(getMinCapacity(byteBuffer.remaining()));
+        buffer.put(byteBuffer);
+    }
+
     public void putInt(int value) {
-        ensureCapacityInternal(buffer.capacity() + 4);
+        ensureCapacityInternal(getMinCapacity(4));
         DataByteUtils.writeInt(buffer, value);
     }
 
@@ -49,12 +54,17 @@ public class DynamicByteBuffer {
     }
 
     public void putLong(long v) {
-        ensureCapacityInternal(buffer.capacity() + 8);
+        ensureCapacityInternal(getMinCapacity(8));
         DataByteUtils.writeLong(buffer, v);
     }
 
+    public void putDouble(double v) {
+        ensureCapacityInternal(getMinCapacity(8));
+        buffer.putDouble(v);
+    }
+
     public void putString(String v) {
-        ensureCapacityInternal(buffer.capacity() + v.length() * 3);
+        ensureCapacityInternal(getMinCapacity(v.length() * 3));
         DataByteUtils.writeStringData(buffer, v, v.length());
     }
 
@@ -63,6 +73,16 @@ public class DynamicByteBuffer {
         if(minCapacity > oldCapacity) {
             grow(minCapacity);
         }
+    }
+
+    /**
+     * 获取所需要的最小容量
+     * @param len
+     * @return
+     */
+    private int getMinCapacity(int len) {
+        int position = buffer.position();
+        return Math.max(position + len, buffer.capacity());
     }
 
     private void grow(int minCapacity) {
@@ -76,6 +96,7 @@ public class DynamicByteBuffer {
         if (newCapacity > MAX_SIZE) {
             throw new DbException("DynamicByteBuffer扩容异常,超出最大限制");
         }
+        //System.out.println("DynamicByteBuffer扩容,旧容量=" + oldCapacity + ",新=" + newCapacity);
         ByteBuffer newByteBuffer = ByteBuffer.allocate(newCapacity);
         buffer.flip();
         newByteBuffer.put(buffer);
@@ -88,6 +109,13 @@ public class DynamicByteBuffer {
 
     public ByteBuffer getBuffer() {
         return buffer;
+    }
+
+    public byte[] flipAndGetBytes() {
+        this.buffer.flip();
+        byte[] result = new byte[this.buffer.limit()];
+        this.buffer.get(result);
+        return result;
     }
 
     public ByteBuffer flipAndGetBuffer() {

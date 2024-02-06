@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.dbtype;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.common.util.DataByteUtils;
 import java.nio.ByteBuffer;
 
@@ -16,8 +16,8 @@ public class LongType extends AbstractDbType<Long> {
     }
 
     @Override
-    protected void writeValue(WriteBuffer writeBuffer, Long value) {
-        writeBuffer.putLong(value);
+    protected void writeValue(DynByteBuffer buffer, Long value) {
+        buffer.putLong(value);
     }
 
     @Override

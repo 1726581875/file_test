@@ -3,7 +3,7 @@ package com.moyu.xmz.net.model.terminal;
 import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.net.model.BaseResultDto;
 import com.moyu.xmz.session.Database;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -56,19 +56,19 @@ public class DatabaseInfo implements BaseResultDto {
 
     @Override
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(totalByteLen);
-        writeBuffer.putInt(databaseId);
-        ReadWriteUtil.writeString(writeBuffer, name);
-        writeBuffer.putInt(tableNum);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.putInt(totalByteLen);
+        dynByteBuffer.putInt(databaseId);
+        ReadWriteUtil.writeString(dynByteBuffer, name);
+        dynByteBuffer.putInt(tableNum);
         if (tableNum > 0) {
             for (String tableName : tableNameList) {
-                ReadWriteUtil.writeString(writeBuffer, tableName);
+                ReadWriteUtil.writeString(dynByteBuffer, tableName);
             }
         }
-        totalByteLen = writeBuffer.position();
-        writeBuffer.putInt(0, totalByteLen);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        totalByteLen = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, totalByteLen);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

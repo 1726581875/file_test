@@ -2,7 +2,7 @@ package com.moyu.xmz.store.type.dbtype;
 
 import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.exception.DbException;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.type.DataType;
 
 import java.nio.ByteBuffer;
@@ -26,15 +26,15 @@ public abstract class AbstractDbType<T> implements DataType<T> {
     }
 
     @Override
-    public void write(WriteBuffer writeBuffer, T value) {
+    public void write(DynByteBuffer buffer, T value) {
         // 如果是空值(null)，写入标记位值0
         if (value == null) {
             byte flag = 0;
-            writeBuffer.put(flag);
+            buffer.put(flag);
         } else {
             byte flag = 1;
-            writeBuffer.put(flag);
-            writeValue(writeBuffer, value);
+            buffer.put(flag);
+            writeValue(buffer, value);
         }
     }
 
@@ -64,7 +64,7 @@ public abstract class AbstractDbType<T> implements DataType<T> {
      */
     protected abstract T readValue(ByteBuffer byteBuffer);
 
-    protected abstract void writeValue(WriteBuffer writeBuffer, T value);
+    protected abstract void writeValue(DynByteBuffer dynByteBuffer, T value);
 
 
     public static DataType getDataType(byte columnType) {

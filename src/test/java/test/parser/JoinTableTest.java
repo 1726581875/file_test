@@ -40,12 +40,40 @@ public class JoinTableTest {
 
     public static void main(String[] args) {
 
-        simpleJoinTest();
+       // simpleJoinTest();
 
 /*        fastInsertData("table_1", 1000, engineType);
         fastInsertData("table_2", 1000, engineType);
         //testExecSQL("create index idx_id on table_2(id)");
         testExecSQL("select count(*) from table_1 a inner join table_2 b on a.id = b.id");*/
+
+
+        testExecSQL("drop table if exists tb_a");
+        testExecSQL("create table tb_a (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO tb_a (id, name, time) VALUES (1, 'John-a', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO tb_a (id, name, time) VALUES (2, 'Alice-a', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO tb_a (id, name, time) VALUES (3, 'Mike-a', '2023-06-29 11:15:00')");
+
+        testExecSQL("drop table if exists tb_b");
+        testExecSQL("create table tb_b (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO tb_b (id, name, time) VALUES (1, 'John-b', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO tb_b (id, name, time) VALUES (2, 'Alice-b', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO tb_b (id, name, time) VALUES (4, 'Mike-b', '2023-06-29 11:15:00')");
+
+        testExecSQL("drop table if exists tb_c");
+        testExecSQL("create table tb_c (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO tb_c (id, name, time) VALUES (1, 'John-c', '2023-06-29 09:30:00')");
+        testExecSQL("INSERT INTO tb_c (id, name, time) VALUES (2, 'Alice-c', '2023-06-29 10:45:00')");
+        testExecSQL("INSERT INTO tb_c (id, name, time) VALUES (3, 'Mike-c', '2023-06-29 11:15:00')");
+
+        testExecSQL("drop table if exists tb_d");
+        testExecSQL("create table tb_d (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("INSERT INTO tb_d (id, name, time) VALUES (4, 'John-d', '2023-06-29 09:30:00')");
+
+
+        testExecSQL("select * from tb_a as a " +
+                "left join tb_b as b on a.id = b.id " +
+                "left join tb_c as c on c.id = a.id left join tb_d as d on d.id = b.id");
     }
 
 

@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.meta;
 
-import com.moyu.xmz.common.DynamicByteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.common.util.DataByteUtils;
 
@@ -37,7 +37,7 @@ public class DatabaseMeta extends AbstractMeta implements SerializableByte {
 
     @Override
     public ByteBuffer getByteBuffer() {
-        DynamicByteBuffer byteBuffer = new DynamicByteBuffer();
+        DynByteBuffer byteBuffer = new DynByteBuffer();
         byteBuffer.putInt(this.totalByteLen);
         byteBuffer.putLong(this.startPos);
         byteBuffer.putInt(this.databaseId);

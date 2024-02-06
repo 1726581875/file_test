@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.meta;
 
-import com.moyu.xmz.common.DynamicByteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.common.util.DataByteUtils;
 
 import java.nio.ByteBuffer;
@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
 public abstract class AbstractMeta {
 
 
-    protected void writeString(DynamicByteBuffer buffer, String str) {
+    protected void writeString(DynByteBuffer buffer, String str) {
         if (str == null) {
             buffer.put((byte) 0);
         } else {

@@ -5,7 +5,7 @@ import com.moyu.xmz.net.util.ReadWriteUtil;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.SelectColumn;
 import com.moyu.xmz.common.constant.DbTypeConstant;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -108,23 +108,23 @@ public class QueryResultDto implements BaseResultDto {
 
     @Override
     public ByteBuffer getByteBuffer() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(totalByteLen);
-        writeBuffer.putInt(columnsLen);
-        writeBuffer.putInt(rowsLen);
-        writeBuffer.put(this.hasNext);
+        DynByteBuffer dynByteBuffer = new DynByteBuffer();
+        dynByteBuffer.putInt(totalByteLen);
+        dynByteBuffer.putInt(columnsLen);
+        dynByteBuffer.putInt(rowsLen);
+        dynByteBuffer.put(this.hasNext);
         for (ColumnMetaDto columnDto : columns) {
-            writeBuffer.put(columnDto.getByteBuffer());
+            dynByteBuffer.put(columnDto.getByteBuffer());
         }
         if (rowsLen > 0) {
             for (RowDto rowValueDto : rows) {
-                writeBuffer.put(rowValueDto.getByteBuffer(columns));
+                dynByteBuffer.put(rowValueDto.getByteBuffer(columns));
             }
         }
-        ReadWriteUtil.writeString(writeBuffer, desc);
-        totalByteLen = writeBuffer.position();
-        writeBuffer.putInt(0, totalByteLen);
-        ByteBuffer buffer = writeBuffer.getBuffer();
+        ReadWriteUtil.writeString(dynByteBuffer, desc);
+        totalByteLen = dynByteBuffer.position();
+        dynByteBuffer.putInt(0, totalByteLen);
+        ByteBuffer buffer = dynByteBuffer.getBuffer();
         buffer.flip();
         return buffer;
     }

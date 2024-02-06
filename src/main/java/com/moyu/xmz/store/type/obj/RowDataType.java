@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.obj;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.store.type.value.RowValue;
 
 import java.nio.ByteBuffer;
@@ -17,8 +17,8 @@ public class RowDataType extends AbstractObjType<RowValue> {
     }
 
     @Override
-    public void write(WriteBuffer writeBuffer, RowValue rowValue) {
-        writeBuffer.put(rowValue.getByteBuffer());
+    public void write(DynByteBuffer buffer, RowValue rowValue) {
+        buffer.put(rowValue.getByteBuffer());
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.type.dbtype;
 
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 import com.moyu.xmz.common.util.DataByteUtils;
 import java.nio.ByteBuffer;
 
@@ -18,9 +18,9 @@ public class StringType extends AbstractDbType<String> {
     }
 
     @Override
-    protected void writeValue(WriteBuffer writeBuffer, String value) {
-        writeBuffer.putInt(value.length());
-        writeBuffer.putStringData(value, value.length());
+    protected void writeValue(DynByteBuffer buffer, String value) {
+        buffer.putInt(value.length());
+        buffer.putString(value);
     }
 
     @Override

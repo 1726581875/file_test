@@ -1,7 +1,7 @@
 package com.moyu.xmz.net.packet;
 
 import com.moyu.xmz.net.util.ReadWriteUtil;
-import com.moyu.xmz.store.common.WriteBuffer;
+import com.moyu.xmz.common.DynByteBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -31,15 +31,10 @@ public class ErrPacket extends Packet {
 
 
     public byte[] getBytes() {
-        WriteBuffer writeBuffer = new WriteBuffer(128);
-        writeBuffer.putInt(errCode);
-        ReadWriteUtil.writeString(writeBuffer, errMsg);
-        ByteBuffer buffer = writeBuffer.getBuffer();
-        int packetLength = buffer.position();
-        buffer.flip();
-        byte[] bytes = new byte[packetLength];
-        buffer.get(bytes);
-        return bytes;
+        DynByteBuffer buffer = new DynByteBuffer();
+        buffer.putInt(errCode);
+        ReadWriteUtil.writeString(buffer, errMsg);
+        return buffer.flipAndGetBytes();
     }
 
 
