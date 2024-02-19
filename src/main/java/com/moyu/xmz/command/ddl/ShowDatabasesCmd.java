@@ -23,10 +23,11 @@ public class ShowDatabasesCmd extends AbstractCmd {
 
         long queryStartTime = System.currentTimeMillis();
 
-        SelectColumn idColumn = SelectColumn.newColumn("id", DbTypeConstant.INT_4);
-        SelectColumn nameColumn = SelectColumn.newColumn("dbName", DbTypeConstant.CHAR);
         QueryResult queryResult = new QueryResult();
-        queryResult.setSelectColumns(new SelectColumn[]{idColumn, nameColumn});
+        queryResult.setSelectColumns(new SelectColumn[]{
+                SelectColumn.newColumn("id", DbTypeConstant.INT_4),
+                SelectColumn.newColumn("dbName", DbTypeConstant.CHAR)
+        });
         DatabaseMetaAccessor metadataStore = null;
         try {
             metadataStore = new DatabaseMetaAccessor();

@@ -30,19 +30,6 @@ public class MetadataStoreTest {
 
         testDatabase();
 
-        testTable("xmz01");
-        testTable("xmz02");
-        testTable("xmz03");
-        testTable("xmz04");
-        testTable("xmz05");
-        testTable("xmz06");
-
-        testDropTable("xmz05");
-
-
-        testShowTables();
-        //testColumn();
-
 
     }
 
@@ -53,93 +40,6 @@ public class MetadataStoreTest {
             metadataStore = new DatabaseMetaAccessor(filePath);
             metadataStore.createDatabase("xmz1");
             metadataStore.getAllData().forEach(System.out::println);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            metadataStore.close();
-        }
-    }
-
-    private static void testTable(String tableName) {
-        TableMetaAccessor metadataStore = null;
-        try {
-            metadataStore = new TableMetaAccessor(0, filePath);
-            metadataStore.createTable(tableName, null);
-            TableMetaAccessor finalMetadataStore = metadataStore;
-            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
-                System.out.println("==== table ==== ");
-                System.out.println(tableMetadata);
-                List<ColumnMeta> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
-                columnList.forEach(System.out::println);
-                System.out.println("==== table ==== ");
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            metadataStore.close();
-        }
-    }
-
-
-    private static void testDropTable(String tableName) {
-        TableMetaAccessor metadataStore = null;
-        try {
-            metadataStore = new TableMetaAccessor(0, filePath);
-            metadataStore.dropTable(tableName);
-            TableMetaAccessor finalMetadataStore = metadataStore;
-            System.out.println("==== drop table ==== ");
-            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
-                System.out.println(tableMetadata);
-                List<ColumnMeta> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
-                columnList.forEach(System.out::println);
-            });
-            System.out.println("==== drop table end==== ");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            metadataStore.close();
-        }
-    }
-
-
-    private static void testShowTables() {
-        TableMetaAccessor metadataStore = null;
-        try {
-            metadataStore = new TableMetaAccessor(0, filePath);
-            TableMetaAccessor finalMetadataStore = metadataStore;
-            System.out.println("==== drop table ==== ");
-            metadataStore.getCurrDbAllTable().forEach(tableMetadata -> {
-                System.out.println(tableMetadata);
-                List<ColumnMeta> columnList = finalMetadataStore.getColumnList(tableMetadata.getTableId());
-                columnList.forEach(System.out::println);
-            });
-            System.out.println("==== drop table end==== ");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            metadataStore.close();
-        }
-    }
-
-
-    private static void testColumn(){
-        ColumnMetaAccessor metadataStore = null;
-        try {
-            metadataStore = new ColumnMetaAccessor(filePath);
-            List<Column> columnDtoList = new ArrayList<>();
-            for (int i = 0; i < 5; i++) {
-                Column columnDto = new Column("column_" + i, DbTypeConstant.VARCHAR, i, 64);
-                columnDtoList.add(columnDto);
-            }
-            metadataStore.createColumnBlock(0, columnDtoList);
-            Map<Integer, TableColumnBlock> columnMap = metadataStore.getColumnMap();
-            columnMap.forEach((k,v) -> {
-                System.out.println("=======  tableId="+ k +" ========");
-                v.getColumnMetaList().forEach(System.out::println);
-            });
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

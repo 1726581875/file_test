@@ -42,7 +42,7 @@ public class PathUtils {
     }
 
 
-    public static String getIndexMetaPath(Integer databaseId) {
+    public static String getDbMetaBasePath(Integer databaseId) {
         return  getMetaDirPath() + File.separator + databaseId;
     }
 

@@ -39,7 +39,7 @@ public class ShowTablesCmd extends AbstractCmd {
         TableMetaAccessor metadataStore = null;
         try {
             metadataStore = new TableMetaAccessor(databaseId);
-            List<TableMeta> allData = metadataStore.getCurrDbAllTable();
+            List<TableMeta> allData = metadataStore.getAllTable();
 
             for (int i = 0; i < allData.size(); i++) {
                 TableMeta table = allData.get(i);

@@ -1,14 +1,11 @@
 package com.moyu.xmz.store.accessor;
 
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.store.common.block.TableColumnBlock;
-import com.moyu.xmz.store.common.meta.ColumnMeta;
-import com.moyu.xmz.store.common.meta.TableMeta;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.FileUtils;
 import com.moyu.xmz.common.util.PathUtils;
+import com.moyu.xmz.store.common.meta.TableMeta;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,16 +17,9 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/8
  */
-public class TableMetaAccessor {
-
-
-    private static final String DEFAULT_META_PATH =  PathUtils.getMetaDirPath();
-
-    private String filePath;
+public class TableMetaAccessor extends BaseAccessor {
 
     public static final String TABLE_META_FILE_NAME = "table.meta";
-
-    private FileAccessor fileAccessor;
 
     private Integer databaseId;
 
@@ -37,12 +27,7 @@ public class TableMetaAccessor {
 
 
     public TableMetaAccessor(Integer databaseId) throws IOException {
-        this(databaseId, DEFAULT_META_PATH);
-    }
-
-
-    public TableMetaAccessor(Integer databaseId, String filePath) throws IOException {
-        this.filePath = filePath;
+        super(PathUtils.getDbMetaBasePath(databaseId) + File.separator + TABLE_META_FILE_NAME);
         this.databaseId = databaseId;
         init();
     }
@@ -113,14 +98,8 @@ public class TableMetaAccessor {
 
 
 
-    public List<TableMeta> getCurrDbAllTable() {
-        List<TableMeta> currDbTables = new ArrayList<>();
-        for (TableMeta table : tableMetaList) {
-            if(databaseId.equals(table.getDatabaseId())) {
-                currDbTables.add(table);
-            }
-        }
-        return currDbTables;
+    public List<TableMeta> getAllTable() {
+        return this.tableMetaList;
     }
 
     public TableMeta getTable(String tableName) {
@@ -132,27 +111,6 @@ public class TableMetaAccessor {
         }
         return null;
     }
-
-
-
-    public List<ColumnMeta> getColumnList(Integer tableId) {
-        ColumnMetaAccessor columnMetaAccessor = null;
-        try {
-            columnMetaAccessor = new ColumnMetaAccessor(filePath);
-            TableColumnBlock columnBlock = columnMetaAccessor.getColumnMap().get(tableId);
-            if (columnBlock != null) {
-                return columnBlock.getColumnMetaList();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (columnMetaAccessor != null) {
-                columnMetaAccessor.close();
-            }
-        }
-        return new ArrayList<>();
-    }
-
 
     private void checkTableName(String tableName) {
         for (TableMeta metadata : tableMetaList) {
@@ -183,36 +141,20 @@ public class TableMetaAccessor {
 
 
     private void init() throws IOException {
-        // 初始化table的元数据文件，不存在会创建文件，并把所有表信息读取到内存
-        String basePath = filePath + File.separator + databaseId;
-        FileUtils.createDirIfNotExists(basePath);
-
-        String tableMetaPath = basePath + File.separator + TABLE_META_FILE_NAME;
-
-        File dbFile = new File(tableMetaPath);
-        if (!dbFile.exists()) {
-            dbFile.createNewFile();
-        }
-        fileAccessor = new FileAccessor(tableMetaPath);
-        long endPosition = fileAccessor.getEndPosition();
-        tableMetaList = new ArrayList<>();
+        long endPosition = this.fileAccessor.getEndPosition();
+        this.tableMetaList = new ArrayList<>();
         if (endPosition > CommonConstant.INT_LENGTH) {
             long currPos = 0;
             while (currPos < endPosition) {
-                int dataByteLen = DataByteUtils.readInt(fileAccessor.read(currPos, CommonConstant.INT_LENGTH));
-                ByteBuffer readBuffer = fileAccessor.read(currPos, dataByteLen);
+                int dataByteLen = DataByteUtils.readInt(this.fileAccessor.read(currPos, CommonConstant.INT_LENGTH));
+                ByteBuffer readBuffer = this.fileAccessor.read(currPos, dataByteLen);
                 TableMeta dbMetadata = new TableMeta(readBuffer);
-                tableMetaList.add(dbMetadata);
+                this.tableMetaList.add(dbMetadata);
                 currPos += dataByteLen;
             }
         }
     }
 
-    public void close() {
-        if (fileAccessor != null) {
-            fileAccessor.close();
-        }
-    }
 
 
 

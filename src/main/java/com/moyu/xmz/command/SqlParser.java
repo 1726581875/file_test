@@ -194,7 +194,7 @@ public class SqlParser implements Parser {
             case DESC:
                 skipSpace();
                 String word12 = getNextOriginalWord();
-                return new DescTableCmd(this.connectSession.getDatabaseId(), word12);
+                return new DescTableCmd(this.connectSession.getDatabase(), word12);
             case TRUNCATE:
                 assertNextKeywordIs(TABLE);
                 skipSpace();

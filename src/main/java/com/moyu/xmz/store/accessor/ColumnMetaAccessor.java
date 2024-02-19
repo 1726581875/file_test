@@ -18,18 +18,11 @@ import java.util.Map;
  * @author xiaomingzhang
  * @date 2023/5/8
  */
-public class ColumnMetaAccessor {
-
-    private static final String DEFAULT_META_PATH =  PathUtils.getMetaDirPath();
+public class ColumnMetaAccessor extends BaseAccessor {
 
     public static final String COLUMN_META_FILE_NAME = "column.meta";
 
-    private FileAccessor fileAccessor;
-
     private Integer databaseId;
-
-    private String filePath;
-
 
     private List<TableColumnBlock> columnBlockList = new ArrayList<>();
 
@@ -40,11 +33,8 @@ public class ColumnMetaAccessor {
     private Map<Integer, TableColumnBlock> columnBlockMap = new HashMap<>();
 
     public ColumnMetaAccessor(Integer databaseId) throws IOException {
-        this(DEFAULT_META_PATH + File.separator + databaseId);
-    }
-
-    public ColumnMetaAccessor(String filePath) throws IOException {
-        this.filePath = filePath;
+        super(PathUtils.getDbMetaBasePath(databaseId) + File.separator + COLUMN_META_FILE_NAME);
+        this.databaseId = databaseId;
         init();
     }
 
@@ -111,11 +101,6 @@ public class ColumnMetaAccessor {
 
 
 
-
-    public List<TableColumnBlock> getAllColumnBlock() {
-        return columnBlockList;
-    }
-
     public TableColumnBlock getColumnBlock(Integer tableId) {
         return columnBlockMap.get(tableId);
     }
@@ -137,14 +122,6 @@ public class ColumnMetaAccessor {
     private void init() throws IOException {
         this.columnBlockList = new ArrayList<>();
         this.columnBlockMap = new HashMap<>();
-
-        // 初始化table的元数据文件，不存在会创建文件，并把所有表信息读取到内存
-        String columnPath = filePath + File.separator + COLUMN_META_FILE_NAME;
-        File dbFile = new File(columnPath);
-        if (!dbFile.exists()) {
-            dbFile.createNewFile();
-        }
-        fileAccessor = new FileAccessor(columnPath);
         long endPosition = fileAccessor.getEndPosition();
         if (endPosition >= TableColumnBlock.TABLE_COLUMN_BLOCK_SIZE) {
             long currPos = 0;
@@ -161,11 +138,6 @@ public class ColumnMetaAccessor {
         }
     }
 
-    public void close() {
-        if (fileAccessor != null) {
-            fileAccessor.close();
-        }
-    }
 
 
 }

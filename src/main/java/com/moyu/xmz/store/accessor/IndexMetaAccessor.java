@@ -17,14 +17,9 @@ import java.util.Map;
  * @author xiaomingzhang
  * @date 2023/5/30
  */
-public class IndexMetaAccessor {
+public class IndexMetaAccessor extends BaseAccessor {
 
-    private String filePath;
-
-    public static final String COLUMN_META_FILE_NAME = "index.meta";
-
-    private FileAccessor fileAccessor;
-
+    public static final String FILE_NAME = "index.meta";
 
     private List<TableIndexBlock> indexBlockList = new ArrayList<>();
 
@@ -39,8 +34,8 @@ public class IndexMetaAccessor {
 
 
     public IndexMetaAccessor(Integer databaseId) throws IOException {
+        super(PathUtils.getDbMetaBasePath(databaseId) + File.separator + FILE_NAME);
         this.databaseId = databaseId;
-        this.filePath = PathUtils.getIndexMetaPath(databaseId);
         init();
     }
 
@@ -200,14 +195,6 @@ public class IndexMetaAccessor {
     private void init() throws IOException {
         this.indexBlockList = new ArrayList<>();
         this.indexBlockMap = new HashMap<>();
-
-        // 初始化table的元数据文件，不存在会创建文件，并把所有表信息读取到内存
-        String columnPath = filePath + File.separator + COLUMN_META_FILE_NAME;
-        File dbFile = new File(columnPath);
-        if (!dbFile.exists()) {
-            dbFile.createNewFile();
-        }
-        fileAccessor = new FileAccessor(columnPath);
         long endPosition = fileAccessor.getEndPosition();
         if (endPosition >= TableIndexBlock.TABLE_COLUMN_BLOCK_SIZE) {
             long currPos = 0;
@@ -221,12 +208,6 @@ public class IndexMetaAccessor {
             for (TableIndexBlock columnBlock : indexBlockList) {
                 indexBlockMap.put(columnBlock.getTableId(), columnBlock);
             }
-        }
-    }
-
-    public void close() {
-        if (fileAccessor != null) {
-            fileAccessor.close();
         }
     }
 
