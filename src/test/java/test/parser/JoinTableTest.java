@@ -32,9 +32,9 @@ public class JoinTableTest {
 
     static {
         DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.execCommand();
+        dropDatabaseCmd.exec();
         CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.execCommand();
+        createDatabaseCmd.exec();
         database = Database.getDatabase(databaseName);
     }
 
@@ -173,7 +173,7 @@ public class JoinTableTest {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

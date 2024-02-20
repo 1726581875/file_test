@@ -32,9 +32,9 @@ public class PrintResultTest {
 
     static {
         DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.execCommand();
+        dropDatabaseCmd.exec();
         CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.execCommand();
+        createDatabaseCmd.exec();
         database = Database.getDatabase(databaseName);
     }
 
@@ -77,7 +77,7 @@ public class PrintResultTest {
         String sql = "select * from print_test";
         ConnectSession connectSession = new ConnectSession(database);
         SelectCmd command = (SelectCmd) connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
 
 
@@ -157,7 +157,7 @@ public class PrintResultTest {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

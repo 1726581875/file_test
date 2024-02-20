@@ -30,9 +30,9 @@ public class TotalSqlTest {
 
     static {
         DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.execCommand();
+        dropDatabaseCmd.exec();
         CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.execCommand();
+        createDatabaseCmd.exec();
         database = Database.getDatabase(databaseName);
     }
 
@@ -622,7 +622,7 @@ public class TotalSqlTest {
         ConnectSession connectSession = new ConnectSession(database);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

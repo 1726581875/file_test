@@ -19,7 +19,7 @@ public class ShowDatabasesCmd extends AbstractCmd {
     private List<DatabaseMeta> resultList;
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
 
         long queryStartTime = System.currentTimeMillis();
 

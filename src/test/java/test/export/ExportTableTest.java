@@ -23,7 +23,7 @@ public class ExportTableTest {
         ConnectSession connectSession = new ConnectSession("xmz", 1);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand("select * from t_event_record");
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
 
 
 

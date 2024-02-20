@@ -21,7 +21,7 @@ public class TruncateTableCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         boolean isSuccess = false;
         DataChunkAccessor dataChunkAccessor = null;
         try {

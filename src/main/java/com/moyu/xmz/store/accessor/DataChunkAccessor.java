@@ -1,11 +1,10 @@
 package com.moyu.xmz.store.accessor;
 
-import com.moyu.xmz.store.common.block.DataChunk;
-import com.moyu.xmz.store.common.meta.RowMeta;
-import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.common.util.DataByteUtils;
-import com.moyu.xmz.common.util.FileUtils;
 import com.moyu.xmz.common.util.PathUtils;
+import com.moyu.xmz.store.common.block.DataChunk;
+import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.common.meta.RowMeta;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,52 +14,39 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/12
  */
-public class DataChunkAccessor {
-
-    private static final String defaultPath = PathUtils.getBaseDirPath();
-
-    private static final String fileName = "data.yan";
+public class DataChunkAccessor extends BaseAccessor {
 
     public static final int FIRST_BLOCK_INDEX = 1;
-
-    private FileAccessor fileAccessor;
-
+    /**
+     * 最后一个数据块信息
+     */
     private DataChunk lastChunk;
-
-
     /**
      * 块数量
      */
     private int dataChunkNum;
-
+    /**
+     * 当前最大行id
+     */
     private long maxRowId;
 
 
     public DataChunkAccessor(String fileFullPath) throws IOException {
-        FileUtils.createFileIfNotExists(fileFullPath);
-        this.fileAccessor = new FileAccessor(fileFullPath);
+        super(fileFullPath);
         this.dataChunkNum = 0;
-
-        // 初始化最后一个数据块到内存
+        // 初始化获取最后一个数据块到内存
         long endPosition = fileAccessor.getEndPosition();
         this.dataChunkNum = (int) (endPosition / DataChunk.DATA_CHUNK_LEN);
 
         if(fileAccessor.getEndPosition() >= 8) {
             this.maxRowId = DataByteUtils.readLong(fileAccessor.read(0, 8));
         }
-
         if (endPosition > DataChunk.DATA_CHUNK_LEN) {
             ByteBuffer readBuffer = fileAccessor.read(endPosition - DataChunk.DATA_CHUNK_LEN, DataChunk.DATA_CHUNK_LEN);
             this.lastChunk = new DataChunk(readBuffer);
         }
 
     }
-
-
-    public DataChunkAccessor() throws IOException {
-        this(defaultPath + fileName);
-    }
-
 
     public DataChunk createChunk() {
         synchronized (this) {
@@ -259,13 +245,6 @@ public class DataChunkAccessor {
         return null;
     }
 
-
-
-    public void close() {
-        if (fileAccessor != null) {
-            fileAccessor.close();
-        }
-    }
 
 
     public DataChunk getLastChunk() {

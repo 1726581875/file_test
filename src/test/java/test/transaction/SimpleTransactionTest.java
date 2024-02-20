@@ -42,7 +42,7 @@ public class SimpleTransactionTest {
         System.out.println("执行语句 " + sql + "");
         SqlParser sqlParser = new SqlParser(session);
         Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

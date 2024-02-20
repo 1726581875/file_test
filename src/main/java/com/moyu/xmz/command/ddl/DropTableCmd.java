@@ -36,7 +36,7 @@ public class DropTableCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         boolean result;
         TableMetaAccessor tableMetaAccessor = null;
         ColumnMetaAccessor columnMetaAccessor = null;

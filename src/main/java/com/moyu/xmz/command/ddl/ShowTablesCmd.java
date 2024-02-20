@@ -27,7 +27,7 @@ public class ShowTablesCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
 
         long queryStartTime = System.currentTimeMillis();
 

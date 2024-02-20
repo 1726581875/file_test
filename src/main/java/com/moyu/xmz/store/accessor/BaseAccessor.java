@@ -16,9 +16,9 @@ public abstract class BaseAccessor {
     protected String filePath;
 
     public BaseAccessor(String filePath) throws IOException {
+        initFileIfNotExists(filePath);
         this.fileAccessor = new FileAccessor(filePath);
         this.filePath = filePath;
-        initFileIfNotExists(this.filePath);
     }
 
 

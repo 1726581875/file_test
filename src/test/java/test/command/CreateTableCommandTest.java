@@ -33,7 +33,7 @@ public class CreateTableCommandTest {
             columnDtoList.add(columnDto);
         }
         command.setColumnList(columnDtoList);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         PrintResultUtil.printResult(queryResult);
     }
 

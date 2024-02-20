@@ -31,19 +31,19 @@ public class CreateTableCmd extends AbstractCmd {
     private List<Column> columnList;
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         boolean isSuccess = true;
-        TableMetaAccessor tableMetaAccessor = null;
-        ColumnMetaAccessor columnMetaAccessor = null;
-        IndexMetaAccessor indexMetaAccessor = null;
+        TableMetaAccessor tableAcc = null;
+        ColumnMetaAccessor columnAcc = null;
+        IndexMetaAccessor indexAcc = null;
         try {
-            tableMetaAccessor = new TableMetaAccessor(databaseId);
-            columnMetaAccessor = new ColumnMetaAccessor(databaseId);
-            indexMetaAccessor = new IndexMetaAccessor(databaseId);
+            tableAcc = new TableMetaAccessor(databaseId);
+            columnAcc = new ColumnMetaAccessor(databaseId);
+            indexAcc = new IndexMetaAccessor(databaseId);
             // 插入table元数据
-            TableMeta table = tableMetaAccessor.createTable(tableName, engineType);
+            TableMeta table = tableAcc.createTable(tableName, engineType);
             // 插入column元数据
-            columnMetaAccessor.createColumnBlock(table.getTableId(), columnList);
+            columnAcc.createColumnBlock(table.getTableId(), columnList);
             // 添加该表信息到内存
             Table tableObj = new Table(table);
             session.getDatabase().addTable(tableObj);
@@ -51,24 +51,24 @@ public class CreateTableCmd extends AbstractCmd {
             Column keyColumn = getPrimaryKeyColumn(columnList.toArray(new Column[0]));
             if(keyColumn != null && CommonConstant.ENGINE_TYPE_YU.equals(engineType)) {
                 TableInfo tableInfo = new TableInfo(session, tableObj, null);
-                CreateIndexCmd indexCommand = new CreateIndexCmd(tableInfo);
-                indexCommand.setIndexName(keyColumn.getColumnName());
-                indexCommand.setColumnName(keyColumn.getColumnName());
-                indexCommand.setIndexType(CommonConstant.PRIMARY_KEY);
-                indexCommand.execCommand();
+                CreateIndexCmd indexCmd = new CreateIndexCmd(tableInfo);
+                indexCmd.setIndexName(keyColumn.getColumnName());
+                indexCmd.setColumnName(keyColumn.getColumnName());
+                indexCmd.setIndexType(CommonConstant.PRIMARY_KEY);
+                indexCmd.exec();
             }
         } catch (Exception e) {
             isSuccess = false;
             e.printStackTrace();
         } finally {
-            if (tableMetaAccessor != null) {
-                tableMetaAccessor.close();
+            if (tableAcc != null) {
+                tableAcc.close();
             }
-            if (columnMetaAccessor != null) {
-                columnMetaAccessor.close();
+            if (columnAcc != null) {
+                columnAcc.close();
             }
-            if (indexMetaAccessor != null) {
-                indexMetaAccessor.close();
+            if (indexAcc != null) {
+                indexAcc.close();
             }
         }
         return isSuccess ? QueryResult.simpleResult(RESULT_OK) : QueryResult.simpleResult(RESULT_ERROR);

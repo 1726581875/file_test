@@ -29,7 +29,7 @@ public class InsertCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         StoreEngine engineOperation = StoreEngine.getEngine(tableInfo);
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int num = 0;

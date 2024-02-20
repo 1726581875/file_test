@@ -29,9 +29,9 @@ public class ParameterSqlTest {
 
     static {
         DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.execCommand();
+        dropDatabaseCmd.exec();
         CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.execCommand();
+        createDatabaseCmd.exec();
         database = Database.getDatabase(databaseName);
     }
 
@@ -89,7 +89,7 @@ public class ParameterSqlTest {
         ConnectSession connectSession = new ConnectSession(database);
         AbstractCmd command = (AbstractCmd) connectSession.prepareCommand(sql);
         command.setParameterValues(parameterList);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

@@ -19,7 +19,7 @@ public class CreateDatabaseCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         boolean success = true;
         DatabaseMetaAccessor metadataStore = null;
         try {

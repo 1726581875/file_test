@@ -32,9 +32,9 @@ public class TotalSqlTest2 {
 
     static {
         DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.execCommand();
+        dropDatabaseCmd.exec();
         CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.execCommand();
+        createDatabaseCmd.exec();
         database = Database.getDatabase(databaseName);
     }
 
@@ -44,7 +44,7 @@ public class TotalSqlTest2 {
         /*        fastInsertData2("table_100000", 100000, engineType);
         fastInsertData2("table_1000000", 1000000, engineType);*/
 
-/*        yanStoreEngineTest();
+        yanStoreEngineTest();
         testCreateIndexCommand();
         fastInsertData2("abc_1", 10000, engineType);
         testOptimizeCondition();
@@ -56,7 +56,7 @@ public class TotalSqlTest2 {
 
         testFunction();
 
-        testExecSQL("select uuid()");*/
+        testExecSQL("select uuid()");
 
 
         testExecSQL("drop table if exists  xmz_sort_test");
@@ -338,7 +338,7 @@ public class TotalSqlTest2 {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

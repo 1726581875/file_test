@@ -28,7 +28,7 @@ public class DropDatabaseCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         boolean isSuccess = true;
         DatabaseMetaAccessor metadataStore = null;
         try {
@@ -44,7 +44,7 @@ public class DropDatabaseCmd extends AbstractCmd {
             List<TableMeta> resultList = showTablesCmd.getResultList();
             for (TableMeta tableMeta : resultList) {
                 DropTableCmd dropTableCmd = new DropTableCmd(database, tableMeta.getTableName(), true);
-                dropTableCmd.execCommand();
+                dropTableCmd.exec();
             }
             Database.removeDatabase(metadata.getDatabaseId());
 

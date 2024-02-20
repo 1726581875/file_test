@@ -22,7 +22,7 @@ public abstract class AbstractCmd implements Command {
 
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         return null;
     }
 

@@ -399,7 +399,7 @@ public class SqlParserTest {
         ConnectSession connectSession = new ConnectSession("xmz", 0);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
     }
@@ -410,7 +410,7 @@ public class SqlParserTest {
         ConnectSession connectSession = new ConnectSession("xmz", 0);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

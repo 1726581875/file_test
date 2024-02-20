@@ -17,25 +17,17 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/5/6
  */
-public class DatabaseMetaAccessor {
+public class DatabaseMetaAccessor extends BaseAccessor {
 
-    private static final String DEFAULT_META_PATH =  PathUtils.getMetaDirPath();
-
-    private String filePath;
+    private static final String DEFAULT_META_PATH = PathUtils.getMetaDirPath();
 
     public static final String DATABASE_META_FILE_NAME = "database.meta";
-
-    private FileAccessor fileAccessor;
 
     private List<DatabaseMeta> databaseMetaList = new ArrayList<>();
 
 
     public DatabaseMetaAccessor() throws IOException {
-        this(DEFAULT_META_PATH);
-    }
-
-    public DatabaseMetaAccessor(String filePath) throws IOException {
-        this.filePath = filePath;
+        super(DEFAULT_META_PATH + File.separator + DATABASE_META_FILE_NAME);
         init();
     }
 
@@ -98,7 +90,7 @@ public class DatabaseMetaAccessor {
     }
 
 
-    public List<DatabaseMeta> getAllData(){
+    public List<DatabaseMeta> getAllData() {
         return databaseMetaList;
     }
 
@@ -129,17 +121,7 @@ public class DatabaseMetaAccessor {
     }
 
 
-    private void init() throws IOException {
-
-        FileUtils.createDirIfNotExists(filePath);
-
-        String databasePath = filePath + File.separator + DATABASE_META_FILE_NAME;
-        // 初始化"数据库"的元数据文件，不存在则创建文件，并把所有数据库信息读取到内存
-        File dbFile = new File(databasePath);
-        if (!dbFile.exists()) {
-            dbFile.createNewFile();
-        }
-        fileAccessor = new FileAccessor(databasePath);
+    private void init() {
         long endPosition = fileAccessor.getEndPosition();
         if (endPosition > CommonConstant.INT_LENGTH) {
             long currPos = 0;
@@ -152,14 +134,6 @@ public class DatabaseMetaAccessor {
             }
         }
     }
-
-
-    public void close() {
-        if (fileAccessor != null) {
-            fileAccessor.close();
-        }
-    }
-
 
 
 }

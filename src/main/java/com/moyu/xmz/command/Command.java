@@ -7,6 +7,10 @@ package com.moyu.xmz.command;
  */
 public interface Command {
 
-    QueryResult execCommand();
+    /**
+     * 执行命令
+     * @return
+     */
+    QueryResult exec();
 
 }

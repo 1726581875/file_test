@@ -14,7 +14,6 @@ import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.SelectColumn;
 import com.moyu.xmz.store.common.meta.IndexMeta;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,7 +32,7 @@ public class DescTableCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         QueryResult queryResult = new QueryResult();
         SelectColumn[] selectColumns = {
                 SelectColumn.newColumn("columnName", DbTypeConstant.CHAR),

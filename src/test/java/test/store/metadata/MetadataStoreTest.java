@@ -27,25 +27,8 @@ public class MetadataStoreTest {
         FileUtils.deleteOnExists(filePath + ColumnMetaAccessor.COLUMN_META_FILE_NAME);
         FileUtils.deleteOnExists(filePath + TableMetaAccessor.TABLE_META_FILE_NAME);
         FileUtils.deleteOnExists(filePath + DatabaseMetaAccessor.DATABASE_META_FILE_NAME);
-
-        testDatabase();
-
-
     }
 
-
-    private static void testDatabase() {
-        DatabaseMetaAccessor metadataStore = null;
-        try {
-            metadataStore = new DatabaseMetaAccessor(filePath);
-            metadataStore.createDatabase("xmz1");
-            metadataStore.getAllData().forEach(System.out::println);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            metadataStore.close();
-        }
-    }
 
 
 

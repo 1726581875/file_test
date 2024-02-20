@@ -29,14 +29,14 @@ public class Database {
 
     static {
         ShowDatabasesCmd showDbCommand = new ShowDatabasesCmd();
-        showDbCommand.execCommand();
+        showDbCommand.exec();
         List<DatabaseMeta> resultList = showDbCommand.getResultList();
         if (resultList != null) {
             for (DatabaseMeta metadata : resultList) {
                 Database database = new Database(metadata.getDatabaseId(), metadata.getName());
                 databaseMap.put(metadata.getDatabaseId(), database);
                 ShowTablesCmd showTablesCmd = new ShowTablesCmd(metadata.getDatabaseId());
-                showTablesCmd.execCommand();
+                showTablesCmd.exec();
                 List<TableMeta> tableMetaList = showTablesCmd.getResultList();
                 for (TableMeta tableMeta : tableMetaList) {
                     database.addTable(new Table(tableMeta));

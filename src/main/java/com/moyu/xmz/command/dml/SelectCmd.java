@@ -34,7 +34,7 @@ public class SelectCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         long queryStartTime = System.currentTimeMillis();
         // 执行查询
         Cursor queryResultCursor = this.query.getQueryResultCursor();

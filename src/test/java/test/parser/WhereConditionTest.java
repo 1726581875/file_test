@@ -64,7 +64,7 @@ public class WhereConditionTest {
         System.out.println("执行语句 " + sql + "");
         ConnectSession connectSession = new ConnectSession(database);
         Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");

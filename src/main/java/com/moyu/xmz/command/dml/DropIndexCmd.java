@@ -31,7 +31,7 @@ public class DropIndexCmd extends AbstractCmd {
     }
 
     @Override
-    public QueryResult execCommand() {
+    public QueryResult exec() {
         IndexMetaAccessor indexStore = null;
         try {
             indexStore = new IndexMetaAccessor(databaseId);

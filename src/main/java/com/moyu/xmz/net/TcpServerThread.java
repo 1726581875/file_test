@@ -204,7 +204,7 @@ public class TcpServerThread implements Runnable {
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
         // 执行sql并且获取执行结果
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         QueryResultDto queryResultDto = QueryResultDto.valueOf(queryResult);
         return queryResultDto;
     }
@@ -244,7 +244,7 @@ public class TcpServerThread implements Runnable {
         System.out.println("参数：" + paramPrintStr.toString());
         AbstractCmd command = (AbstractCmd) connectSession.prepareCommand(sql);
         command.setParameterValues(queryParams);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         QueryResultDto queryResultDto = QueryResultDto.valueOf(queryResult);
         return queryResultDto;
     }

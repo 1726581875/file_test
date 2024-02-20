@@ -85,7 +85,7 @@ public class MutiThreadTest {
         ConnectSession connectSession = new ConnectSession(database);
         SqlParser sqlParser = new SqlParser(connectSession);
         Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.execCommand();
+        QueryResult queryResult = command.exec();
         System.out.println("执行结果:");
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
