@@ -1,5 +1,8 @@
 package com.moyu.xmz.common.util;
 
+import com.moyu.xmz.store.accessor.FileAccessor;
+
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,7 +12,9 @@ import java.nio.ByteBuffer;
 public class DataByteUtils {
 
     /**
-     * 参考H2database的DataUtils.writeStringData类
+     * 单个字符按照UTF-8编码规则转为字节
+     * 2 字节编码：Unicode 码点范围 U+0080 到 U+07FF，编码格式为 110xxxxx 10xxxxxx。
+     * 3 字节编码：Unicode 码点范围 U+0800 到 U+FFFF，编码格式为 1110xxxx 10xxxxxx 10xxxxxx。
      * @param buff
      * @param s
      * @param len
@@ -19,41 +24,26 @@ public class DataByteUtils {
             int c = s.charAt(i);
             // 0x80十进制为128，二进制10000000
             if (c < 0x80) {
-                /**
-                 * a字符转int后的二进制序列
-                 * 00000000 00000000 00000000 1100001
-                 * 转byte只保留了1100001
-                 */
                 // 小于128，一个字节可以存储，也就是常见的ASCII字符
                 buff.put((byte) c);
-                // 十进制2048，二进制00001000 00000000
-            } else if (c >= 0x800) {
-                /**
-                 * 字符 "啊" int为 21834
-                 * 00000000 00000000 01010101 01001010
-                 *
-                 * 00000000 0000[0000 0101] | 11100000 = 111[00101]
-                 * 00000000 00000000 01[010101 01] & 00111111 = 00[010101]
-                 * 00000000 00000000 01010101 01001010 & 00111111 = 00[001010]
-                 */
-                // 大于等于2048拆分为3个字节存储
-                // 0xe0=11100000
-                buff.put((byte) (0xe0 | (c >> 12)));
-                buff.put((byte) (((c >> 6) & 0x3f)));
-                buff.put((byte) (c & 0x3f));
-            } else {
+                // 0x800十进制2048，二进制00001000 00000000
+            } else if (c < 0x800) {
                 // 大于等于128，并且小于2048，按两个字节存储
-                // 0xc0二进制为11000000,
-                buff.put((byte) (0xc0 | (c >> 6)));
+                buff.put((byte) (0b11000000 | (c >> 6)));
                 //只保留后六位(0x3f十进制是63，二进制是00111111。)
-                buff.put((byte) (c & 0x3f));
+                buff.put((byte) (0b10000000 | (c & 0b00111111)));
+            } else if (c >= 0x800) {
+                // 大于等于2048拆分为3个字节存储
+                buff.put((byte) (0b11100000 | (c >> 12)));
+                buff.put((byte) (0b10000000 | (c >> 6 & 0b00111111)));
+                buff.put((byte) (0b10000000 | (c & 0b00111111)));
             }
         }
     }
 
 
     /**
-     * 参考H2database的DataUtils.readString类
+     * 字节转字符串
      * @param buff
      * @param len
      * @return
@@ -61,44 +51,19 @@ public class DataByteUtils {
     public static String readString(ByteBuffer buff, int len) {
         char[] chars = new char[len];
         for (int i = 0; i < len; i++) {
-            // & 0xff是保持二进制补码的一致性。
-            /**
-             * 将byte 类型提升为int时候，b的补码提升为 32位，补码的高位补1
-             * byte b = -127 二进制为10000001
-             * byte->int 计算机背后存储的二进制补码由 10000001（8位）转化成了 11111111 11111111 11111111 10000001
-             *
-             * 为了保持原始的二进制序列 & 0xff
-             * 11111111 11111111 11111111 10000001 & 00000000 00000000 00000000 11111111 = 00000000 00000000 00000000 10000001
-             */
+            // 类型提升为int时0xff保持二进制补码的一致性
             int x = buff.get() & 0xff;
             if (x < 0x80) {
                 chars[i] = (char) x;
-
-                // 0xe0=11100000
-            } else if (x >= 0xe0) {
-                /**
-                 * 字符 "啊" int为 21834
-                 * 00000000 00000000 01010101 01001010
-                 *
-                 * 转换为3个字节
-                 * 00000000 0000[0000 0101] | 11100000 = 111[00101]
-                 * 00000000 00000000 01[010101 01] & 00111111 = 00[010101]
-                 * 00000000 00000000 01010101 01001010 & 00111111 = 00[001010]
-                 *
-                 * 3字节再转换为java字符
-                 * 111[00101] | 00001111 = 0000[0101] << 12 = 00000000 00000000 [0101]0000 00000000
-                 * 00[010101] & 00111111 = 00[010101] << 6  = 00000000 00000000 0000 [0101 01]000000
-                 * 00[001010] & 00111111 = 00[010101]       = 00000000 00000000 00000000  00 [001010]
-                 *
-                 *   00000000 00000000 01010000 00000000
-                 * + 00000000 00000000 00000101 01000000
-                 * + 00000000 00000000 00000000 00001010
-                 * = 00000000 00000000 01010101 01001010
-                 */
-                chars[i] = (char) (((x & 0xf) << 12)
-                        + ((buff.get() & 0x3f) << 6) + (buff.get() & 0x3f));
-            } else {
-                chars[i] = (char) (((x & 0x1f) << 6) + (buff.get() & 0x3f));
+            } else if(x < 0b11100000) {
+                int first = (x & 0b00011111) << 6;
+                int second = (buff.get() & 0b00111111);
+                chars[i] = (char) (first + second);
+            } else if (x >= 0b11100000) {
+                int first = (x & 0b00001111) << 12;
+                int second = (buff.get() & 0b00111111) << 6;
+                int third = buff.get() & 0b00111111;
+                chars[i] = (char) (first + second + third);
             }
         }
         return new String(chars);
@@ -203,24 +168,22 @@ public class DataByteUtils {
 
 
     public static void main(String[] args) {
-        String str = "啊";
-        int length = str.length();
-
-        Character c1 = 'a';
-
-        int c = str.charAt(0);
-        // 0x80十进制为128，二进制10000000
-        if (c < 0x80) {
-            System.out.println("1");
-        } else if (c >= 0x800) {
-            System.out.println("byte1:" + (int)(((byte) (0xe0 | (c >> 12)))));
-            System.out.println("byte2:" + (int)((byte) (((c >> 6) & 0x3f))));
-            System.out.println(("byte3:" + (int)(byte) (c & 0x3f)));
-        } else {
-            System.out.println("3");
-            System.out.println(length);
-            System.out.println((int) str.charAt(0));
+        String str = "\uD83D\uDE00";
+        try {
+            FileAccessor fileAccessor = new FileAccessor("D:\\tmp\\1.txt");
+            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+            DataByteUtils.writeStringData(byteBuffer, str, str.length());
+            byteBuffer.flip();
+            fileAccessor.write(byteBuffer, 0);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        ByteBuffer bf = ByteBuffer.allocate(1024);
+        DataByteUtils.writeStringData(bf, str, str.length());
+        bf.flip();
+
+        System.out.println(DataByteUtils.readString(bf, str.length()));
     }
 
 
