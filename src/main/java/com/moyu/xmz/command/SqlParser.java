@@ -85,6 +85,11 @@ public class SqlParser implements Parser {
     private static final String NOT = "NOT";
     private static final String NULL = "NULL";
     private static final String DEFAULT = "DEFAULT";
+    private static final String DATABASES = "DATABASES";
+    private static final String TABLES = "TABLES";
+    private static final String IF = "IF";
+    private static final String EXISTS = "EXISTS";
+    private static final String ADD = "ADD";
 
 
 
@@ -110,21 +115,16 @@ public class SqlParser implements Parser {
                 skipSpace();
                 String nextKeyWord = getNextKeyWord();
                 switch (nextKeyWord) {
-                    // create database
                     case DATABASE:
-                        skipSpace();
                         String databaseName = getNextOriginalWord();
                         CreateDatabaseCmd command = new CreateDatabaseCmd(databaseName);
                         return command;
-                    // create table
                     case TABLE:
                         return getCreateTableCommand();
                     // CREATE INDEX indexName ON tableName (columnName(length));
                     case INDEX:
-                        skipSpace();
                         String indexName = getNextOriginalWord();
                         assertNextKeywordIs(ON);
-                        skipSpace();
                         String tableName = parseTableNameOrIndexName();
                         StartEndIndex startEnd = getNextBracketStartEnd();
                         String columnName = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
@@ -141,24 +141,21 @@ public class SqlParser implements Parser {
             case INSERT:
                 return getInsertCommand();
             case DROP:
-                skipSpace();
                 String keyWord = getNextKeyWord();
                 switch (keyWord) {
                     // drop database
                     case DATABASE:
-                        skipSpace();
                         String databaseName = getNextOriginalWord();
                         DropDatabaseCmd command = new DropDatabaseCmd();
                         command.setDatabaseName(databaseName);
                         return command;
                         // drop table
                     case TABLE:
-                        skipSpace();
                         String keyword99 = getNextKeyWordUnMove();
                         DropTableCmd dropTableCmd = null;
-                        if("IF".equals(keyword99)) {
-                            assertNextKeywordIs("IF");
-                            assertNextKeywordIs("EXISTS");
+                        if(IF.equals(keyword99)) {
+                            assertNextKeywordIs(IF);
+                            assertNextKeywordIs(EXISTS);
                             String tableName = getNextOriginalWord();
                             dropTableCmd = new DropTableCmd(this.connectSession.getDatabase(), tableName, true);
                         } else {
@@ -167,7 +164,6 @@ public class SqlParser implements Parser {
                         }
                         return dropTableCmd;
                     case INDEX:
-                        skipSpace();
                         String indexName = getNextOriginalWord();
                         assertNextKeywordIs(ON);
                         skipSpace();
@@ -180,24 +176,19 @@ public class SqlParser implements Parser {
             case ALTER:
                 return getAlterTableCommand();
             case SHOW:
-                skipSpace();
                 String word11 = getNextKeyWord();
-                // show databases
-                if ("DATABASES".equals(word11)) {
+                if (DATABASES.equals(word11)) {
                     return new ShowDatabasesCmd();
-                    // show tables
-                } else if ("TABLES".equals(word11)) {
+                } else if (TABLES.equals(word11)) {
                     return new ShowTablesCmd(this.connectSession.getDatabaseId());
                 } else {
                     ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
                 }
             case DESC:
-                skipSpace();
                 String word12 = getNextOriginalWord();
                 return new DescTableCmd(this.connectSession.getDatabase(), word12);
             case TRUNCATE:
                 assertNextKeywordIs(TABLE);
-                skipSpace();
                 // tableName
                 String word13 = getNextOriginalWord();
                 return new TruncateTableCmd(connectSession.getDatabaseId() ,word13);
@@ -262,7 +253,7 @@ public class SqlParser implements Parser {
         skipSpace();
         String operate = getNextKeyWord();
         switch (operate) {
-            case "ADD":
+            case ADD:
                 skipSpace();
                 String word0 = getNextKeyWord();
                 if(INDEX.equals(word0)) {
@@ -274,7 +265,7 @@ public class SqlParser implements Parser {
                     return parseIndexCommand(tableName, CommonConstant.PRIMARY_KEY);
                 }
                 break;
-            case "DROP":
+            case DROP:
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
