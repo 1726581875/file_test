@@ -2,6 +2,7 @@ package test;
 
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.createTable.CreateTableSqlTest;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,6 +15,8 @@ public class TotalTestRunner {
 
     public static void main(String[] args) {
         runTestCase(MyTest.class);
+        // 测试建表语句
+        runTestCase(CreateTableSqlTest.class);
     }
 
     public static void runTestCase(Class<?> testClass) {

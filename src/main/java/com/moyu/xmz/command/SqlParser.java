@@ -1890,7 +1890,8 @@ public class SqlParser implements Parser {
             if(trimStr.startsWith("PRIMARY") || trimStr.startsWith("UNIQUE")) {
                 continue;
             } else {
-                Column column = parseCreateTableColumn(columnIndex++, trimStr);
+                ColumnDefineParser columnParser = new ColumnDefineParser(trimStr, columnIndex++);
+                Column column = columnParser.parseColumnDefine();
                 columnList.add(column);
             }
         }
@@ -1944,149 +1945,6 @@ public class SqlParser implements Parser {
             this.end = end;
         }
     }
-
-    /**
-     *
-     * @param columnIndex
-     * @param columnStr
-     * @return
-     */
-    private Column parseCreateTableColumn(int columnIndex, String columnStr) {
-
-        String[] columnKeyWords = columnStr.trim().split("\\s+");
-        if(columnKeyWords.length < 2) {
-            ExceptionUtil.throwSqlIllegalException("sql语法异常,{}", columnStr);
-        }
-
-        // 解析字段名
-        String columnName = SqlParserUtils.getUnquotedStr(columnKeyWords[0]);
-        if((columnName.startsWith("`") && columnName.endsWith("`"))
-                || (columnName.startsWith("\"") && columnName.endsWith("\""))) {
-            columnName = columnStr.substring(1, columnName.length() - 1);
-        }
-
-        // 解析字段类型、字段长度。示例:varchar(64)、int
-        String columnTypeStr = columnKeyWords[1];
-
-        int columnLength = -1;
-        // 括号开始
-        int start = -1;
-        // 括号结束
-        int end = -1;
-        for (int i = 0; i < columnTypeStr.length(); i++) {
-            if(columnTypeStr.charAt(i) == '('){
-                start = i;
-            }
-            if(columnTypeStr.charAt(i) == ')'){
-                end = i;
-            }
-        }
-        String typeName = null;
-        if(end > start && start > 0) {
-            columnLength = Integer.valueOf(columnTypeStr.substring(start + 1, end));
-            typeName = columnTypeStr.substring(0, start);
-        } else {
-            typeName = columnTypeStr;
-        }
-
-        Byte type = ColumnTypeEnum.getColumnTypeByName(typeName);
-        if (type == null) {
-            ExceptionUtil.throwSqlIllegalException("不支持类型:{}", typeName);
-        }
-
-        int nextWordIdx = 2;
-        // 判断是否有unsigned关键字修饰
-        if (columnKeyWords.length > nextWordIdx && "UNSIGNED".equals(columnKeyWords[nextWordIdx].toUpperCase())) {
-            if (type == DbTypeConstant.INT_4) {
-                type = DbTypeConstant.UNSIGNED_INT_4;
-            } else if (type == DbTypeConstant.INT_8) {
-                type = DbTypeConstant.UNSIGNED_INT_8;
-            }
-            nextWordIdx++;
-        }
-
-        // 如果没有指定字段长度像int、bigint等，要自动给长度
-        if(columnLength == -1) {
-            if(DbTypeConstant.INT_4 == type) {
-                columnLength = 4;
-            }
-            if(DbTypeConstant.INT_8 == type) {
-                columnLength = 8;
-            }
-        }
-
-
-        Column column = new Column(columnName, type, columnIndex, columnLength);
-
-        // 解析字段类型后面的字段设置，像column varchar(10) DEFAULT/NOT NULL 或者 id varchar(10) PRIMARY KEY等等情况
-        if (columnKeyWords.length > nextWordIdx) {
-            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
-            if (str.equals("PRIMARY")) {
-                nextWordIdx++;
-                if (columnKeyWords.length <= nextWordIdx || !(columnKeyWords[nextWordIdx].trim().toUpperCase().equals("KEY"))) {
-                    ExceptionUtil.throwSqlIllegalException("sql不合法 PRIMARY语法有误");
-                }
-                column.setIsPrimaryKey((byte) 1);
-                nextWordIdx++;
-            }
-        }
-
-        if (columnKeyWords.length > nextWordIdx) {
-            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
-            if (NOT.equals(str)) {
-                nextWordIdx++;
-                if (columnKeyWords.length <= nextWordIdx || !NULL.equals(columnKeyWords[nextWordIdx].toUpperCase())) {
-                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近，是否为NOT NULL", columnStr);
-                }
-                column.setIsNotNull((byte) 1);
-                nextWordIdx++;
-            }
-        }
-
-        if (columnKeyWords.length > nextWordIdx) {
-            String str = columnKeyWords[nextWordIdx].trim().toUpperCase();
-            if (DEFAULT.equals(str)) {
-                nextWordIdx++;
-                if (columnKeyWords.length <= nextWordIdx) {
-                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
-                }
-                String defaultVal = columnKeyWords[nextWordIdx];
-                if (NULL.equals(defaultVal.toUpperCase())) {
-                    if(column.getIsNotNull() == (byte) 1) {
-                        ExceptionUtil.throwSqlIllegalException("字段{}不能允许为空，检查是否使NOT NULL和DEFAULT NULL同时使用", column.getColumnName());
-                    }
-                    column.setIsNotNull((byte) 0);
-                    column.setDefaultVal(NULL);
-                } else {
-                    column.setDefaultVal(defaultVal);
-                }
-                nextWordIdx++;
-            }
-        }
-
-        // 解析comment字段
-        if (columnKeyWords.length > nextWordIdx) {
-            String str = columnKeyWords[nextWordIdx].trim();
-            if (str.toUpperCase().equals("COMMENT")) {
-                nextWordIdx++;
-                if (columnKeyWords.length <= nextWordIdx) {
-                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
-                }
-                String comment = columnKeyWords[nextWordIdx];
-                if ((comment.startsWith("'") && comment.endsWith("'"))
-                        || (comment.startsWith("\"") && comment.endsWith("\""))) {
-                    comment = comment.substring(1, comment.length() - 1);
-                } else {
-                    ExceptionUtil.throwSqlIllegalException("sql不合法 {}附近", columnStr);
-                }
-                column.setComment(comment);
-                nextWordIdx++;
-            }
-        }
-
-        return column;
-    }
-
 
     /**
      * 获取下一个括号的开始位置和结束位置

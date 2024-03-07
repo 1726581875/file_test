@@ -41,6 +41,7 @@ public class DropDatabaseCmd extends AbstractCmd {
             metadataStore.dropDatabase(databaseName);
             // 删除所有表
             ShowTablesCmd showTablesCmd = new ShowTablesCmd(metadata.getDatabaseId());
+            showTablesCmd.exec();
             List<TableMeta> resultList = showTablesCmd.getResultList();
             for (TableMeta tableMeta : resultList) {
                 DropTableCmd dropTableCmd = new DropTableCmd(database, tableMeta.getTableName(), true);
