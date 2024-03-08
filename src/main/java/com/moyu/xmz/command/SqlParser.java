@@ -335,7 +335,7 @@ public class SqlParser implements Parser {
 
         List<Column> updateColumnList = new ArrayList<>();
         String updateColumnStr = originalSql.substring(start, end).trim();
-        String[] updateColumnStrArr = updateColumnStr.split(",");
+        String[] updateColumnStrArr = splitByQuotationMarks(updateColumnStr);
         for (int i = 0; i < updateColumnStrArr.length; i++) {
             String columnStr = updateColumnStrArr[i];
             String[] split = columnStr.split("=");
@@ -616,7 +616,7 @@ public class SqlParser implements Parser {
     }
 
     private void parseSelectColumnNonTable(Query query, String selectStr) {
-        String[] selectColumnStrArr = selectStr.split(",");
+        String[] selectColumnStrArr = splitByQuotationMarks(selectStr);
         List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String columnStr = selectColumnStrArr[i].trim();
@@ -686,7 +686,7 @@ public class SqlParser implements Parser {
 
         if(charEnd > charStart) {
             String groupByStr = originalSql.substring(charStart, charEnd);
-            String[] split = groupByStr.split(",");
+            String[] split = splitByQuotationMarks(groupByStr);
             for (String columnName : split) {
                 Column column = columnMap.get(columnName.trim());
                 if(column == null) {
@@ -1042,9 +1042,8 @@ public class SqlParser implements Parser {
         for (Column c : allColumns) {
             columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
-
         // 解析select关键字后面字段信息
-        String[] selectColumnStrArr = selectColumnsStr.split(",");
+        String[] selectColumnStrArr = splitByQuotationMarks(selectColumnsStr);
         List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String str = selectColumnStrArr[i].trim();
@@ -1587,7 +1586,7 @@ public class SqlParser implements Parser {
         StartEndIndex startEnd = getNextBracketStartEnd();
         String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
         if (!(inValueStr.toUpperCase().startsWith(SELECT))) {
-            String[] split = inValueStr.split(",");
+            String[] split = splitByQuotationMarks(inValueStr);
             for (String v : split) {
                 String value = v.trim();
                 if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
@@ -1692,7 +1691,7 @@ public class SqlParser implements Parser {
             // 读取字段
             StartEndIndex columnBracket = getNextBracketStartEnd();
             String columnStr = originalSql.substring(columnBracket.getStart() + 1, columnBracket.getEnd());
-            columnNames = columnStr.split(",");
+            columnNames = splitByQuotationMarks(columnStr);
 
             for (int i = 0; i < columnNames.length; i++) {
                 String columnName = columnNames[i].trim();
@@ -1717,7 +1716,7 @@ public class SqlParser implements Parser {
         // value
         StartEndIndex valueBracket = getNextBracketStartEnd();
         String valueStr = originalSql.substring(valueBracket.getStart() + 1, valueBracket.getEnd());
-        String[] valueList = valueStr.split(",");
+        String[] valueList = splitByQuotationMarks(valueStr);
 
 
         if (columnNames.length != valueList.length) {
@@ -1882,7 +1881,7 @@ public class SqlParser implements Parser {
 
         StartEndIndex bracketStartEnd = getNextBracketStartEnd();
         String allColumnStr = originalSql.substring(bracketStartEnd.getStart() + 1, bracketStartEnd.getEnd());
-        String[] columnStrArr = allColumnStr.split(",");
+        String[] columnStrArr = splitByQuotationMarks(allColumnStr);
         int columnIndex = 0;
         for (String columnStr : columnStrArr) {
             String trimStr = columnStr.trim();
@@ -1914,6 +1913,56 @@ public class SqlParser implements Parser {
         command.setEngineType(engineType);
         command.setSession(connectSession);
         return command;
+    }
+
+    /**
+     * 按逗号切分为一个个字段
+     * 输入: id int,name varchar(64), state char(10), login_state tinyint
+     * 输出:['id int,name varchar(64)','state char(10)','login_state tinyint']
+     * @param inputStr
+     * @return
+     */
+    private String[] splitByQuotationMarks(String inputStr) {
+        List<String> columnStrList = new ArrayList<>();
+        char[] charArray = inputStr.toCharArray();
+        int curIdx = 0;
+        int columnStart = 0;
+        Character curQuotationMarks = null;
+        while (curIdx < charArray.length) {
+            char c = charArray[curIdx];
+            // 引号开始
+            if (curQuotationMarks == null && (c == '"' || c == '\'')) {
+                curQuotationMarks = c;
+            } else if (curQuotationMarks != null && c == curQuotationMarks) {
+                // 引号结束
+                curQuotationMarks = null;
+            }
+            // 不是在引号里面的逗号作为字段分割
+            if(c == ',' && curQuotationMarks == null) {
+                if(curIdx > columnStart) {
+                    String columnDefineStr = inputStr.substring(columnStart, curIdx).trim();
+                    if(columnDefineStr.length() > 0) {
+                        columnStrList.add(columnDefineStr);
+                    } else {
+                        ExceptionUtil.throwSqlExecutionException("sql语法有误，在','符号附近");
+                    }
+                    columnStart = curIdx + 1;
+                } else {
+                    ExceptionUtil.throwSqlExecutionException("sql语法有误，在','符号附近");
+                }
+
+            }
+
+            if (curIdx == charArray.length - 1 && columnStart < charArray.length) {
+                String columnDefineStr = inputStr.substring(columnStart, charArray.length).trim();
+                if (columnDefineStr.length() > 0) {
+                    columnStrList.add(columnDefineStr);
+                }
+            }
+            curIdx++;
+        }
+
+        return columnStrList.toArray(new String[0]);
     }
 
 

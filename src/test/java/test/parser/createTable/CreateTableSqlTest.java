@@ -72,8 +72,36 @@ public class CreateTableSqlTest {
                 ") ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COMMENT='用户表';");
     }
 
+    @TestCase("建表sql04")
+    private void yanStoreEngineTest() {
+        testExecSQL("drop table if exists xmz_table");
+        testExecSQL("create table xmz_table (id int primary key, name varchar(10)) ENGINE=yanyEngine");
+        testExecSQL("desc xmz_table");
+        testExecSQL("insert into  xmz_table (id, name) value (1, null);");
+        testExecSQL("insert into  xmz_table (id, name) value (2, '摸鱼2');");
+        testExecSQL("insert into  xmz_table (id, name) value (3, '摸鱼3');");
+        testExecSQL("insert into  xmz_table (id, name) value (4, '摸鱼4');");
+
+        testExecSQL("insert into  xmz_table (id, name) value (5, 'aaaa');");
+        testExecSQL("insert into  xmz_table (id, name) value (6, '啊啊啊');");
+        testExecSQL("insert into  xmz_table (id, name) value (6, '摸鱼');");
+
+        testExecSQL("select * from xmz_table where ((name = '摸鱼') and (name = '摸鱼') and (name = '摸鱼'))");
+        testExecSQL("select * from xmz_table where ((name = '摸鱼'))");
+        testExecSQL("select * from xmz_table where ((((name = '摸鱼'))))");
+        testExecSQL("select * from xmz_table where ((((name = '摸鱼'))) or id = 1)");
+        //testExecSQL("select count(*) from xmz_table where 1 = 1");
+        //testExecSQL("select * from xmz_table where 1 = 1");
+        //testExecSQL("select * from xmz_table where '1'= '1'");
+
+
+
+        //testExecSQL("select * from xmz_table where (name = '摸鱼') and (name = '摸鱼')");
+        //testExecSQL("select * from xmz_table where (((name = '摸鱼') and (name = '摸鱼') and (name = '摸鱼')) or 1 = 1)");
+    }
+
     public static void main(String[] args) {
-        new CreateTableSqlTest().test03();
+        new CreateTableSqlTest().yanStoreEngineTest();
     }
 
     private void testExecSQL(String sql) {
