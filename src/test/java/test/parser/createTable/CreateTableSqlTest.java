@@ -56,7 +56,7 @@ public class CreateTableSqlTest {
     }
 
     @TestCase("建表sql03")
-    private void test03() {
+    public void test03() {
         testExecSQL("CREATE TABLE `sys_user` (\n" +
                 "  `id` bigint(20) NOT NULL COMMENT 'ID',\n" +
                 "  `tenantId` varchar(36) NOT NULL COMMENT '租户id',\n" +
@@ -73,7 +73,7 @@ public class CreateTableSqlTest {
     }
 
     @TestCase("建表sql04")
-    private void yanStoreEngineTest() {
+    public void yanStoreEngineTest() {
         testExecSQL("drop table if exists xmz_table");
         testExecSQL("create table xmz_table (id int primary key, name varchar(10)) ENGINE=yanyEngine");
         testExecSQL("desc xmz_table");
