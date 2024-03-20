@@ -1,6 +1,6 @@
 package com.moyu.xmz.store.common.dto;
 
-import com.moyu.xmz.command.dml.expression.SelectColumnExpr;
+import com.moyu.xmz.command.dml.expression.column.SelectColumnExpr;
 import com.moyu.xmz.command.dml.sql.Query;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 

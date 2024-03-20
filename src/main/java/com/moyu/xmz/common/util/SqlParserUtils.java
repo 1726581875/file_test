@@ -14,11 +14,16 @@ public class SqlParserUtils {
      * @return
      */
     public static String getUnquotedStr(String str){
-        if((str.startsWith("`") && str.endsWith("`"))
-                || (str.startsWith("\"") && str.endsWith("\""))) {
+        if(isContainQuotes(str)) {
             return str.substring(1, str.length() - 1);
         }
         return str;
+    }
+
+    public static boolean isContainQuotes(String str) {
+        return ((str.startsWith("`") && str.endsWith("`"))
+                || (str.startsWith("\"") && str.endsWith("\""))
+                || (str.startsWith("'") && str.endsWith("'")));
     }
 
 

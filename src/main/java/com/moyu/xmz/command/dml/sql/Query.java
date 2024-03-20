@@ -3,7 +3,7 @@ package com.moyu.xmz.command.dml.sql;
 import com.moyu.xmz.command.dml.InsertCmd;
 import com.moyu.xmz.command.dml.expression.ConditionColumnExpr;
 import com.moyu.xmz.command.dml.expression.Expression;
-import com.moyu.xmz.command.dml.expression.SelectColumnExpr;
+import com.moyu.xmz.command.dml.expression.column.SelectColumnExpr;
 import com.moyu.xmz.command.dml.expression.SingleComparison;
 import com.moyu.xmz.command.dml.function.*;
 import com.moyu.xmz.command.dml.plan.SelectIndex;

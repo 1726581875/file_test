@@ -1,11 +1,11 @@
-package com.moyu.xmz.command.dml.expression;
+package com.moyu.xmz.command.dml.expression.column;
 
 import com.moyu.xmz.command.dml.function.FuncArg;
 import com.moyu.xmz.common.constant.DbTypeConstant;
 import com.moyu.xmz.common.constant.FuncConstant;
 import com.moyu.xmz.common.exception.ExceptionUtil;
-import com.moyu.xmz.store.cursor.RowEntity;
 import com.moyu.xmz.store.common.dto.Column;
+import com.moyu.xmz.store.cursor.RowEntity;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -16,70 +16,25 @@ import java.util.UUID;
 
 /**
  * @author xiaomingzhang
- * @date 2023/10/24
+ * @date 2024/3/20
  */
-public class SelectColumnExpr extends Expression {
-
-    public static final String SIMPLE_COLUMN = "SIMPLE_COLUMN";
-    public static final String FUNC_COLUMN = "FUNC_COLUMN";
-    public static final String CONSTANT = "CONSTANT";
-    public static final String NULL = "NULL";
-
+public class FuncColumnExpr extends SelectColumnExpr {
     /**
-     * SIMPLE_COLUMN
+     * 函数名
      */
-    private String type;
-
-    private Column tableColumn;
-
     private String functionName;
-
+    /**
+     * 函数参数
+     */
     private List<FuncArg> funcArgList;
 
-    private String constantValue;
-
-    public SelectColumnExpr(Column tableColumn, String type) {
-        this.tableColumn = tableColumn;
-        this.type = type;
-    }
-
-    public SelectColumnExpr(String constantValue) {
-        this.constantValue = constantValue;
-    }
-
-    public SelectColumnExpr(String functionName, List<FuncArg> funcArgList) {
+    public FuncColumnExpr(String functionName, List<FuncArg> funcArgList) {
         this.functionName = functionName;
         this.funcArgList = funcArgList;
-        this.type = FUNC_COLUMN;
     }
 
     @Override
     public Object getValue(RowEntity rowEntity) {
-        switch (type) {
-            case CONSTANT:
-                // TODO 封装成字段形式
-                return constantValue;
-            case NULL:
-                // TODO 封装成字段形式
-                return null;
-            case SIMPLE_COLUMN:
-                Column column = rowEntity.getColumn(this.tableColumn.getColumnName(), this.tableColumn.getTableAlias());
-                if(column == null) {
-                    ExceptionUtil.throwSqlIllegalException("字段不存在:{}.{}",this.tableColumn.getTableAlias(), this.tableColumn.getColumnName());
-                }
-                return column;
-            case FUNC_COLUMN:
-                return getFunctionResult();
-            default:
-                ExceptionUtil.throwDbException("不支持该字段类型:{}", type);
-        }
-        return null;
-    }
-
-
-    private Column getFunctionResult() {
-
-        Column resultColumn = null;
         switch (this.functionName) {
             case FuncConstant.FUNC_UUID:
                 String uuid = UUID.randomUUID().toString();
@@ -119,26 +74,4 @@ public class SelectColumnExpr extends Expression {
         }
         return null;
     }
-
-
-
-    @Override
-    public Expression optimize() {
-        return null;
-    }
-
-    @Override
-    public void getSQL(StringBuilder sqlBuilder) {
-
-    }
-
-
-    public static SelectColumnExpr newSimpleTableColumnExpr(Column tableColumn) {
-        return new SelectColumnExpr(tableColumn, SIMPLE_COLUMN);
-    }
-
-    public static SelectColumnExpr newFuncColumnExpr(String functionName, List<FuncArg> funcArgList) {
-        return new SelectColumnExpr(functionName, funcArgList);
-    }
-
 }

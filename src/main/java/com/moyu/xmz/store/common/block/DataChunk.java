@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/5/11
- * 固定大小为1024字节的数据块，一个数据块里面包含多行数据
+ * 固定大小为4096字节的数据块，一个数据块里面包含多行数据
  */
 public class DataChunk {
 

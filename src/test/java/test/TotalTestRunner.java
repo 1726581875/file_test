@@ -46,7 +46,7 @@ public class TotalTestRunner {
         }
 
         if (objInstance == null) {
-            System.out.println("测试类" + className + "创建实例失败，请确保有空构造方法");
+            System.err.println("测试类" + className + "创建实例失败，请确保有空构造方法");
             return;
         }
 
@@ -73,7 +73,7 @@ public class TotalTestRunner {
                         System.out.println(String.format(template, className + "." + methodName, "成功"));
                         testResult.setResult("成功");
                     } else {
-                        System.out.println(String.format(template, className + "." + methodName, "失败"));
+                        System.err.println(String.format(template, className + "." + methodName, "失败"));
                         testResult.setResult("失败");
                     }
                     testResultList.add(testResult);

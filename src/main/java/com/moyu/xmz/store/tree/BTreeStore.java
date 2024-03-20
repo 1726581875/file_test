@@ -1,12 +1,10 @@
 package com.moyu.xmz.store.tree;
 
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.store.accessor.FileAccessor;
 import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtils;
-import com.moyu.xmz.common.util.PathUtils;
+import com.moyu.xmz.store.accessor.FileAccessor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -15,10 +13,6 @@ import java.nio.ByteBuffer;
  * @date 2023/6/30
  */
 public class BTreeStore {
-
-    private static final String defaultPath = PathUtils.getBaseDirPath();
-
-    private static final String fileName = "tree2.d";
 
     public static final int PAGE_START_POS = 4096;
 
@@ -31,11 +25,6 @@ public class BTreeStore {
     private long rootStartPos;
 
     private long nextRowId;
-
-
-    public BTreeStore() throws IOException {
-        this(defaultPath + File.separator + fileName);
-    }
 
     public BTreeStore(String fileFullPath) throws IOException {
         FileUtils.createFileIfNotExists(fileFullPath);
