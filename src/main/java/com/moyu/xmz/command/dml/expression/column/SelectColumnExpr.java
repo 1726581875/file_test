@@ -22,16 +22,20 @@ public abstract class SelectColumnExpr extends Expression {
 
     }
 
-    public static TableColumnExpr newSimpleTableColumnExpr(Column tableColumn) {
+    public static TableColumnExpr newColumnExpr(Column tableColumn) {
         return new TableColumnExpr(tableColumn);
     }
 
-    public static FuncColumnExpr newFuncColumnExpr(String functionName, List<FuncArg> funcArgList) {
+    public static FuncColumnExpr newFuncExpr(String functionName, List<FuncArg> funcArgList) {
         return new FuncColumnExpr(functionName, funcArgList);
     }
 
-    public static ConstantColumnExpr newConstantColumnExpr(String constantValue) {
+    public static ConstantColumnExpr newConstantExpr(String constantValue) {
         return new ConstantColumnExpr(constantValue);
+    }
+
+    public static NullColumnExpr newNullExpr() {
+        return new NullColumnExpr();
     }
 
 }

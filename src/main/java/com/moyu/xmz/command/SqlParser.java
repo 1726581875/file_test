@@ -3,6 +3,7 @@ package com.moyu.xmz.command;
 import com.moyu.xmz.command.ddl.*;
 import com.moyu.xmz.command.dml.*;
 import com.moyu.xmz.command.dml.expression.*;
+import com.moyu.xmz.command.dml.expression.column.NullColumnExpr;
 import com.moyu.xmz.command.dml.expression.column.SelectColumnExpr;
 import com.moyu.xmz.command.dml.function.FuncArg;
 import com.moyu.xmz.command.dml.sql.*;
@@ -656,7 +657,7 @@ public class SqlParser implements Parser {
             } else {
                 String[] split = splitQuotMarksByChar(columnStr, ' ');
                 columnNameStr = split[0];
-                SelectColumnExpr constantColumnExpr = SelectColumnExpr.newConstantColumnExpr(columnNameStr);
+                SelectColumnExpr constantColumnExpr = SelectColumnExpr.newConstantExpr(columnNameStr);
                 if(SqlParserUtils.isContainQuotes(columnNameStr)) {
                     columnNameStr = SqlParserUtils.getUnquotedStr(columnNameStr);
                 }
@@ -1093,7 +1094,7 @@ public class SqlParser implements Parser {
                     }
                     columnStr = str.substring(0, columnEnd + 1);
                 } else {
-                    String[] split = str.split("\\s+");
+                    String[] split = splitQuotMarksByChar(str, ' ');
                     columnStr = split[0];
                 }
                 /*
@@ -1103,7 +1104,7 @@ public class SqlParser implements Parser {
                  */
                 if(str.length() > columnStr.length()) {
                     String aliasStr = str.substring(columnStr.length()).trim();
-                    String[] split = aliasStr.split("\\s+");
+                    String[] split = splitQuotMarksByChar(aliasStr, ' ');
                     if (split.length == 1) {
                         alias = split[0];
                     } else if (split.length == 2) {
@@ -1114,11 +1115,30 @@ public class SqlParser implements Parser {
                     }
                 }
 
-
                 SelectColumn selectColumn = null;
                 //函数
                 if (isFunctionColumn(columnStr)) {
                     selectColumn = parseFunction(columnInfo, columnStr);
+                } else if(NULL.equals(columnStr.toUpperCase())) {
+                    selectColumn = new SelectColumn(NULL, (byte)-1);
+                    selectColumn.setColumnExpression(SelectColumnExpr.newNullExpr());
+                } else if (isNumericString(columnStr) || SqlParserUtils.isContainQuotes(columnStr)) {
+                    // 常量
+                    String columnName = null;
+                    Byte columnType = null;
+                    if(SqlParserUtils.isContainQuotes(columnStr)){
+                        columnName = SqlParserUtils.getUnquotedStr(str);
+                        columnType = DbTypeConstant.CHAR;
+                    } else if(isNumericString(columnStr)) {
+                        columnName = columnStr;
+                        if (columnStr.contains(".")) {
+                            columnType = DbTypeConstant.DOUBLE;
+                        } else {
+                            columnType = DbTypeConstant.INT_8;
+                        }
+                    }
+                    selectColumn = new SelectColumn(columnName, columnType);
+                    selectColumn.setColumnExpression(SelectColumnExpr.newConstantExpr(columnStr));
                 } else {
                     // 普通字段
                     Column column = columnInfo.getColumn(columnStr);
@@ -1137,9 +1157,9 @@ public class SqlParser implements Parser {
                     } else {
                         cName = columnSplit[0];
                     }
-
                     selectColumn = new SelectColumn(column, cName);
                     selectColumn.setTableAlias(cTableAlias);
+                    selectColumn.setColumnExpression(SelectColumnExpr.newColumnExpr(column));
                 }
                 selectColumn.setAlias(alias);
                 selectColumnList.add(selectColumn);
@@ -1204,11 +1224,11 @@ public class SqlParser implements Parser {
                 args[0] = columnName;
                 break;
             case FuncConstant.FUNC_UUID:
-                SelectColumnExpr uuidFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FUNC_UUID, null);
+                SelectColumnExpr uuidFunc = SelectColumnExpr.newFuncExpr(FuncConstant.FUNC_UUID, null);
                 selectColumn = new SelectColumn(selectColumnName, functionName, uuidFunc, DbTypeConstant.CHAR);
                return selectColumn;
             case FuncConstant.FUNC_NOW:
-                SelectColumnExpr nowFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FUNC_NOW, null);
+                SelectColumnExpr nowFunc = SelectColumnExpr.newFuncExpr(FuncConstant.FUNC_NOW, null);
                 selectColumn = new SelectColumn(selectColumnName, functionName, nowFunc, DbTypeConstant.TIMESTAMP);
                 return selectColumn;
             case FuncConstant.UNIX_TIMESTAMP:
@@ -1219,7 +1239,7 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("函数{}参数不合法, 参数必须为字符串,参数{}", functionName, timeStr);
                 }
                 funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timeStr));
-                SelectColumnExpr unixTimestampFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.UNIX_TIMESTAMP, funcArgList);
+                SelectColumnExpr unixTimestampFunc = SelectColumnExpr.newFuncExpr(FuncConstant.UNIX_TIMESTAMP, funcArgList);
                 selectColumn = new SelectColumn(selectColumnName, functionName, unixTimestampFunc, DbTypeConstant.INT_8);
                 return selectColumn;
             case FuncConstant.FROM_UNIXTIME:
@@ -1228,7 +1248,7 @@ public class SqlParser implements Parser {
                     timestampStr = timestampStr.substring(1, timestampStr.length() - 1);
                 }
                 funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timestampStr));
-                SelectColumnExpr formUnixtimeFunc = SelectColumnExpr.newFuncColumnExpr(FuncConstant.FROM_UNIXTIME, funcArgList);
+                SelectColumnExpr formUnixtimeFunc = SelectColumnExpr.newFuncExpr(FuncConstant.FROM_UNIXTIME, funcArgList);
                 selectColumn = new SelectColumn(selectColumnName, functionName, formUnixtimeFunc, DbTypeConstant.CHAR);
                 return selectColumn;
             default:

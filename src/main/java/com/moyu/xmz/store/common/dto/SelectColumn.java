@@ -62,7 +62,7 @@ public class SelectColumn {
     public SelectColumn(Column column, String selectColumnName) {
         this.column = column;
         this.selectColumnName = selectColumnName;
-        this.columnExpression = SelectColumnExpr.newSimpleTableColumnExpr(column);
+        this.columnExpression = SelectColumnExpr.newColumnExpr(column);
     }
 
     public SelectColumn(String selectColumnName,
