@@ -1,5 +1,6 @@
 package com.moyu.xmz.terminal;
 
+import com.moyu.xmz.common.util.SqlParserUtils;
 import com.moyu.xmz.net.constant.CmdTypeConstant;
 import com.moyu.xmz.net.model.terminal.DatabaseInfo;
 import com.moyu.xmz.net.model.terminal.QueryResultDto;
@@ -86,17 +87,18 @@ public class TcpTerminal {
                     }
                     continue;
                 }
-                if (!input.contains(END_CHAR) && !input.toUpperCase().startsWith("USE ")) {
+                // 多行输入
+                if (!input.trim().endsWith(END_CHAR) && !input.toUpperCase().startsWith("USE ")) {
                     String line = null;
                     while ((line = reader.readLine("       > ")) != null) {
                         input = input + " " + line;
-                        if (input.contains(END_CHAR)) {
+                        if (input.trim().endsWith(END_CHAR)) {
                             break;
                         }
                     }
                 }
 
-                String[] inputStrs = input.split(";");
+                String[] inputStrs = SqlParserUtils.splitQuotMarksByChar(input,';');
                 for (String inputStr : inputStrs) {
 
                     String[] inputWords = getWords(inputStr);

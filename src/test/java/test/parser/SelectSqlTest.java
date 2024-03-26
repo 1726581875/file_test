@@ -34,7 +34,7 @@ public class SelectSqlTest {
 
     public static void main(String[] args) {
         SelectSqlTest sqlTest = new SelectSqlTest();
-        sqlTest.selectTestCase1();
+        sqlTest.selectNonTableTest();
     }
 
     @TestCase("仅仅使用select关键字查询")
@@ -42,10 +42,14 @@ public class SelectSqlTest {
         testExecSQL("select '我是     常量' AS aa,   'aaa aa';");
         testExecSQL("select '我是常量';");
         testExecSQL("select 100;");
+        testExecSQL("select 100.01;");
         testExecSQL("select now();");
         testExecSQL("select uuid();");
         testExecSQL("select now(),uuid();");
         testExecSQL("select '啊啊啊',now(),uuid();");
+        testExecSQL("select ';';");
+        testExecSQL("select '; ';");
+        testExecSQL("select ';;;;';");
     }
 
     @TestCase("selectTestCase1")

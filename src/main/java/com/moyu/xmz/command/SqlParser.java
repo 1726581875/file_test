@@ -194,7 +194,7 @@ public class SqlParser implements Parser {
                 String word13 = getNextOriginalWord();
                 return new TruncateTableCmd(connectSession.getDatabaseId() ,word13);
             default:
-                ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近");
+                ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近", firstKeyWord);
         }
 
         throw new DbException("sql语法有误");
@@ -209,7 +209,7 @@ public class SqlParser implements Parser {
         StringBuilder stringBuilder = new StringBuilder();
         char[] charArray = sql.toCharArray();
         for (int i = 0; i < charArray.length; i++) {
-            if(charArray[i] == ';') {
+            if(charArray[i] == ';' && i == charArray.length - 1) {
                 break;
             }
             if (charArray[i] == '\n') {
@@ -336,7 +336,7 @@ public class SqlParser implements Parser {
 
         List<Column> updateColumnList = new ArrayList<>();
         String updateColumnStr = originalSql.substring(start, end).trim();
-        String[] updateColumnStrArr = splitQuotMarksByChar(updateColumnStr, ',');
+        String[] updateColumnStrArr = SqlParserUtils.splitQuotMarksByChar(updateColumnStr, ',');
         for (int i = 0; i < updateColumnStrArr.length; i++) {
             String columnStr = updateColumnStrArr[i];
             String[] split = columnStr.split("=");
@@ -487,7 +487,7 @@ public class SqlParser implements Parser {
         QueryTable mainTable = null;
         Query subQuery = null;
         while (true) {
-            if(currIndex >= sqlCharArr.length || sqlCharArr[currIndex] == ';') {
+            if(currIndex >= sqlCharArr.length || (sqlCharArr[currIndex] == ';' && currIndex == sqlCharArr.length - 1)) {
                 // 没有FROM关键字，例如：select now();
                 columnEndIdx = currIndex;
                 break;
@@ -617,7 +617,7 @@ public class SqlParser implements Parser {
     }
 
     private void parseSelectColumnNonTable(Query query, String selectStr) {
-        String[] selectColumnStrArr = splitQuotMarksByChar(selectStr, ',');
+        String[] selectColumnStrArr = SqlParserUtils.splitQuotMarksByChar(selectStr, ',');
         List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String columnStr = selectColumnStrArr[i].trim();
@@ -631,14 +631,14 @@ public class SqlParser implements Parser {
                 columnNameStr = columnStr.substring(0, columnEnd + 1);
             } else {
                 //String[] split = columnStr.split("\\s+");
-                String[] split = splitQuotMarksByChar(columnStr, ' ');
+                String[] split = SqlParserUtils.splitQuotMarksByChar(columnStr, ' ');
                 columnNameStr = split[0];
             }
 
             String alias = null;
             if(columnStr.length() > columnNameStr.length()) {
                 String aliasStr = columnStr.substring(columnNameStr.length()).trim();
-                String[] split = splitQuotMarksByChar(aliasStr, ' ');
+                String[] split = SqlParserUtils.splitQuotMarksByChar(aliasStr, ' ');
                 if (split.length == 1) {
                     alias = split[0];
                 } else if (split.length == 2) {
@@ -655,7 +655,7 @@ public class SqlParser implements Parser {
                 functionExpression.setAlias(alias);
                 selectColumnList.add(functionExpression);
             } else {
-                String[] split = splitQuotMarksByChar(columnStr, ' ');
+                String[] split = SqlParserUtils.splitQuotMarksByChar(columnStr, ' ');
                 columnNameStr = split[0];
                 ConstantColumnExpr cce = ConstantColumnExpr.parseConstantValue(columnNameStr);
                 if(SqlParserUtils.isContainQuotes(columnNameStr)) {
@@ -696,7 +696,7 @@ public class SqlParser implements Parser {
 
         if(charEnd > charStart) {
             String groupByStr = originalSql.substring(charStart, charEnd);
-            String[] split = splitQuotMarksByChar(groupByStr, ',');
+            String[] split = SqlParserUtils.splitQuotMarksByChar(groupByStr, ',');
             for (String columnName : split) {
                 Column column = columnMap.get(columnName.trim());
                 if(column == null) {
@@ -1053,7 +1053,7 @@ public class SqlParser implements Parser {
             columnInfo.setColumn(new Column[]{c}, c.getTableAlias());
         }
         // 解析select关键字后面字段信息
-        String[] selectColumnStrArr = splitQuotMarksByChar(selectColumnsStr, ',');
+        String[] selectColumnStrArr = SqlParserUtils.splitQuotMarksByChar(selectColumnsStr, ',');
         List<SelectColumn> selectColumnList = new ArrayList<>();
         for (int i = 0; i < selectColumnStrArr.length; i++) {
             String str = selectColumnStrArr[i].trim();
@@ -1094,7 +1094,7 @@ public class SqlParser implements Parser {
                     }
                     columnStr = str.substring(0, columnEnd + 1);
                 } else {
-                    String[] split = splitQuotMarksByChar(str, ' ');
+                    String[] split = SqlParserUtils.splitQuotMarksByChar(str, ' ');
                     columnStr = split[0];
                 }
                 /*
@@ -1104,7 +1104,7 @@ public class SqlParser implements Parser {
                  */
                 if(str.length() > columnStr.length()) {
                     String aliasStr = str.substring(columnStr.length()).trim();
-                    String[] split = splitQuotMarksByChar(aliasStr, ' ');
+                    String[] split = SqlParserUtils.splitQuotMarksByChar(aliasStr, ' ');
                     if (split.length == 1) {
                         alias = split[0];
                     } else if (split.length == 2) {
@@ -1598,7 +1598,7 @@ public class SqlParser implements Parser {
         StartEndIndex startEnd = getNextBracketStartEnd();
         String inValueStr = originalSql.substring(startEnd.getStart() + 1, startEnd.getEnd());
         if (!(inValueStr.toUpperCase().startsWith(SELECT))) {
-            String[] split = splitQuotMarksByChar(inValueStr, ',');
+            String[] split = SqlParserUtils.splitQuotMarksByChar(inValueStr, ',');
             for (String v : split) {
                 String value = v.trim();
                 if (v.startsWith("'") && value.endsWith("'") && value.length() > 1) {
@@ -1703,7 +1703,7 @@ public class SqlParser implements Parser {
             // 读取字段
             StartEndIndex columnBracket = getNextBracketStartEnd();
             String columnStr = originalSql.substring(columnBracket.getStart() + 1, columnBracket.getEnd());
-            columnNames = splitQuotMarksByChar(columnStr, ',');
+            columnNames = SqlParserUtils.splitQuotMarksByChar(columnStr, ',');
 
             for (int i = 0; i < columnNames.length; i++) {
                 String columnName = columnNames[i].trim();
@@ -1728,7 +1728,7 @@ public class SqlParser implements Parser {
         // value
         StartEndIndex valueBracket = getNextBracketStartEnd();
         String valueStr = originalSql.substring(valueBracket.getStart() + 1, valueBracket.getEnd());
-        String[] valueList = splitQuotMarksByChar(valueStr, ',');
+        String[] valueList = SqlParserUtils.splitQuotMarksByChar(valueStr, ',');
 
 
         if (columnNames.length != valueList.length) {
@@ -1893,7 +1893,7 @@ public class SqlParser implements Parser {
 
         StartEndIndex bracketStartEnd = getNextBracketStartEnd();
         String allColumnStr = originalSql.substring(bracketStartEnd.getStart() + 1, bracketStartEnd.getEnd());
-        String[] columnStrArr = splitQuotMarksByChar(allColumnStr, ',');
+        String[] columnStrArr = SqlParserUtils.splitQuotMarksByChar(allColumnStr, ',');
         int columnIndex = 0;
         for (String columnStr : columnStrArr) {
             String trimStr = columnStr.trim();
@@ -1925,58 +1925,6 @@ public class SqlParser implements Parser {
         command.setEngineType(engineType);
         command.setSession(connectSession);
         return command;
-    }
-
-    /**
-     * 按逗号切分为一个个字段
-     * 输入: id int,name varchar(64), state char(10), login_state tinyint
-     * 输出:['id int,name varchar(64)','state char(10)','login_state tinyint']
-     * @param inputStr
-     * @param splitChar
-     * @return
-     */
-    private String[] splitQuotMarksByChar(String inputStr, char splitChar) {
-        List<String> columnStrList = new ArrayList<>();
-        char[] charArray = inputStr.toCharArray();
-        int curIdx = 0;
-        int columnStart = 0;
-        Character curQuotationMarks = null;
-        while (curIdx < charArray.length) {
-            char c = charArray[curIdx];
-            // 引号开始
-            if (curQuotationMarks == null && (c == '"' || c == '\'')) {
-                curQuotationMarks = c;
-            } else if (curQuotationMarks != null && c == curQuotationMarks) {
-                // 引号结束
-                curQuotationMarks = null;
-            }
-            // 不是在引号里面的逗号作为字段分割
-            if(c == splitChar && curQuotationMarks == null) {
-                if(curIdx > columnStart) {
-                    String columnDefineStr = inputStr.substring(columnStart, curIdx).trim();
-                    if(columnDefineStr.length() > 0) {
-                        columnStrList.add(columnDefineStr);
-                    } else {
-                        if(splitChar != ' ') {
-                            ExceptionUtil.throwSqlExecutionException("sql语法有误，在{}符号附近", splitChar);
-                        }
-                    }
-                    columnStart = curIdx + 1;
-                } else {
-                    ExceptionUtil.throwSqlExecutionException("sql语法有误，在{}符号附近", splitChar);
-                }
-            }
-
-            if (curIdx == charArray.length - 1 && columnStart < charArray.length) {
-                String columnDefineStr = inputStr.substring(columnStart, charArray.length).trim();
-                if (columnDefineStr.length() > 0) {
-                    columnStrList.add(columnDefineStr);
-                }
-            }
-            curIdx++;
-        }
-
-        return columnStrList.toArray(new String[0]);
     }
 
 
