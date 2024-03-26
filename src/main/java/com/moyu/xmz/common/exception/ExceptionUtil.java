@@ -7,6 +7,10 @@ package com.moyu.xmz.common.exception;
 public class ExceptionUtil {
 
 
+    public static DbException buildDbException(String msgTemple, Object... params) {
+        return new DbException(buildExceptionMsg(msgTemple, params));
+    }
+
     public static void throwDbException(String msgTemple, Object... params) {
         throw new DbException(buildExceptionMsg(msgTemple, params));
     }

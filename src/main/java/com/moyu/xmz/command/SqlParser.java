@@ -3,7 +3,7 @@ package com.moyu.xmz.command;
 import com.moyu.xmz.command.ddl.*;
 import com.moyu.xmz.command.dml.*;
 import com.moyu.xmz.command.dml.expression.*;
-import com.moyu.xmz.command.dml.expression.column.NullColumnExpr;
+import com.moyu.xmz.command.dml.expression.column.ConstantColumnExpr;
 import com.moyu.xmz.command.dml.expression.column.SelectColumnExpr;
 import com.moyu.xmz.command.dml.function.FuncArg;
 import com.moyu.xmz.command.dml.sql.*;
@@ -657,11 +657,11 @@ public class SqlParser implements Parser {
             } else {
                 String[] split = splitQuotMarksByChar(columnStr, ' ');
                 columnNameStr = split[0];
-                SelectColumnExpr constantColumnExpr = SelectColumnExpr.newConstantExpr(columnNameStr);
+                ConstantColumnExpr cce = ConstantColumnExpr.parseConstantValue(columnNameStr);
                 if(SqlParserUtils.isContainQuotes(columnNameStr)) {
                     columnNameStr = SqlParserUtils.getUnquotedStr(columnNameStr);
                 }
-                SelectColumn selectColumn = new SelectColumn(columnNameStr, null, constantColumnExpr, DbTypeConstant.CHAR);
+                SelectColumn selectColumn = new SelectColumn(columnNameStr, null, cce, cce.getType());
                 selectColumn.setAlias(alias);
                 selectColumnList.add(selectColumn);
             }
@@ -1122,23 +1122,17 @@ public class SqlParser implements Parser {
                 } else if(NULL.equals(columnStr.toUpperCase())) {
                     selectColumn = new SelectColumn(NULL, (byte)-1);
                     selectColumn.setColumnExpression(SelectColumnExpr.newNullExpr());
-                } else if (isNumericString(columnStr) || SqlParserUtils.isContainQuotes(columnStr)) {
+                } else if (ConstantColumnExpr.isNumericString(columnStr) || SqlParserUtils.isContainQuotes(columnStr)) {
                     // 常量
+                    ConstantColumnExpr cce = ConstantColumnExpr.parseConstantValue(columnStr);
                     String columnName = null;
-                    Byte columnType = null;
                     if(SqlParserUtils.isContainQuotes(columnStr)){
                         columnName = SqlParserUtils.getUnquotedStr(str);
-                        columnType = DbTypeConstant.CHAR;
-                    } else if(isNumericString(columnStr)) {
+                    } else {
                         columnName = columnStr;
-                        if (columnStr.contains(".")) {
-                            columnType = DbTypeConstant.DOUBLE;
-                        } else {
-                            columnType = DbTypeConstant.INT_8;
-                        }
                     }
-                    selectColumn = new SelectColumn(columnName, columnType);
-                    selectColumn.setColumnExpression(SelectColumnExpr.newConstantExpr(columnStr));
+                    selectColumn = new SelectColumn(columnName, cce.getType());
+                    selectColumn.setColumnExpression(cce);
                 } else {
                     // 普通字段
                     Column column = columnInfo.getColumn(columnStr);
@@ -1391,7 +1385,7 @@ public class SqlParser implements Parser {
                 String columnName = originalSql.substring(start, currIndex);
                 if (columnName.startsWith("'") && columnName.endsWith("'")) {
                     columnExpression = new ConstantValue(columnName);
-                } else if (isNumericString(columnName)) {
+                } else if (ConstantColumnExpr.isNumericString(columnName)) {
                     columnExpression = new ConstantValue(columnName);
                 } else {
                     column = columnMap.get(columnName);
@@ -1595,17 +1589,6 @@ public class SqlParser implements Parser {
             obj = value;
         }
         return obj;
-    }
-
-
-
-    public boolean isNumericString(String input) {
-        try {
-            Double.parseDouble(input); // 使用Double类的parseDouble方法尝试将字符串转换为数字
-            return true; // 转换成功，说明是数字字符串
-        } catch (NumberFormatException e) {
-            return false; // 转换出错，说明不是数字字符串
-        }
     }
 
 

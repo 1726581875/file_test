@@ -30,10 +30,6 @@ public abstract class SelectColumnExpr extends Expression {
         return new FuncColumnExpr(functionName, funcArgList);
     }
 
-    public static ConstantColumnExpr newConstantExpr(String constantValue) {
-        return new ConstantColumnExpr(constantValue);
-    }
-
     public static NullColumnExpr newNullExpr() {
         return new NullColumnExpr();
     }
