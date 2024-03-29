@@ -128,11 +128,12 @@ public class TcpTerminal {
 
                         // 如果还没使用数据库，只能执行show databases/create database命令
                         if (useDatabase == null) {
-                            if (isShowDatabases(inputWords) || isCreateDatabase(inputWords)) {
+                            if(isNeedDatabaseCmd(inputWords)) {
+                                System.out.println("请先使用use命令选择数据库..");
+                            } else {
+                                // 执行不需要先选择数据库的命令
                                 QueryResultDto queryResultDto = tcpDataSender.execQueryCommand(-1, inputStr);
                                 printAllResultData(queryResultDto);
-                            } else {
-                                System.out.println("请先使用use命令选择数据库..");
                             }
                             continue;
                         }
@@ -265,15 +266,24 @@ public class TcpTerminal {
         }
     }
 
-
-    private boolean isShowDatabases(String[] inputWords) {
-        return (inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase()) && "DATABASES".equals(inputWords[1].toUpperCase())));
+    /**
+     * 判断SQL是否需要先选择具体接数据库
+     * @param inputWords
+     * @return
+     */
+    public boolean isNeedDatabaseCmd(String[] inputWords) {
+        // SHOW DATABASES
+        if((inputWords.length >= 2 && ("SHOW".equals(inputWords[0].toUpperCase())
+                && "DATABASES".equals(inputWords[1].toUpperCase())))){
+            return false;
+        }
+        // CREATE DATABASES
+        if((inputWords.length >= 2 && ("CREATE".equals(inputWords[0].toUpperCase())
+                && "DATABASE".equals(inputWords[1].toUpperCase())))){
+            return false;
+        }
+        return false;
     }
-
-    private boolean isCreateDatabase(String[] inputWords) {
-        return (inputWords.length >= 2 && ("CREATE".equals(inputWords[0].toUpperCase()) && "DATABASE".equals(inputWords[1].toUpperCase())));
-    }
-
 
     private LineReader buildLineReader(Terminal terminal, DatabaseInfo database) throws IOException {
         MyLineReaderImpl myLineReader = new MyLineReaderImpl(terminal, terminal.getName());

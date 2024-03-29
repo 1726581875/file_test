@@ -3,6 +3,9 @@ package test;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * @author xiaomingzhang
  * @date 2024/2/28
@@ -11,9 +14,13 @@ import test.annotation.TestModule;
 public class MyTest {
 
     @TestCase("我的测试案例01")
-    public void test(){
+    public void test() throws IOException {
 
-        System.out.println("执行了测试111111");
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        new MyTest().test();
     }
 
 }

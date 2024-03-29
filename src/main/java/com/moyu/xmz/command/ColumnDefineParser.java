@@ -95,7 +95,7 @@ public class ColumnDefineParser {
                 columnLength = 8;
             }
         }
-        Column column = new Column(columnName, type, columnIndex, columnLength);
+        Column column = new Column(columnName, type, this.columnIndex, columnLength);
         // 解析下一个词
         String nextWord = getNextWord(false);
         switch (nextWord.toUpperCase()) {

@@ -30,7 +30,7 @@ public class UpdateCmd extends AbstractCmd {
         Table table = tableInfo.getSession().getDatabase().getTable(tableInfo.getTableName());
         int updateRowNum = 0;
         synchronized (table) {
-            updateRowNum = engineOperation.update(updateColumns);
+            updateRowNum = engineOperation.update(updateColumns, tableInfo.getCondition());
         }
         QueryCacheUtil.clearQueryCache(tableInfo.getSession().getDatabaseId());
         return QueryResult.simpleResult("共更新了" + updateRowNum + "行数据");

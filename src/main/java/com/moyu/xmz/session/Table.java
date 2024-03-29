@@ -45,12 +45,37 @@ public class Table {
     }
 
 
-    public Column[] getColumns() {
-        if(columns == null || columns.length == 0) {
+    public Column[] getColumns(boolean refresh) {
+        if(refresh) {
             init(databaseId, tableName);
+        } else {
+            initIfNon();
         }
         return columns;
     }
+
+    public Column[] getColumns() {
+        initIfNon();
+        return columns;
+    }
+
+
+    public Column getColumn(String columnName) {
+        initIfNon();
+        for (Column column : this.columns) {
+            if(column.getColumnName().equals(columnName)) {
+                return column;
+            }
+        }
+        throw ExceptionUtil.buildDbException("表{}获取字段信息发生异常,字段{}不存在", this.tableName, columnName);
+    }
+
+    private void initIfNon() {
+        if(columns == null || columns.length == 0) {
+            init(databaseId, tableName);
+        }
+    }
+
 
     private void init(Integer databaseId, String tableName) {
 

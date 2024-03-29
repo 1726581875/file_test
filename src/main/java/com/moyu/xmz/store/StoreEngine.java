@@ -21,39 +21,87 @@ import java.util.List;
 /**
  * @author xiaomingzhang
  * @date 2023/7/1
+ * 存储引擎，定义存取操作数据的方式
  */
 public abstract class StoreEngine {
 
+    /**
+     * 连接信息，包括用户会话信息、连接的数据库信息
+     */
     protected ConnectSession session;
-
+    /**
+     * 操作的表名
+     */
     protected String tableName;
-
+    /**
+     * 当前操作表的所有字段
+     */
     protected Column[] tableColumns;
-
-    protected Expression condition;
-
+    /**
+     * 当前操作表包含的所有索引信息
+     */
     protected List<IndexMeta> allIndexList;
 
 
-    public StoreEngine(ConnectSession session, String tableName, Column[] tableColumns, Expression condition) {
+    public StoreEngine(ConnectSession session, String tableName, Column[] tableColumns) {
         this.session = session;
         this.tableName = tableName;
         this.tableColumns = tableColumns;
-        this.condition = condition;
     }
 
+    /**
+     * 插入数据
+     * @param rowEntity
+     * @return
+     */
     public abstract int insert(RowEntity rowEntity);
 
+    /**
+     * 批量插入数据
+     * @param rowList
+     * @return
+     */
     public abstract int batchFastInsert(List<RowEntity> rowList);
 
-    public abstract int update(Column[] updateColumns);
+    /**
+     * 更新一行
+     * @param updateColumns
+     * @return
+     */
+    public abstract int update(Column[] updateColumns, Expression condition);
 
-    public abstract int delete();
+    /**
+     * 删除，按照条件
+     * @see this.condition
+     * @return
+     */
+    public abstract int delete(Expression condition);
 
+    /**
+     * 创建索引
+     * @param tableId
+     * @param indexName
+     * @param columnName
+     * @param indexType
+     */
     public abstract void createIndex(Integer tableId, String indexName, String columnName, byte indexType);
 
-
+    /**
+     * 获取数据遍历游标
+     * 定义遍历所有数据方式
+     * @param table
+     * @return
+     * @throws IOException
+     */
     public abstract Cursor getQueryCursor(QueryTable table) throws IOException;
+
+
+    /**
+     * 字段变更
+     */
+    public boolean addOrDropColumnResetData(Column defColumn, Column[] newColumns, boolean isAdd) {
+        return false;
+    }
 
 
     public static StoreEngine getEngine(TableInfo tableInfo) {

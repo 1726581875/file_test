@@ -1,4 +1,4 @@
-package test.parser;
+package test.parser.alterTable;
 
 import com.moyu.xmz.command.Command;
 import com.moyu.xmz.command.QueryResult;
@@ -10,15 +10,16 @@ import com.moyu.xmz.session.Database;
 import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.SelectSqlTest;
 
 /**
  * @author xiaomingzhang
- * @date 2024/3/20
+ * @date 2024/3/29
  */
-@TestModule("简单select语句测试")
-public class SelectSqlTest {
+@TestModule("修改表字段结构测试")
+public class AlterTableColumnTest {
 
-    private final static String databaseName = "select_test";
+    private final static String databaseName = "alt_tb_column";
 
     private static Database database = null;
 
@@ -33,37 +34,27 @@ public class SelectSqlTest {
     }
 
     public static void main(String[] args) {
-        SelectSqlTest sqlTest = new SelectSqlTest();
-        sqlTest.selectNonTableTest();
+        AlterTableColumnTest sqlTest = new AlterTableColumnTest();
+        sqlTest.alterTestCase1();
     }
 
-    @TestCase("仅仅使用select关键字查询")
-    public void selectNonTableTest() {
-        testExecSQL("select '我是     常量' AS aa,   'aaa aa';");
-        testExecSQL("select '我是常量';");
-        testExecSQL("select 100;");
-        testExecSQL("select 100.01;");
-        testExecSQL("select now();");
-        testExecSQL("select uuid();");
-        testExecSQL("select now(),uuid();");
-        testExecSQL("select '啊啊啊',now(),uuid();");
-        testExecSQL("select ';';");
-        testExecSQL("select '; ';");
-        testExecSQL("select ';;;;';");
-        testExecSQL("select * from (select '李华' as name) as t");
-    }
-
-    @TestCase("selectTestCase1")
-    public void selectTestCase1() {
+    @TestCase("alter table add column添加字段测试")
+    public void alterTestCase1() {
         testExecSQL("drop table if exists  case_01");
         testExecSQL("create table case_01 (id int, name varchar(10), time timestamp) ENGINE=" + engineType);
         testExecSQL("INSERT INTO case_01 (id, name, time) VALUES (1, 'John', '2023-06-29 09:30:00')");
         testExecSQL("INSERT INTO case_01 (id, name, time) VALUES (2, 'Alice', '2023-06-29 10:45:00')");
         testExecSQL("INSERT INTO case_01 (id, name, time) VALUES (3, 'Sophia', '2023-06-29 14:10:00')");
         testExecSQL("INSERT INTO case_01 (id, name, time) VALUES (4, 'Daniel', '2023-06-29 15:45:00')");
+        testExecSQL("select * from case_01");
+        testExecSQL("alter table case_01 add column state varchar(10) default '1';");
+        testExecSQL("select * from case_01");
+        testExecSQL("desc case_01");
 
-        testExecSQL("select a.id,a.name,a.time,'12 3 ' as t, 567 a, null from case_01 a;");
-
+        testExecSQL("alter table case_01 drop column name;");
+        testExecSQL("select * from case_01");
+        testExecSQL("alter table case_01 drop column state;");
+        testExecSQL("select * from case_01");
     }
 
 
@@ -77,6 +68,7 @@ public class SelectSqlTest {
         PrintResultUtil.printResult(queryResult);
         System.out.println("====================================");
     }
+
 
 
 }

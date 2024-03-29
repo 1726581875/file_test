@@ -41,7 +41,7 @@ import java.util.List;
 public class YuEngine extends StoreEngine {
 
     public YuEngine(TableInfo tableInfo) {
-        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getCondition());
+        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns());
         super.allIndexList = tableInfo.getAllIndexList();
     }
 
@@ -143,7 +143,7 @@ public class YuEngine extends StoreEngine {
     }
 
     @Override
-    public int update(Column[] updateColumns) {
+    public int update(Column[] updateColumns, Expression condition) {
         int updateRowNum = 0;
         DataChunkAccessor dataChunkAccessor = null;
         try {
@@ -203,14 +203,14 @@ public class YuEngine extends StoreEngine {
 
 
     @Override
-    public int delete() {
+    public int delete(Expression condition) {
         int deleteRowNum = 0;
         DataChunkAccessor dataChunkAccessor = null;
         try {
             String fileFullPath = PathUtils.getDataFilePath(session.getDatabaseId(), this.tableName);
             dataChunkAccessor = new DataChunkAccessor(fileFullPath);
             // TODO 应该要支持按索引删除
-            deleteRowNum = deleteDataByCondition(dataChunkAccessor);
+            deleteRowNum = deleteDataByCondition(dataChunkAccessor, condition);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -347,7 +347,7 @@ public class YuEngine extends StoreEngine {
      * @param dataChunkAccessor
      * @return
      */
-    private int deleteDataByCondition(DataChunkAccessor dataChunkAccessor) {
+    private int deleteDataByCondition(DataChunkAccessor dataChunkAccessor, Expression condition) {
         int dataChunkNum = dataChunkAccessor.getDataChunkNum();
         int deleteRowNum = 0;
         // 遍历数据块

@@ -3,6 +3,7 @@ package com.moyu.xmz.store.cursor;
 import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.common.exception.SqlIllegalException;
 import com.moyu.xmz.common.DynByteBuffer;
+import com.moyu.xmz.common.util.StringUtils;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.type.ColumnTypeFactory;
 import com.moyu.xmz.store.type.DataType;
@@ -54,11 +55,26 @@ public class RowEntity {
     }
 
 
+    public Column getColumn(String columnName) {
+        for (Column c : columns) {
+            if (c.getColumnName().equals(columnName)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+
     public Column getColumn(String columnName, String tableAlias) {
         for (Column c : columns) {
-            if((tableAlias == null || tableAlias.equals(c.getTableAlias()))
-                    && c.getColumnName().equals(columnName)) {
-                return c;
+            if(StringUtils.isNotEmpty(tableAlias)) {
+                if(tableAlias.equals(c.getTableAlias()) && c.getColumnName().equals(columnName)) {
+                    return c;
+                }
+            } else {
+                if(c.getColumnName().equals(columnName)) {
+                    return c;
+                }
             }
         }
 

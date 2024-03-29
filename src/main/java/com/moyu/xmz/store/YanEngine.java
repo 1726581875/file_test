@@ -3,6 +3,7 @@ package com.moyu.xmz.store;
 import com.moyu.xmz.command.dml.expression.Expression;
 import com.moyu.xmz.command.dml.plan.SelectIndex;
 import com.moyu.xmz.command.dml.sql.QueryTable;
+import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.store.common.dto.TableInfo;
 import com.moyu.xmz.store.cursor.BTreeIndexCursor;
 import com.moyu.xmz.store.cursor.BtreeCursor;
@@ -41,7 +42,7 @@ public class YanEngine extends StoreEngine {
 
 
     public YanEngine(TableInfo tableInfo) {
-        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns(), tableInfo.getCondition());
+        super(tableInfo.getSession(), tableInfo.getTableName(), tableInfo.getTableColumns());
         super.allIndexList = tableInfo.getAllIndexList();
     }
 
@@ -130,7 +131,7 @@ public class YanEngine extends StoreEngine {
 
 
     @Override
-    public int update(Column[] updateColumns) {
+    public int update(Column[] updateColumns, Expression condition) {
         int updateNum = 0;
         BTreeMap bTreeMap = null;
         try {
@@ -175,7 +176,7 @@ public class YanEngine extends StoreEngine {
     }
 
     @Override
-    public int delete() {
+    public int delete(Expression condition) {
         int deleteNum = 0;
         BTreeMap bTreeMap = null;
         try {
@@ -420,6 +421,10 @@ public class YanEngine extends StoreEngine {
 
 
     private BTreeMap getBTreeMap() throws IOException {
+        return getBTreeMap(this.tableName);
+    }
+
+    private BTreeMap getBTreeMap(String tableName) throws IOException {
         BTreeStore bTreeStore = new BTreeStore(PathUtils.getYanEngineDataFilePath(session.getDatabaseId(), tableName));
         BTreeMap bTreeMap = null;
         try {
@@ -437,5 +442,99 @@ public class YanEngine extends StoreEngine {
         return bTreeMap;
     }
 
+    @Override
+    public boolean addOrDropColumnResetData(Column defColumn, Column[] newColumns, boolean isAdd) {
 
+        boolean isSuccess = false;
+        BTreeMap originalTable = null;
+        BtreeCursor originalCursor = null;
+        BTreeMap temTable = null;
+        String tmpTableName = this.tableName + "_temp" + System.currentTimeMillis();
+        try {
+            originalTable = getBTreeMap();
+            temTable = getBTreeMap(tmpTableName);
+            originalCursor = new BtreeCursor(this.tableColumns, originalTable);
+            RowEntity rowEntity = originalCursor.next();
+            while (rowEntity != null) {
+                Column primaryKey = getPrimaryKey(rowEntity.getColumns());
+                if(!rowEntity.isDeleted()) {
+                    for (Column c : newColumns) {
+                        Column vColumn = rowEntity.getColumn(c.getColumnName());
+                        if(vColumn != null) {
+                            c.setValue(vColumn.getValue());
+                        } else {
+                            if(isAdd) {
+                                if (c.getColumnName().equals(defColumn.getColumnName())) {
+                                    c.setValue(defColumn.getValue());
+                                } else {
+                                    ExceptionUtil.throwDbException("复制值失败，字段{}找不到", c.getColumnName());
+                                }
+                            } else {
+                                ExceptionUtil.throwDbException("复制值失败，字段{}找不到", c.getColumnName());
+                            }
+                        }
+                    }
+                    RowValue rowValue = new RowValue(0L, newColumns, rowEntity.getRowId());
+                    // 如果不存在主键，以行id作为b+树的key
+                    if (primaryKey == null) {
+                        temTable.put(rowEntity.getRowId(), rowValue);
+                    } else {
+                        temTable.put(primaryKey.getValue(), rowValue);
+                    }
+                }
+                rowEntity = originalCursor.next();
+            }
+            isSuccess = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(originalTable != null) {
+                originalTable.close();
+            }
+            if(temTable != null) {
+                temTable.close();
+            }
+            if(originalCursor != null) {
+                originalCursor.close();
+            }
+        }
+
+        if(isSuccess) {
+            isSuccess = false;
+            String originalFilePath = PathUtils.getYanEngineDataFilePath(session.getDatabaseId(), tableName);
+            String temFilePath = PathUtils.getYanEngineDataFilePath(session.getDatabaseId(), tmpTableName);
+            File originalFile = new File(originalFilePath);
+
+            String bakOriginalPath = originalFilePath + "_bak";
+            File bakFile = new File(bakOriginalPath);
+            if(bakFile.exists()) {
+                bakFile.delete();
+            }
+            // 备份原始的数据文件
+            boolean r1 = originalFile.renameTo(bakFile);
+            if(r1) {
+                // 临时文件（新的数据）文件命名为正式文件
+                File temFile = new File(temFilePath);
+                boolean r2 = temFile.renameTo(new File(originalFilePath));
+                if(r2) {
+                    // 删除备份
+                    bakFile.deleteOnExit();
+                    isSuccess = true;
+                } else {
+                    // 还原数据文件
+                    System.out.println("修改表字段，文件重命名失败");
+                    boolean r3 = bakFile.renameTo(new File(originalFilePath));
+                    if(!r3) {
+                        System.out.println("恢复失败:bakOriginalPath:" + bakOriginalPath + ", originalFilePath:" + originalFilePath);
+                    }
+                }
+                temFile.deleteOnExit();
+            } else {
+                System.out.println("修改字段失败，备份失败");
+            }
+        }
+
+        return isSuccess;
+
+    }
 }

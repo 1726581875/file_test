@@ -58,6 +58,14 @@ public class ColumnMetaAccessor extends BaseAccessor {
         }
     }
 
+    public void saveColumnBlock(TableColumnBlock columnBlock) {
+        synchronized (ColumnMetaAccessor.class) {
+            fileAccessor.write(columnBlock.getByteBuffer(), columnBlock.getStartPos());
+            columnBlockMap.put(columnBlock.getTableId(), columnBlock);
+            columnBlockList.add(columnBlock);
+        }
+    }
+
 
     public void dropColumnBlock(Integer tableId) {
 

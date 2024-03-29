@@ -1,5 +1,6 @@
 package com.moyu.xmz.store.common.block;
 
+import com.moyu.xmz.common.exception.ExceptionUtil;
 import com.moyu.xmz.store.common.meta.ColumnMeta;
 import com.moyu.xmz.store.common.SerializableByte;
 import com.moyu.xmz.common.util.DataByteUtils;
@@ -16,19 +17,34 @@ import java.util.List;
 public class TableColumnBlock implements SerializableByte {
 
     public static final int TABLE_COLUMN_BLOCK_SIZE = 4096;
-
+    /**
+     * 已使用字节长度，目前限制不得超过块大小4096字节
+     */
     private int usedByteLen;
-
+    /**
+     * 当前块下标
+     */
     private int blockIndex;
-
+    /**
+     * 当前文件内偏移量
+     * blockIndex * 块大小(4096)
+     */
     private long startPos;
-
+    /**
+     * 所属表id
+     */
     private int tableId;
-
+    /**
+     * 列字段数量
+     */
     private int columnNum;
-
+    /**
+     * 字段信息开始偏移量
+     */
     private long columnStartPos;
-
+    /**
+     * 具体字段数据
+     */
     private List<ColumnMeta> columnMetaList;
 
     public TableColumnBlock(int blockIndex, long startPos, int tableId) {
@@ -82,6 +98,30 @@ public class TableColumnBlock implements SerializableByte {
         this.columnNum++;
         this.usedByteLen += column.getTotalByteLen();
         this.columnMetaList.add(column);
+    }
+
+    public void addColumn(ColumnMeta column, int i) {
+        this.columnNum++;
+        this.usedByteLen += column.getTotalByteLen();
+        this.columnMetaList.add(i, column);
+    }
+
+    public void removeColumn(String columnName) {
+        int removeIdx = -1;
+        for (int i = 0; i < columnMetaList.size(); i++) {
+            if(columnMetaList.get(i).getColumnName().equals(columnName)) {
+                removeIdx = i;
+            }
+        }
+        if(removeIdx == -1) {
+            ExceptionUtil.throwDbException("删除字段失败，不存在字段{}", columnName);
+        }
+
+        ColumnMeta columnMeta = columnMetaList.get(removeIdx);
+
+        this.usedByteLen -= columnMeta.getTotalByteLen();
+        this.columnNum--;
+        this.columnMetaList.remove(removeIdx);
     }
 
     public static int getTableColumnBlockSize() {

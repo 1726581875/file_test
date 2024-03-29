@@ -69,6 +69,7 @@ public class SqlParser implements Parser {
     private static final String DESC = "DESC";
     private static final String DATABASE = "DATABASE";
     private static final String TABLE = "TABLE";
+    private static final String COLUMN = "COLUMN";
     private static final String INDEX = "INDEX";
     private static final String DISTINCT = "DISTINCT";
     private static final String FROM = "FROM";
@@ -242,20 +243,19 @@ public class SqlParser implements Parser {
 
 
     private Command getAlterTableCommand() {
-        skipSpace();
+
         String tableKeyWord = getNextKeyWord();
         if(!TABLE.equals(tableKeyWord)) {
             throw new SqlIllegalException("sql语法有误");
         }
 
-        skipSpace();
         String tableName = getNextOriginalWord();
 
-        skipSpace();
+        Table table = this.connectSession.getDatabase().getTable(tableName);
+
         String operate = getNextKeyWord();
         switch (operate) {
             case ADD:
-                skipSpace();
                 String word0 = getNextKeyWord();
                 if(INDEX.equals(word0)) {
                     // ALTER TABLE tableName ADD INDEX indexName(columnName);
@@ -264,9 +264,35 @@ public class SqlParser implements Parser {
                     // ALTER TABLE tableName ADD PRIMARY KEY indexName(columnName);
                     assertNextKeywordIs("KEY");
                     return parseIndexCommand(tableName, CommonConstant.PRIMARY_KEY);
+                } else if(COLUMN.equals(word0)) {
+                    String columnDefineStr = originalSql.substring(currIndex).trim();
+                    if(columnDefineStr.endsWith(";")) {
+                        columnDefineStr = columnDefineStr.substring(currIndex, columnDefineStr.length() - 1);
+                    }
+                    ColumnDefineParser defParser = new ColumnDefineParser(columnDefineStr, -1);
+                    Column column = defParser.parseColumnDefine();
+                    // 如果有默认值设置默认值
+                    setColumnValue(column, column.getDefaultVal());
+                    TableInfo tableInfo = new TableInfo(connectSession, table, null);
+                    AlterTableCmd alterTableCmd = new AlterTableCmd(tableInfo, ADD, column);
+                    return alterTableCmd;
                 }
                 break;
             case DROP:
+                String word1 = getNextKeyWord();
+                if(INDEX.equals(word1)) {
+
+                } else if(COLUMN.equals(word1)) {
+                    String columnName = originalSql.substring(currIndex).trim();
+                    if(columnName.endsWith(";")) {
+                        columnName = columnName.substring(currIndex, columnName.length() - 1);
+                    }
+                    Column column = table.getColumn(columnName);
+                    TableInfo tableInfo = new TableInfo(connectSession, table, null);
+                    AlterTableCmd alterTableCmd = new AlterTableCmd(tableInfo, DROP, column);
+                    return alterTableCmd;
+                }
+                break;
             default:
                 throw new SqlIllegalException("sql语法有误");
         }
@@ -407,7 +433,7 @@ public class SqlParser implements Parser {
         }
 
         TableInfo tableInfo = getOperateTableInfo(tableName, columns, condition);
-        DeleteCmd deleteCmd = new DeleteCmd(tableInfo);
+        DeleteCmd deleteCmd = new DeleteCmd(tableInfo, condition);
         return deleteCmd;
     }
 
