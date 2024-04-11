@@ -1,36 +1,25 @@
 package test.parser.alterTable;
 
-import com.moyu.xmz.command.Command;
-import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
-import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
-import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
-import test.parser.SelectSqlTest;
+import test.parser.BaseSqlTest;
 
 /**
  * @author xiaomingzhang
  * @date 2024/3/29
  */
 @TestModule("修改表字段结构测试")
-public class AlterTableColumnTest {
+public class AlterTableColumnTest extends BaseSqlTest {
 
     private final static String databaseName = "alt_tb_column";
 
-    private static Database database = null;
-
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
 
-    static {
-        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.exec();
-        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.exec();
-        database = Database.getDatabase(databaseName);
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
 
     public static void main(String[] args) {
@@ -58,16 +47,6 @@ public class AlterTableColumnTest {
     }
 
 
-    private void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
-    }
 
 
 

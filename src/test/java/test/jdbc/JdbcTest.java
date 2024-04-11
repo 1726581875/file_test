@@ -8,7 +8,7 @@ import java.sql.*;
  */
 public class JdbcTest {
 
-    private static final String driver = "com.moyu.test.jdbc.Driver";
+    private static final String driver = "com.moyu.xmz.jdbc.Driver";
     private static final String url = "localhost:8888:ddd";
 
 

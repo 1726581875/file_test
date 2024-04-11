@@ -4,7 +4,6 @@ import com.moyu.xmz.common.constant.CommonConstant;
 import com.moyu.xmz.common.util.DataByteUtils;
 import com.moyu.xmz.common.util.FileUtils;
 import com.moyu.xmz.store.accessor.FileAccessor;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -14,16 +13,29 @@ import java.nio.ByteBuffer;
  */
 public class BTreeStore {
 
+    /**
+     * 开始存储数据页位置，
+     * 0~4095拿来存一些表基本信息，比如: 根节点的位置(rootStartPos)、下一个行id(nextRowId)、页数量(pageCount)
+     * 数据页从4096位置开始存储
+     */
     public static final int PAGE_START_POS = 4096;
 
     private FileAccessor fileAccessor;
-
+    /**
+     * 页数量统计
+     */
     private int pageCount;
-
+    /**
+     * 下一页的偏移下标
+     */
     private int nextPageIndex;
-
+    /**
+     * 根节点的位置
+     */
     private long rootStartPos;
-
+    /**
+     * 下一个行id
+     */
     private long nextRowId;
 
     public BTreeStore(String fileFullPath) throws IOException {

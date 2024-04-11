@@ -9,25 +9,23 @@ import com.moyu.xmz.session.Database;
 import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.BaseSqlTest;
 
 /**
  * @author xiaomingzhang
  * @date 2024/3/7
  */
 @TestModule("创建表sql测试")
-public class CreateTableSqlTest {
+public class CreateTableSqlTest extends BaseSqlTest {
 
     private final static String databaseName = "create_table_test";
 
-    private static Database database = null;
 
-    static {
-        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.exec();
-        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.exec();
-        database = Database.getDatabase(databaseName);
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
+
 
     @TestCase("建表sql01")
     public void test01() {
@@ -104,16 +102,6 @@ public class CreateTableSqlTest {
         new CreateTableSqlTest().yanStoreEngineTest();
     }
 
-    private void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
-    }
 
 
 

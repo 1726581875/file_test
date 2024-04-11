@@ -67,7 +67,7 @@ public class YanEngine extends StoreEngine {
             insertIndexTree(allIndexList, rowEntity, primaryKey);
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;
+            throw ExceptionUtil.buildDbException("插入数据异常");
         } finally {
             if(bTreeMap != null) {
                 bTreeMap.close();
@@ -98,7 +98,7 @@ public class YanEngine extends StoreEngine {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return 0;
+            throw ExceptionUtil.buildDbException("插入数据异常");
         } finally {
             bTreeMap.close();
         }
@@ -110,8 +110,8 @@ public class YanEngine extends StoreEngine {
         // 插入索引
         if (indexList != null && indexList.size() > 0) {
             for (IndexMeta index : indexList) {
-                Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
-                if (indexColumnValue != null && indexColumnValue.getValue() != null) {
+                Column indexColumn = getIndexColumn(index.getColumnName(), row.getColumns());
+                if (indexColumn != null && indexColumn.getValue() != null) {
                     insertIndexValue(index, row, primaryKey);
                 }
             }
@@ -166,7 +166,7 @@ public class YanEngine extends StoreEngine {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return updateNum;
+            throw ExceptionUtil.buildDbException("更新数据异常");
         } finally {
             if(bTreeMap != null) {
                 bTreeMap.close();
@@ -196,7 +196,7 @@ public class YanEngine extends StoreEngine {
                         Column primaryKey = getPrimaryKey(rowEntity.getColumns());
                         if (allIndexList != null && allIndexList.size() > 0) {
                             for (IndexMeta index : allIndexList) {
-                                Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), rowEntity.getColumns());
+                                Column indexColumnValue = getIndexColumn(index.getColumnName(), rowEntity.getColumns());
                                 if (indexColumnValue != null && indexColumnValue.getValue() != null) {
                                     removeIndexItemValue(index, rowEntity, primaryKey);
                                 }
@@ -216,7 +216,7 @@ public class YanEngine extends StoreEngine {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return deleteNum;
+            throw ExceptionUtil.buildDbException("删除数据异常");
         } finally {
             if(bTreeMap != null) {
                 bTreeMap.close();
@@ -251,7 +251,7 @@ public class YanEngine extends StoreEngine {
             FileUtils.createFileIfNotExists(indexPath);
 
             // 获取b-tree的键类型
-            Column indexColumn = getIndexColumnByColumnName(columnName, tableColumns);
+            Column indexColumn = getIndexColumn(columnName, tableColumns);
             bTreeIndexStore = new BTreeStore(indexPath);
             DataType keyDataType = AbstractDbType.getDataType(indexColumn.getColumnType());
 
@@ -262,7 +262,7 @@ public class YanEngine extends StoreEngine {
             Cursor cursor = new BtreeCursor(tableColumns, bTreeMap);
             RowEntity row = null;
             while ((row = cursor.next()) != null) {
-                Column indexColumnValue = getIndexColumnByColumnName(columnName, row.getColumns());
+                Column indexColumnValue = getIndexColumn(columnName, row.getColumns());
                 ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
 
                 Column primaryKey = getPrimaryKey(row.getColumns());
@@ -295,7 +295,7 @@ public class YanEngine extends StoreEngine {
         try {
             // 索引路径
             String indexPath = getIndexPath(index.getIndexName());
-            Column indexColumn = getIndexColumnByColumnName(index.getColumnName(), tableColumns);
+            Column indexColumn = getIndexColumn(index.getColumnName(), tableColumns);
             bTreeIndexStore = new BTreeStore(indexPath);
             DataType keyDataType = AbstractDbType.getDataType(indexColumn.getColumnType());
             BTreeMap bTreeIndexMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeIndexStore, true);
@@ -304,7 +304,7 @@ public class YanEngine extends StoreEngine {
             DataType valueArrItemType = primaryKey != null
                     ? AbstractDbType.getDataType(primaryKey.getColumnType()) : new LongType();
 
-            Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
+            Column indexColumnValue = getIndexColumn(index.getColumnName(), row.getColumns());
             ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
 
             keyArrayValue = insertNodeArray(value, valueArrItemType, keyArrayValue);
@@ -324,7 +324,7 @@ public class YanEngine extends StoreEngine {
         try {
             // 索引路径
             String indexPath = getIndexPath(index.getIndexName());
-            Column indexColumn = getIndexColumnByColumnName(index.getColumnName(), tableColumns);
+            Column indexColumn = getIndexColumn(index.getColumnName(), tableColumns);
             bTreeIndexStore = new BTreeStore(indexPath);
             DataType keyDataType = AbstractDbType.getDataType(indexColumn.getColumnType());
             BTreeMap bTreeIndexMap = new BTreeMap(keyDataType, new ArrayDataType(), bTreeIndexStore, true);
@@ -333,7 +333,7 @@ public class YanEngine extends StoreEngine {
             DataType valueArrItemType = primaryKey != null
                     ? AbstractDbType.getDataType(primaryKey.getColumnType()) : new LongType();
 
-            Column indexColumnValue = getIndexColumnByColumnName(index.getColumnName(), row.getColumns());
+            Column indexColumnValue = getIndexColumn(index.getColumnName(), row.getColumns());
             ArrayValue keyArrayValue = (ArrayValue) bTreeIndexMap.get(indexColumnValue.getValue());
 
             if (keyArrayValue != null) {
@@ -349,6 +349,7 @@ public class YanEngine extends StoreEngine {
             bTreeIndexMap.put(indexColumnValue.getValue(), keyArrayValue);
         } catch (Exception e) {
             e.printStackTrace();
+            throw ExceptionUtil.buildDbException("删除索引数据异常");
         } finally {
             if(bTreeIndexStore != null) {
                 bTreeIndexStore.close();
@@ -357,7 +358,7 @@ public class YanEngine extends StoreEngine {
     }
 
 
-    private Column getIndexColumnByColumnName(String columnName, Column[] columns) {
+    private Column getIndexColumn(String columnName, Column[] columns) {
         for (Column c : columns) {
             if (columnName.equals(c.getColumnName())) {
                 return c;
@@ -393,6 +394,7 @@ public class YanEngine extends StoreEngine {
                 keyArrValue = (ArrayValue) bTreeIndexMap.get(value);
             } catch (Exception e) {
                 e.printStackTrace();
+                throw ExceptionUtil.buildDbException("发生数据库内部异常");
             } finally {
                 if (bTreeIndexStore != null) {
                     bTreeIndexStore.close();
@@ -487,6 +489,7 @@ public class YanEngine extends StoreEngine {
             isSuccess = true;
         } catch (Exception e) {
             e.printStackTrace();
+            throw ExceptionUtil.buildDbException("发生数据库内部异常");
         } finally {
             if(originalTable != null) {
                 originalTable.close();

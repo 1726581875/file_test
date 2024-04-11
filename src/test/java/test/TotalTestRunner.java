@@ -1,36 +1,55 @@
 package test;
 
+import com.moyu.xmz.command.QueryResult;
+import com.moyu.xmz.common.constant.DbTypeConstant;
+import com.moyu.xmz.store.common.dto.SelectColumn;
+import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.TotalSqlTest;
+import test.parser.alterTable.AlterTableColumnTest;
 import test.parser.createTable.CreateTableSqlTest;
+import test.parser.subQuery.SubQueryTest;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author xiaomingzhang
  * @date 2024/2/28
+ * 总测试类
  */
 public class TotalTestRunner {
 
+    private static final List<TestResult> testResultList = new ArrayList<>();
+
     public static void main(String[] args) {
-
-        List<TestResult> testResultList = new ArrayList<>();
-        runTestCase(MyTest.class, testResultList);
         // 测试建表语句
-        runTestCase(CreateTableSqlTest.class, testResultList);
+        runTestCase(CreateTableSqlTest.class);
+        // 测试alter table语句
+        runTestCase(AlterTableColumnTest.class);
+        // 子查询测试
+        runTestCase(SubQueryTest.class);
+        // 综合测试
+        runTestCase(TotalSqlTest.class);
 
-        // 生成测试报告
-        exportTestReport(testResultList);
+        System.out.println();
+        System.out.println("############## 汇总结果 ################");
+
+        // 生成简单测试报告
+        List<String> headers = Arrays.asList("序号", "类名", "方法名", "测试模块", "测试案例", "测试结果");
+        exportTestReport(headers, testResultList);
+        printTestResult(headers, testResultList);
     }
 
-    public static void runTestCase(Class<?> testClass, List<TestResult> testResultList) {
+    public static void runTestCase(Class<?> testClass) {
         // 获取测试模块名称
         TestModule moduleAnn = testClass.getAnnotation(TestModule.class);
         String className = testClass.getName();
@@ -83,8 +102,9 @@ public class TotalTestRunner {
     }
 
 
-    private static void exportTestReport(List<TestResult> testResultList) {
-        StringBuilder testReportBuilder = new StringBuilder("序号,类名,方法名,测试模块,测试案例,测试结果\n");
+    private static void exportTestReport(List<String> headers, List<TestResult> testResultList) {
+        String headerStr = headers.stream().collect(Collectors.joining(","));
+        StringBuilder testReportBuilder = new StringBuilder(headerStr + "\n");
         for (int i = 0; i < testResultList.size(); i++) {
             TestResult testResult = testResultList.get(i);
             testReportBuilder.append(testResult.getCsvString() + "\n");
@@ -98,7 +118,6 @@ public class TotalTestRunner {
             dos = new FileOutputStream(file);
             dos.write(testReportBuilder.toString().getBytes());
             dos.flush();
-            System.out.println(testReportBuilder);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -110,6 +129,29 @@ public class TotalTestRunner {
                 }
             }
         }
+    }
+
+
+    /**
+     * @param headers
+     * @param testResultList
+     */
+    private static void printTestResult(List<String> headers, List<TestResult> testResultList) {
+        QueryResult queryResult = new QueryResult();
+        // 表头: "序号", "类名", "方法名", "测试模块", "测试案例", "测试结果"
+        SelectColumn[] selectColumns = new SelectColumn[headers.size()];
+        for (int i = 0; i < headers.size(); i++) {
+            selectColumns[i] = SelectColumn.newColumn(headers.get(i), DbTypeConstant.CHAR);
+        }
+        queryResult.setSelectColumns(selectColumns);
+        // 数据行
+        for (int i = 0; i < testResultList.size(); i++) {
+            TestResult r = testResultList.get(i);
+            queryResult.addRow(new Object[]{i + 1, r.getClassName(),  r.getMethodName()
+                    , r.getModuleName(), r.getCaseName(), r.getResult()});
+        }
+
+        PrintResultUtil.printResult(queryResult);
     }
 
 

@@ -111,11 +111,11 @@ public class SqlParser implements Parser {
         this.sqlCharArr = this.upperCaseSql.toCharArray();
         this.currIndex = 0;
 
-        String firstKeyWord = getNextKeyWord();
+        String firstKeyWord = getNextKeyword();
 
         switch (firstKeyWord) {
             case CREATE:
-                String nextKeyWord = getNextKeyWord();
+                String nextKeyWord = getNextKeyword();
                 switch (nextKeyWord) {
                     case DATABASE:
                         String databaseName = getNextOriginalWord();
@@ -143,7 +143,7 @@ public class SqlParser implements Parser {
             case INSERT:
                 return getInsertCommand();
             case DROP:
-                String keyWord = getNextKeyWord();
+                String keyWord = getNextKeyword();
                 switch (keyWord) {
                     // drop database
                     case DATABASE:
@@ -153,7 +153,7 @@ public class SqlParser implements Parser {
                         return command;
                         // drop table
                     case TABLE:
-                        String keyword99 = getNextKeyWordUnMove();
+                        String keyword99 = getNextKeywordUnMove();
                         DropTableCmd dropTableCmd = null;
                         if(IF.equals(keyword99)) {
                             assertNextKeywordIs(IF);
@@ -178,7 +178,7 @@ public class SqlParser implements Parser {
             case ALTER:
                 return getAlterTableCommand();
             case SHOW:
-                String word11 = getNextKeyWord();
+                String word11 = getNextKeyword();
                 if (DATABASES.equals(word11)) {
                     return new ShowDatabasesCmd();
                 } else if (TABLES.equals(word11)) {
@@ -244,7 +244,7 @@ public class SqlParser implements Parser {
 
     private Command getAlterTableCommand() {
 
-        String tableKeyWord = getNextKeyWord();
+        String tableKeyWord = getNextKeyword();
         if(!TABLE.equals(tableKeyWord)) {
             throw new SqlIllegalException("sql语法有误");
         }
@@ -253,10 +253,10 @@ public class SqlParser implements Parser {
 
         Table table = this.connectSession.getDatabase().getTable(tableName);
 
-        String operate = getNextKeyWord();
+        String operate = getNextKeyword();
         switch (operate) {
             case ADD:
-                String word0 = getNextKeyWord();
+                String word0 = getNextKeyword();
                 if(INDEX.equals(word0)) {
                     // ALTER TABLE tableName ADD INDEX indexName(columnName);
                     return parseIndexCommand(tableName, CommonConstant.GENERAL_INDEX);
@@ -279,7 +279,7 @@ public class SqlParser implements Parser {
                 }
                 break;
             case DROP:
-                String word1 = getNextKeyWord();
+                String word1 = getNextKeyword();
                 if(INDEX.equals(word1)) {
 
                 } else if(COLUMN.equals(word1)) {
@@ -337,7 +337,7 @@ public class SqlParser implements Parser {
         }
 
         skipSpace();
-        String keyword = getNextKeyWord();
+        String keyword = getNextKeyword();
         if(!"SET".equals(keyword)) {
             ExceptionUtil.throwSqlIllegalException("sql语法有误");
         }
@@ -352,7 +352,7 @@ public class SqlParser implements Parser {
                 break;
             }
             end = currIndex;
-            String word = getNextKeyWord();
+            String word = getNextKeyword();
             if (WHERE.equals(word)) {
                 break;
             }
@@ -391,7 +391,7 @@ public class SqlParser implements Parser {
         // 解析where条件
         Expression condition = null;
         skipSpace();
-        String nextKeyWord = getNextKeyWord();
+        String nextKeyWord = getNextKeyword();
         if (WHERE.equals(nextKeyWord)) {
             condition = parseWhereCondition(columnMap);
         }
@@ -411,7 +411,7 @@ public class SqlParser implements Parser {
             if(currIndex >= sqlCharArr.length) {
                 ExceptionUtil.throwSqlIllegalException("sql语法有误");
             }
-            String word = getNextKeyWord();
+            String word = getNextKeyword();
             if(FROM.equals(word)) {
                 skipSpace();
                 tableName = getNextOriginalWord();
@@ -427,7 +427,7 @@ public class SqlParser implements Parser {
         Map<String, Column> columnMap = getColumnMap(columns);
 
         Expression condition = null;
-        String nextKeyWord = getNextKeyWord();
+        String nextKeyWord = getNextKeyword();
         if (WHERE.equals(nextKeyWord)) {
             condition = parseWhereCondition(columnMap);
         }
@@ -597,13 +597,13 @@ public class SqlParser implements Parser {
         // 解析条件
         Expression condition = null;
         skipSpace();
-        String nextKeyWord = getNextKeyWordUnMove();
+        String nextKeyWord = getNextKeywordUnMove();
         if(WHERE.equals(nextKeyWord)) {
-            getNextKeyWord();
+            getNextKeyword();
             // 解析where条件
             condition = parseWhereCondition(columnMap);
             // 条件后面再接limit,如select * from table where column1=0 limit 10
-            String nextKeyWord2 = getNextKeyWordUnMove();
+            String nextKeyWord2 = getNextKeywordUnMove();
             if(LIMIT.equals(nextKeyWord2)) {
                 parseOffsetLimit(query);
             } else if (ORDER.equals(nextKeyWord2)) {
@@ -785,7 +785,7 @@ public class SqlParser implements Parser {
 
                     // 遇到limit结束
                     if(nextKeywordIs(LIMIT)) {
-                        String nextKeyWork = getNextKeyWordUnMove();
+                        String nextKeyWork = getNextKeywordUnMove();
                         if(LIMIT.equals(nextKeyWork)) {
                             setSortType(charStart, currSortField);
                             break;
@@ -821,7 +821,7 @@ public class SqlParser implements Parser {
         query.setSortFields(sortFieldList);
 
         // 如果下一个关键字为limit, 解析limit
-        String nextKeyWord3 = getNextKeyWordUnMove();
+        String nextKeyWord3 = getNextKeywordUnMove();
         if(LIMIT.equals(nextKeyWord3)) {
             parseOffsetLimit(query);
         }
@@ -845,7 +845,7 @@ public class SqlParser implements Parser {
     private Expression parseWhereCondition(Map<String, Column> columnMap) {
         Expression condition = null;
         Expression l = readCondition(columnMap);
-        String nextKeyWordUnMove = getNextKeyWordUnMove();
+        String nextKeyWordUnMove = getNextKeywordUnMove();
         if(ConditionAndOr.AND.equals(nextKeyWordUnMove)) {
             condition = readRightAndCondition(columnMap, l);
         } else {
@@ -862,10 +862,10 @@ public class SqlParser implements Parser {
      */
     private QueryTable getSubQueryAliasMainTable(Query subQuery) {
         QueryTable mainTable = null;
-        String as = getNextKeyWordUnMove();
+        String as = getNextKeywordUnMove();
         if ("AS".equals(as)) {
             // skip as
-            getNextKeyWord();
+            getNextKeyword();
         }
         String tableName = getNextOriginalWord();
         if ("".equals(tableName)) {
@@ -898,16 +898,16 @@ public class SqlParser implements Parser {
 
 
     private void parseOffsetLimit(Query query) {
-        getNextKeyWord();
-        String limitNum = getNextKeyWord().trim();
+        getNextKeyword();
+        String limitNum = getNextKeyword().trim();
         query.setLimit(Integer.valueOf(limitNum));
 
         skipSpace();
-        String offsetStr = getNextKeyWord();
+        String offsetStr = getNextKeyword();
         Integer offset = null;
         if(OFFSET.equals(offsetStr)) {
             skipSpace();
-            String offsetNum = getNextKeyWord().trim();
+            String offsetNum = getNextKeyword().trim();
             offset = Integer.valueOf(offsetNum);
         }
         query.setOffset(offset == null ? 0 : offset);
@@ -933,7 +933,7 @@ public class SqlParser implements Parser {
                 break;
             }
 
-            String word11 = getNextKeyWordUnMove();
+            String word11 = getNextKeywordUnMove();
             if (WHERE.equals(word11) || LIMIT.equals(word11) || GROUP.equals(word11)
                     || currIndex >= sqlCharArr.length) {
                 break;
@@ -948,7 +948,7 @@ public class SqlParser implements Parser {
                     || CommonConstant.JOIN_TYPE_LEFT.equals(word11)
                     || CommonConstant.JOIN_TYPE_RIGHT.equals(word11)) {
                 // skip keyword INNER/LEFT/RIGHT
-                getNextKeyWord();
+                getNextKeyword();
                 // skip keyword JOIN
                 assertNextKeywordIs(JOIN);
 
@@ -1002,9 +1002,9 @@ public class SqlParser implements Parser {
         QueryTable table = new QueryTable(tableName, columns);
         table.setEngineType(tableMeta.getEngineType());
 
-        String next = getNextKeyWordUnMove();
+        String next = getNextKeywordUnMove();
         if(AS.equals(next)) {
-            getNextKeyWord();
+            getNextKeyword();
             String alias = getNextOriginalWord();
             table.setAlias(alias);
             Column.setColumnTableAlias(table.getTableColumns(), table.getAlias());
@@ -1038,7 +1038,7 @@ public class SqlParser implements Parser {
 
     private void assertNextKeywordIs(String keyword) {
         skipSpace();
-        String nextKeyWord = getNextKeyWord();
+        String nextKeyWord = getNextKeyword();
         AssertUtils.assertTrue(keyword.equals(nextKeyWord), "Sql语法有误,在附近" + nextKeyWord);
     }
 
@@ -1315,9 +1315,9 @@ public class SqlParser implements Parser {
                     break;
                 }
 
-                String andOrType = getNextKeyWordUnMove();
+                String andOrType = getNextKeywordUnMove();
                 if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
-                    getNextKeyWord();
+                    getNextKeyword();
                     Expression right = readCondition(columnMap);
                     left = new ConditionAndOr(andOrType, left, right);
                 }
@@ -1338,9 +1338,9 @@ public class SqlParser implements Parser {
        while (true) {
         if (sqlCharArr[currIndex] == '(') {
             l = readCondition(columnMap);
-            String andOrType = getNextKeyWordUnMove();
+            String andOrType = getNextKeywordUnMove();
             if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
-                getNextKeyWord();
+                getNextKeyword();
                 Expression right = readCondition(columnMap);
                 l = new ConditionAndOr(andOrType, l, right);
             }
@@ -1355,16 +1355,16 @@ public class SqlParser implements Parser {
 
 
     public Expression readRightAndCondition(Map<String, Column> columnMap, Expression l) {
-        String nextKeyWord = getNextKeyWordUnMove();
+        String nextKeyWord = getNextKeywordUnMove();
         if(!ConditionAndOr.AND.equals(nextKeyWord)) {
             return l;
         }
 
-        getNextKeyWord();
+        getNextKeyword();
         Expression right = readCondition(columnMap);
         l = new ConditionAndOr(nextKeyWord, l, right);
 
-        String next = getNextKeyWordUnMove();
+        String next = getNextKeywordUnMove();
         if (ConditionAndOr.OR.equals(next)) {
             l = readRightOrCondition(columnMap, l);
         } else {
@@ -1375,16 +1375,16 @@ public class SqlParser implements Parser {
 
     public Expression readRightOrCondition(Map<String, Column> columnMap, Expression l) {
 
-        String nextKeyWord = getNextKeyWordUnMove();
+        String nextKeyWord = getNextKeywordUnMove();
         if (!ConditionAndOr.OR.equals(nextKeyWord)) {
             return l;
         }
 
-        getNextKeyWord();
+        getNextKeyword();
         Expression right = readCondition(columnMap);
         l = new ConditionAndOr(nextKeyWord, l, right);
 
-        String next = getNextKeyWordUnMove();
+        String next = getNextKeywordUnMove();
         if (ConditionAndOr.AND.equals(next)) {
             l = readRightAndCondition(columnMap, l);
         } else {
@@ -1458,7 +1458,7 @@ public class SqlParser implements Parser {
                 break;
             case "NOT":
                 skipSpace();
-                String word0 = getNextKeyWord();
+                String word0 = getNextKeyword();
                 if ("IN".equals(word0)) {
                     condition = parseInCondition(left, true);
                 } else if ("LIKE".equals(word0)) {
@@ -1468,7 +1468,7 @@ public class SqlParser implements Parser {
                 }
                 break;
             case IS:
-                String word1 = getNextKeyWord();
+                String word1 = getNextKeyword();
                 if (NULL.equals(word1)) {
                     condition = new SingleComparison(OperatorConstant.IS_NULL, left, new ConstantValue(null));
                 } else if ("NOT".equals(word1)) {
@@ -1707,7 +1707,7 @@ public class SqlParser implements Parser {
 
         skipSpace();
 
-        String word = getNextKeyWord();
+        String word = getNextKeyword();
         if (!"INTO".equals(word)) {
             ExceptionUtil.throwSqlIllegalException("sql语法有误,{}", word);
         }
@@ -1747,7 +1747,7 @@ public class SqlParser implements Parser {
 
         // 读字段值
         skipSpace();
-        String valueKeyWord = getNextKeyWord();
+        String valueKeyWord = getNextKeyword();
         if (!VALUE.equals(valueKeyWord) && !VALUES.equals(valueKeyWord)) {
             ExceptionUtil.throwSqlIllegalException("sql语法有误,{}", valueKeyWord);
         }
@@ -2024,7 +2024,7 @@ public class SqlParser implements Parser {
 
 
 
-    private String getNextKeyWord() {
+    private String getNextKeyword() {
         skipSpace();
         int i = currIndex;
         while (i < sqlCharArr.length) {
@@ -2045,7 +2045,7 @@ public class SqlParser implements Parser {
     }
 
 
-    private String getNextKeyWordUnMove() {
+    private String getNextKeywordUnMove() {
         skipSpace();
         int i = currIndex;
         while (i < sqlCharArr.length) {

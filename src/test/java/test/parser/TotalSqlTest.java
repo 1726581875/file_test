@@ -1,10 +1,5 @@
 package test.parser;
 
-import com.moyu.xmz.command.Command;
-import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.SqlParser;
-import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
-import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.command.dml.InsertCmd;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 import com.moyu.xmz.common.constant.CommonConstant;
@@ -12,7 +7,8 @@ import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.TableInfo;
-import com.moyu.xmz.terminal.util.PrintResultUtil;
+import test.annotation.TestCase;
+import test.annotation.TestModule;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -22,47 +18,45 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/6/9
  */
-public class TotalSqlTest {
+@TestModule("综合SQL测试")
+public class TotalSqlTest extends BaseSqlTest {
 
-    private final static String databaseName = "xmz";
+    private final static String databaseName = "xmz_sql_test";
 
-    private static Database database = null;
-
-    static {
-        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.exec();
-        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.exec();
-        database = Database.getDatabase(databaseName);
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
 
 
     public static void main(String[] args) {
-        testDatabaseDDL();
-        testTableDDL();
-        testInsert();
-        testSimpleSelect();
-        testUseIndex();
-        testJoinTable();
-        testSubQuery();
-        testFunction();
-        testSubQuery2();
-        testAlias();
-        testSubQueryFunction();
-        testSubQueryFunction2();
-        testRangeQuery();
-        testRangeIndexQuery();
-        testSubQueryTempTableToDisk();
-        testLikeString();
-        gptRandom20Test();
-        gptRandom20Test2();
-        yanStoreEngineTest();
-        //bigTableJoin();
-        testUseIndex();
+        TotalSqlTest test = new TotalSqlTest();
+        test.testDatabaseDDL();
+        test.testTableDDL();
+        test.testInsert();
+        test.testSimpleSelect();
+        test.testUseIndex();
+        test.testJoinTable();
+        test.testSubQuery();
+        test.testFunction();
+        test.testSubQuery2();
+        test.testAlias();
+        test.testSubQueryFunction();
+        test.testSubQueryFunction2();
+        test.testRangeQuery();
+        test.testRangeIndexQuery();
+        test.testSubQueryTempTableToDisk();
+        test.testLikeString();
+        test.gptRandom20Test();
+        test.gptRandom20Test2();
+        test.yanStoreEngineTest();
+        //test.bigTableJoin();
+        test.testUseIndex();
     }
 
 
-    private static void bigTableJoin(){
+    //@TestCase("bigTableJoin")
+    public void bigTableJoin() {
         fastInsertData2("y_y_1", 100000, CommonConstant.ENGINE_TYPE_YAN);
         fastInsertData2("y_y_2", 1000, CommonConstant.ENGINE_TYPE_YAN);
         testExecSQL("select count(*) from y_y_1 a inner join y_y_2 b on a.id = b.id");
@@ -77,10 +71,8 @@ public class TotalSqlTest {
         testExecSQL("select count(*) from y_y_4 a inner join y_y_3 b on a.id = b.id");
     }
 
-
-
-
-    private static void yanStoreEngineTest() {
+    @TestCase("yanStoreEngineTest")
+    public void yanStoreEngineTest() {
         testExecSQL("drop table if exists xmz_table");
         testExecSQL("create table xmz_table (id int, name varchar(10)) ENGINE=yanStore");
         testExecSQL("insert into  xmz_table (id, name) value (1, null);");
@@ -98,9 +90,8 @@ public class TotalSqlTest {
     }
 
 
-
-
-    private static void gptRandom20Test2() {
+    @TestCase("gptRandom20Test2")
+    public void gptRandom20Test2() {
         testExecSQL("drop table if exists  xmz_o_2");
         testExecSQL("create table xmz_o_2 (id int, name varchar(10), time timestamp)");
 
@@ -150,7 +141,8 @@ public class TotalSqlTest {
     }
 
 
-    private static void testLikeString() {
+    @TestCase("testLikeString")
+    public void testLikeString() {
         testExecSQL("drop table if exists  xmz_o_2");
         testExecSQL("create table xmz_o_2 (id int, name varchar(10), time timestamp)");
 
@@ -175,7 +167,8 @@ public class TotalSqlTest {
     }
 
 
-    private static void gptRandom20Test() {
+    @TestCase("gptRandom20Test")
+    public void gptRandom20Test() {
         testExecSQL("drop table if exists  xmz_o_1");
         testExecSQL("create table xmz_o_1 (id int, name varchar(10), time timestamp)");
 
@@ -224,14 +217,16 @@ public class TotalSqlTest {
     }
 
 
-    private static void testSubQueryTempTableToDisk() {
+    @TestCase("testSubQueryTempTableToDisk")
+    public void testSubQueryTempTableToDisk() {
         fastInsertData("xmz_s_1", 10000);
         testExecSQL("select count(*) from xmz_s_1 where id in (select id from xmz_s_1)");
         testExecSQL("select * from xmz_s_1 where id not in (select id from xmz_s_1)");
     }
 
 
-    private static void testRangeIndexQuery() {
+    @TestCase("testRangeIndexQuery")
+    public void testRangeIndexQuery() {
         fastInsertData("xmz_o_1", 10000);
 
         testExecSQL("create index idx_o_id on xmz_o_1(id);");
@@ -255,11 +250,10 @@ public class TotalSqlTest {
     }
 
 
-
-    private static void fastInsertData2(String tableName, int rowNum, String engineType) {
+    private void fastInsertData2(String tableName, int rowNum, String engineType) {
         testExecSQL("drop table if exists " + tableName);
 
-        testExecSQL("create table "+ tableName +" (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
+        testExecSQL("create table " + tableName + " (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
@@ -289,10 +283,10 @@ public class TotalSqlTest {
         testExecSQL("desc " + tableName);
     }
 
-    private static void fastInsertData(String tableName, int rowNum) {
+    private void fastInsertData(String tableName, int rowNum) {
         testExecSQL("drop table if exists " + tableName);
 
-        testExecSQL("create table "+ tableName +" (id int, name varchar(10), time timestamp)");
+        testExecSQL("create table " + tableName + " (id int, name varchar(10), time timestamp)");
         long beginTime = System.currentTimeMillis();
         long time = beginTime;
 
@@ -323,7 +317,7 @@ public class TotalSqlTest {
     }
 
 
-    private static Column[] getColumns(Integer id, String name) {
+    private Column[] getColumns(Integer id, String name) {
         Column[] columns = new Column[3];
         // 字段11
         columns[0] = new Column("id", ColumnTypeEnum.INT.getColumnType(), 0, 4);
@@ -339,7 +333,8 @@ public class TotalSqlTest {
         return columns;
     }
 
-    public static void testRangeQuery(){
+    @TestCase("testRangeQuery")
+    public void testRangeQuery() {
         testExecSQL("drop table if exists  xmz_y_3");
         testExecSQL("create table xmz_y_3 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_y_3(id,name,time) value (1,'111','2023-05-19 00:00:00')");
@@ -357,8 +352,8 @@ public class TotalSqlTest {
         testExecSQL("select  *  from xmz_y_3 where id between 1 and 2");
     }
 
-
-    public static void testSubQueryFunction2(){
+    @TestCase("testSubQueryFunction2")
+    public void testSubQueryFunction2() {
         testExecSQL("drop table if exists  xmz_y_2");
         testExecSQL("create table xmz_y_2 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_y_2(id,name,time) value (1,'111','2023-05-19 00:00:00')");
@@ -374,8 +369,8 @@ public class TotalSqlTest {
         testExecSQL("select * from (select id,count(*),max(id) from xmz_y_2 group by id) t");
     }
 
-
-    public static void testSubQueryFunction() {
+    @TestCase("testSubQueryFunction")
+    public void testSubQueryFunction() {
 
         testExecSQL("drop table  if exists  xmz_yan");
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
@@ -392,8 +387,8 @@ public class TotalSqlTest {
 
     }
 
-
-    private static void testAlias(){
+    @TestCase("testAlias")
+    public void testAlias() {
 
         testExecSQL("drop table if exists xmz_y_1");
         testExecSQL("create table xmz_y_1(id int, name varchar(10), time timestamp)");
@@ -412,9 +407,8 @@ public class TotalSqlTest {
         testExecSQL("select bb.id as id1, bb.* from xmz_y_1 as bb");
     }
 
-
-
-    private static void testSubQuery2(){
+    @TestCase("testSubQuery2")
+    public void testSubQuery2() {
         testExecSQL("drop table if exists  xmz_yan");
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_yan(id,name,time) value (1,'111','2023-05-19 00:00:00')");
@@ -439,9 +433,8 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_yan where id in (select id from xmz_yan)");
     }
 
-
-
-    private static void testFunction(){
+    @TestCase("testFunction")
+    public void testFunction() {
 
         testExecSQL("create table table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("desc table_1");
@@ -478,8 +471,8 @@ public class TotalSqlTest {
         testExecSQL("drop table if exists  table_1");
     }
 
-
-    public static void testSubQuery() {
+    @TestCase("testSubQuery")
+    public void testSubQuery() {
 
         testExecSQL("drop table  if exists  xmz_yan");
         testExecSQL("create table xmz_yan (id int, name varchar(10), time timestamp)");
@@ -493,14 +486,12 @@ public class TotalSqlTest {
         testExecSQL("select * from (select * from (select * from xmz_yan where id = 1 ) t0 ) t");
         testExecSQL("select * from (select * from (select * from xmz_yan where id = 1) t0 where t0.id = 1 ) t");
 
-
         testExecSQL("select * from (select * from xmz_yan as a left join xmz_yan as b on a.id = b.id ) t where id = 1");
-
 
     }
 
-
-    public static void testJoinTable() {
+    @TestCase("testJoinTable")
+    public void testJoinTable() {
 
         testExecSQL("drop table  if exists  xmz_00");
         testExecSQL("create table xmz_00 (id int, name varchar(10), time timestamp)");
@@ -529,9 +520,8 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_00 a inner join xmz_01 b on a.id = b.id");
     }
 
-
-
-    public static void testUseIndex() {
+    @TestCase("testUseIndex")
+    public void testUseIndex() {
         testExecSQL("drop table if exists xmz_table_1");
 
         testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
@@ -544,9 +534,8 @@ public class TotalSqlTest {
         testExecSQL("select * from xmz_table_1 where id = 3");
     }
 
-
-
-    public static void testSimpleSelect() {
+    @TestCase("testSimpleSelect")
+    public void testSimpleSelect() {
 
         testExecSQL("drop table if exists xmz_table");
         testExecSQL("create table xmz_table (id int, name varchar(10))");
@@ -574,8 +563,8 @@ public class TotalSqlTest {
 
     }
 
-
-    public static void testInsert() {
+    @TestCase("testInsert")
+    public void testInsert() {
         testExecSQL("drop table if exists xmz_table_1");
         testExecSQL("create table xmz_table_1 (id int, name varchar(10), time timestamp)");
         testExecSQL("insert into xmz_table_1(id,name,time) value (1,'111','2023-05-19 00:00:00')");
@@ -584,8 +573,8 @@ public class TotalSqlTest {
 
     }
 
-
-    private static void testTableDDL() {
+    @TestCase("testTableDDL")
+    public void testTableDDL() {
 
         testExecSQL("drop table if exists xmz_table_1");
         testExecSQL("drop table if exists xmz_table_3");
@@ -602,8 +591,8 @@ public class TotalSqlTest {
 
     }
 
-
-    private static void testDatabaseDDL() {
+    @TestCase("testDatabaseDDL")
+    public void testDatabaseDDL() {
         testExecSQL("show databases");
         testExecSQL("create database xmz_01");
         testExecSQL("create database xmz_02");
@@ -614,18 +603,5 @@ public class TotalSqlTest {
         testExecSQL("drop database xmz_03");
     }
 
-
-
-    private static void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        SqlParser sqlParser = new SqlParser(connectSession);
-        Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
-    }
 
 }
