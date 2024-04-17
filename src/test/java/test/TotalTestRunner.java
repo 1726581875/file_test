@@ -6,9 +6,13 @@ import com.moyu.xmz.store.common.dto.SelectColumn;
 import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.MutiThreadTest;
 import test.parser.TotalSqlTest;
+import test.parser.WhereConditionTest;
 import test.parser.alterTable.AlterTableColumnTest;
 import test.parser.createTable.CreateTableSqlTest;
+import test.parser.joinTable.JoinTableTest;
+import test.parser.select.SelectSqlTest;
 import test.parser.subQuery.SubQueryTest;
 
 import java.io.File;
@@ -39,6 +43,14 @@ public class TotalTestRunner {
         runTestCase(SubQueryTest.class);
         // 综合测试
         runTestCase(TotalSqlTest.class);
+        // 多线程测试
+        runTestCase(MutiThreadTest.class);
+        // 多表连接测试
+        runTestCase(JoinTableTest.class);
+        // 简单select语法测试
+        runTestCase(SelectSqlTest.class);
+        // where条件测试
+        runTestCase(WhereConditionTest.class);
 
         System.out.println();
         System.out.println("############## 汇总结果 ################");

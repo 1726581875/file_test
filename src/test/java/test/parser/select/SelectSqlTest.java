@@ -1,36 +1,21 @@
-package test.parser;
+package test.parser.select;
 
-import com.moyu.xmz.command.Command;
-import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
-import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
-import com.moyu.xmz.terminal.util.PrintResultUtil;
 import test.annotation.TestCase;
 import test.annotation.TestModule;
+import test.parser.BaseSqlTest;
 
 /**
  * @author xiaomingzhang
  * @date 2024/3/20
  */
 @TestModule("简单select语句测试")
-public class SelectSqlTest {
+public class SelectSqlTest extends BaseSqlTest {
 
     private final static String databaseName = "select_test";
 
-    private static Database database = null;
-
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
-
-    static {
-        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.exec();
-        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.exec();
-        database = Database.getDatabase(databaseName);
-    }
 
     public static void main(String[] args) {
         SelectSqlTest sqlTest = new SelectSqlTest();
@@ -67,16 +52,9 @@ public class SelectSqlTest {
     }
 
 
-    private void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
-
 
 }

@@ -1,12 +1,9 @@
 package test.parser;
 
-import com.moyu.xmz.command.Command;
-import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.SqlParser;
 import com.moyu.xmz.common.constant.CommonConstant;
-import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
-import com.moyu.xmz.terminal.util.PrintResultUtil;
+import test.annotation.TestCase;
+import test.annotation.TestModule;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -14,23 +11,17 @@ import java.util.concurrent.CountDownLatch;
  * @author xiaomingzhang
  * @date 2023/7/16
  */
-public class MutiThreadTest {
+@TestModule("多线程测试")
+public class MutiThreadTest extends BaseSqlTest {
 
 
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
 
     private final static String databaseName = "yuany";
 
-    private static Database database = null;
 
-
-    static {
-/*        CreateDatabaseCommand createDatabaseCommand = new CreateDatabaseCommand(databaseName);
-        createDatabaseCommand.execute();*/
-        database = Database.getDatabase(databaseName);
-    }
-
-    public static void main(String[] args) throws InterruptedException {
+    @TestCase("mutiInsertTest")
+    public void mutiInsertTest() {
         testExecSQL("drop table if exists xmz_table_1");
         testExecSQL("create table xmz_table_1(id int, name varchar(10), time timestamp) ENGINE=" + engineType);
 
@@ -43,14 +34,24 @@ public class MutiThreadTest {
         new Thread(insertThread2, "thread-2").start();
         new Thread(insertThread3, "thread-3").start();
 
-        countDownLatch.await();
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("========== 最终结果 =========");
         testExecSQL("select count(*) from xmz_table_1");
     }
 
 
-    static class InsertThread implements Runnable {
+    public static void main(String[] args) throws InterruptedException {
+        MutiThreadTest m = new MutiThreadTest();
+        m.mutiInsertTest();
+    }
+
+
+    class InsertThread implements Runnable {
 
         private CountDownLatch countDownLatch;
 
@@ -77,18 +78,9 @@ public class MutiThreadTest {
     }
 
 
-
-
-    private static void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        SqlParser sqlParser = new SqlParser(connectSession);
-        Command command = sqlParser.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
 
 }

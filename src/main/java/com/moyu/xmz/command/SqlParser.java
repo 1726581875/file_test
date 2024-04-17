@@ -1305,19 +1305,31 @@ public class SqlParser implements Parser {
                 isOpen = true;
             }
             do {
-                // 读左边条件表达式
-                left = readLeftExpression(columnMap);
-                if(left instanceof ConditionColumnExpr || left instanceof ConstantValue) {
-                    left = readRightExpression(columnMap, left);
+                Character nextNonSpaceChar = getNextNonSpaceChar();
+                if(nextNonSpaceChar != null && nextNonSpaceChar.equals(')')) {
+                    skipSpace();
+                    break;
+                }
+
+                if (left != null && (nextKeywordIs(ConditionAndOr.AND) || nextKeywordIs(ConditionAndOr.OR))) {
+                    String andOrType = getNextKeyword();
+                    Expression right = readCondition(columnMap);
+                    left = new ConditionAndOr(andOrType, left, right);
+                    break;
+                } else {
+                    // 读左边条件表达式
+                    left = readLeftExpression(columnMap);
+                    if (left instanceof ConditionColumnExpr || left instanceof ConstantValue) {
+                        left = readRightExpression(columnMap, left);
+                    }
                 }
 
                 if(!isOpen) {
                     break;
                 }
 
-                String andOrType = getNextKeywordUnMove();
-                if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
-                    getNextKeyword();
+                if (nextKeywordIs(ConditionAndOr.AND) ||nextKeywordIs(ConditionAndOr.OR)) {
+                    String andOrType = getNextKeyword();
                     Expression right = readCondition(columnMap);
                     left = new ConditionAndOr(andOrType, left, right);
                 }
@@ -1338,9 +1350,8 @@ public class SqlParser implements Parser {
        while (true) {
         if (sqlCharArr[currIndex] == '(') {
             l = readCondition(columnMap);
-            String andOrType = getNextKeywordUnMove();
-            if (ConditionAndOr.AND.equals(andOrType) || ConditionAndOr.OR.equals(andOrType)) {
-                getNextKeyword();
+            if (nextKeywordIs(ConditionAndOr.AND) ||nextKeywordIs(ConditionAndOr.OR)) {
+                String andOrType = getNextKeyword();
                 Expression right = readCondition(columnMap);
                 l = new ConditionAndOr(andOrType, l, right);
             }
@@ -2100,6 +2111,18 @@ public class SqlParser implements Parser {
 
     private boolean nextKeywordIs(String keyword) {
         return nextNextKeywordIs(keyword, false);
+    }
+
+
+    private Character getNextNonSpaceChar() {
+        int i = currIndex;
+        while (i < sqlCharArr.length) {
+            if (sqlCharArr[i] != ' ') {
+                return sqlCharArr[i];
+            }
+            i++;
+        }
+        return null;
     }
 
     /**

@@ -1,9 +1,5 @@
-package test.parser;
+package test.parser.joinTable;
 
-import com.moyu.xmz.command.Command;
-import com.moyu.xmz.command.QueryResult;
-import com.moyu.xmz.command.ddl.CreateDatabaseCmd;
-import com.moyu.xmz.command.ddl.DropDatabaseCmd;
 import com.moyu.xmz.command.dml.InsertCmd;
 import com.moyu.xmz.common.constant.ColumnTypeEnum;
 import com.moyu.xmz.common.constant.CommonConstant;
@@ -11,7 +7,9 @@ import com.moyu.xmz.session.ConnectSession;
 import com.moyu.xmz.session.Database;
 import com.moyu.xmz.store.common.dto.Column;
 import com.moyu.xmz.store.common.dto.TableInfo;
-import com.moyu.xmz.terminal.util.PrintResultUtil;
+import test.annotation.TestCase;
+import test.annotation.TestModule;
+import test.parser.BaseSqlTest;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,26 +19,16 @@ import java.util.List;
  * @author xiaomingzhang
  * @date 2023/8/1
  */
-public class JoinTableTest {
+@TestModule("多表连接测试")
+public class JoinTableTest extends BaseSqlTest {
 
     private static final String engineType = CommonConstant.ENGINE_TYPE_YAN;
 
-    private final static String databaseName = "www_com";
-
-    private static Database database = null;
+    private final static String databaseName = "join_table";
 
 
-    static {
-        DropDatabaseCmd dropDatabaseCmd = new DropDatabaseCmd(databaseName, true);
-        dropDatabaseCmd.exec();
-        CreateDatabaseCmd createDatabaseCmd = new CreateDatabaseCmd(databaseName);
-        createDatabaseCmd.exec();
-        database = Database.getDatabase(databaseName);
-    }
-
-    public static void main(String[] args) {
-
-       // simpleJoinTest();
+    @TestCase("simpleJoinTest01")
+    public void simpleJoinTest01() {
 
 /*        fastInsertData("table_1", 1000, engineType);
         fastInsertData("table_2", 1000, engineType);
@@ -77,7 +65,7 @@ public class JoinTableTest {
     }
 
 
-    private static void simpleJoinTest(){
+    public void simpleJoinTest02() {
 
         testExecSQL("drop table if exists xmz_q_1");
 
@@ -118,7 +106,8 @@ public class JoinTableTest {
         //testExecSQL("select count(*) from xmz_q_2 a inner join xmz_q_1 b on 1=1 or a.id = b.id");
     }
 
-    private static void fastInsertData(String tableName, int rowNum, String engineType) {
+    @TestCase("fastInsertData")
+    private void fastInsertData(String tableName, int rowNum, String engineType) {
         testExecSQL("drop table if exists " + tableName);
 
         testExecSQL("create table "+ tableName +" (id int primary key, name varchar(10), time timestamp) ENGINE=" + engineType);
@@ -168,15 +157,9 @@ public class JoinTableTest {
     }
 
 
-    private static void testExecSQL(String sql) {
-        System.out.println("====================================");
-        System.out.println("执行语句 " + sql + "");
-        ConnectSession connectSession = new ConnectSession(database);
-        Command command = connectSession.prepareCommand(sql);
-        QueryResult queryResult = command.exec();
-        System.out.println("执行结果:");
-        PrintResultUtil.printResult(queryResult);
-        System.out.println("====================================");
+    @Override
+    protected Database initDatabase() {
+        return createDatabase(databaseName);
     }
 
 }
