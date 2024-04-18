@@ -9,6 +9,7 @@ public class FuncArg {
 
     public static final String CONSTANT = "CONSTANT";
     public static final String COLUMN = "COLUMN";
+    public static final String FUNCTION = "FUNCTION";
 
     /**
      * 参数下标

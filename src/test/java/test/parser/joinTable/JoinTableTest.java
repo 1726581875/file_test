@@ -106,7 +106,6 @@ public class JoinTableTest extends BaseSqlTest {
         //testExecSQL("select count(*) from xmz_q_2 a inner join xmz_q_1 b on 1=1 or a.id = b.id");
     }
 
-    @TestCase("fastInsertData")
     private void fastInsertData(String tableName, int rowNum, String engineType) {
         testExecSQL("drop table if exists " + tableName);
 

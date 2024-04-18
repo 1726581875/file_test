@@ -4,6 +4,7 @@ import com.moyu.xmz.command.dml.expression.Expression;
 import com.moyu.xmz.command.dml.sql.QueryTable;
 import com.moyu.xmz.common.config.CommonConfig;
 import com.moyu.xmz.common.constant.CommonConstant;
+import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.SqlExecutionException;
 import com.moyu.xmz.common.util.FileUtils;
 import com.moyu.xmz.common.util.PathUtils;
@@ -114,6 +115,7 @@ public class YuEngine extends StoreEngine {
             num = list.size();
         } catch (Exception e) {
             e.printStackTrace();
+            throw new DbException("批量插入发生");
         } finally {
             dataChunkAccessor.close();
         }

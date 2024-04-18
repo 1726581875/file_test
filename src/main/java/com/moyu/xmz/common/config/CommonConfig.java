@@ -31,6 +31,11 @@ public class CommonConfig {
      */
     public static final int MAX_MEMORY_SORT_ROW_SIZE = 100000;
 
+    /**
+     * 函数嵌套的最大层数
+     */
+    public static final int FUNCTION_MAX_DEPTH = 30;
+
 
     private CommonConfig(){}
 

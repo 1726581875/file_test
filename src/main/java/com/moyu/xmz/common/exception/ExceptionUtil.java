@@ -11,6 +11,10 @@ public class ExceptionUtil {
         return new DbException(buildExceptionMsg(msgTemple, params));
     }
 
+    public static DbException buildSqlIllegalException(String msgTemple, Object... params) {
+        return new SqlIllegalException(buildExceptionMsg(msgTemple, params));
+    }
+
     public static void throwDbException(String msgTemple, Object... params) {
         throw new DbException(buildExceptionMsg(msgTemple, params));
     }

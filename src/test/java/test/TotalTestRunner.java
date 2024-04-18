@@ -11,6 +11,7 @@ import test.parser.TotalSqlTest;
 import test.parser.WhereConditionTest;
 import test.parser.alterTable.AlterTableColumnTest;
 import test.parser.createTable.CreateTableSqlTest;
+import test.parser.function.SelectFunctionTest;
 import test.parser.joinTable.JoinTableTest;
 import test.parser.select.SelectSqlTest;
 import test.parser.subQuery.SubQueryTest;
@@ -51,6 +52,8 @@ public class TotalTestRunner {
         runTestCase(SelectSqlTest.class);
         // where条件测试
         runTestCase(WhereConditionTest.class);
+        // 函数测试
+        runTestCase(SelectFunctionTest.class);
 
         System.out.println();
         System.out.println("############## 汇总结果 ################");
@@ -93,9 +96,7 @@ public class TotalTestRunner {
                     try {
                         method.invoke(objInstance, null);
                         isSuccess = true;
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
 
@@ -159,8 +160,13 @@ public class TotalTestRunner {
         // 数据行
         for (int i = 0; i < testResultList.size(); i++) {
             TestResult r = testResultList.get(i);
+
+            String result =  r.getResult();
+            if("失败".equals(result)) {
+                result =  "\u001B[31m" + result + "\u001B[0m";
+            }
             queryResult.addRow(new Object[]{i + 1, r.getClassName(),  r.getMethodName()
-                    , r.getModuleName(), r.getCaseName(), r.getResult()});
+                    , r.getModuleName(), r.getCaseName(),result});
         }
 
         PrintResultUtil.printResult(queryResult);

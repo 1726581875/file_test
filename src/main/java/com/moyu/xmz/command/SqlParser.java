@@ -4,9 +4,11 @@ import com.moyu.xmz.command.ddl.*;
 import com.moyu.xmz.command.dml.*;
 import com.moyu.xmz.command.dml.expression.*;
 import com.moyu.xmz.command.dml.expression.column.ConstantColumnExpr;
+import com.moyu.xmz.command.dml.expression.column.FuncColumnExpr;
 import com.moyu.xmz.command.dml.expression.column.SelectColumnExpr;
 import com.moyu.xmz.command.dml.function.FuncArg;
 import com.moyu.xmz.command.dml.sql.*;
+import com.moyu.xmz.common.config.CommonConfig;
 import com.moyu.xmz.common.constant.*;
 import com.moyu.xmz.common.exception.DbException;
 import com.moyu.xmz.common.exception.ExceptionUtil;
@@ -649,12 +651,9 @@ public class SqlParser implements Parser {
             String columnStr = selectColumnStrArr[i].trim();
             // 解析字段名
             String columnNameStr = null;
+            String funcArgStr = null;
             if(isFunctionColumn(columnStr)) {
-                int columnEnd = columnStr.indexOf(")");
-                if (columnEnd == -1) {
-                    ExceptionUtil.throwSqlIllegalException("sql语法有误，在{}附近", columnStr);
-                }
-                columnNameStr = columnStr.substring(0, columnEnd + 1);
+                columnNameStr = columnStr;
             } else {
                 //String[] split = columnStr.split("\\s+");
                 String[] split = SqlParserUtils.splitQuotMarksByChar(columnStr, ' ');
@@ -677,9 +676,11 @@ public class SqlParser implements Parser {
 
             //函数
             if (isFunctionColumn(columnNameStr)) {
-                SelectColumn functionExpression = parseFunction(null, columnNameStr);
-                functionExpression.setAlias(alias);
-                selectColumnList.add(functionExpression);
+                FuncColumnExpr funcColumnExpr = parseFunction(null, columnNameStr, 0);
+                Byte resultType = funcColumnExpr.getResultType() == null ? -1 : funcColumnExpr.getResultType();
+                SelectColumn selectColumn = new SelectColumn(columnNameStr, columnNameStr, funcColumnExpr, resultType);
+                selectColumn.setAlias(alias);
+                selectColumnList.add(selectColumn);
             } else {
                 String[] split = SqlParserUtils.splitQuotMarksByChar(columnStr, ' ');
                 columnNameStr = split[0];
@@ -1144,7 +1145,7 @@ public class SqlParser implements Parser {
                 SelectColumn selectColumn = null;
                 //函数
                 if (isFunctionColumn(columnStr)) {
-                    selectColumn = parseFunction(columnInfo, columnStr);
+                    selectColumn = parseFunction(columnInfo, columnStr, null);
                 } else if(NULL.equals(columnStr.toUpperCase())) {
                     selectColumn = new SelectColumn(NULL, (byte)-1);
                     selectColumn.setColumnExpression(SelectColumnExpr.newNullExpr());
@@ -1194,7 +1195,7 @@ public class SqlParser implements Parser {
     }
 
 
-    private SelectColumn parseFunction(TableColumnInfo columnInfo, String functionStr) {
+    private SelectColumn parseFunction(TableColumnInfo columnInfo, String functionStr, String argsStr) {
         String selectColumnStr = functionStr.trim();
 
         Column column = null;
@@ -1251,7 +1252,12 @@ public class SqlParser implements Parser {
                 SelectColumnExpr nowFunc = SelectColumnExpr.newFuncExpr(FuncConstant.FUNC_NOW, null);
                 selectColumn = new SelectColumn(selectColumnName, functionName, nowFunc, DbTypeConstant.TIMESTAMP);
                 return selectColumn;
+            case FuncConstant.NOW_TIMESTAMP:
+                SelectColumnExpr nowTimestampFunc = SelectColumnExpr.newFuncExpr(FuncConstant.NOW_TIMESTAMP, null);
+                selectColumn = new SelectColumn(selectColumnName, functionName, nowTimestampFunc, DbTypeConstant.TIMESTAMP);
+                return selectColumn;
             case FuncConstant.UNIX_TIMESTAMP:
+            case FuncConstant.TO_TIMESTAMP:
                 String timeStr = getFunctionArg(functionStr);
                 if(timeStr.startsWith("'") && timeStr.endsWith("'")) {
                     timeStr = timeStr.substring(1, timeStr.length() - 1);
@@ -1259,7 +1265,7 @@ public class SqlParser implements Parser {
                     ExceptionUtil.throwSqlIllegalException("函数{}参数不合法, 参数必须为字符串,参数{}", functionName, timeStr);
                 }
                 funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timeStr));
-                SelectColumnExpr unixTimestampFunc = SelectColumnExpr.newFuncExpr(FuncConstant.UNIX_TIMESTAMP, funcArgList);
+                SelectColumnExpr unixTimestampFunc = SelectColumnExpr.newFuncExpr(functionName, funcArgList);
                 selectColumn = new SelectColumn(selectColumnName, functionName, unixTimestampFunc, DbTypeConstant.INT_8);
                 return selectColumn;
             case FuncConstant.FROM_UNIXTIME:
@@ -1281,14 +1287,66 @@ public class SqlParser implements Parser {
     }
 
 
+
     private String getFunctionArg(String functionStr) {
         int start = functionStr.indexOf('(');
-        int end = functionStr.indexOf(')');
+        int end = functionStr.lastIndexOf(')');
         if (start < 0 || end < 0 || start > end) {
             ExceptionUtil.throwSqlIllegalException("sql不合法，{}", functionStr);
         }
-        return functionStr.substring(start + 1, end).trim();
+        String args = functionStr.substring(start + 1, end).trim();
+        return args;
     }
+
+
+
+    private FuncColumnExpr parseFunction(TableColumnInfo columnInfo, String functionStr, int depth) {
+        if(depth > CommonConfig.FUNCTION_MAX_DEPTH) {
+            throw ExceptionUtil.buildDbException("函数嵌套深度不能超过{}层", CommonConfig.FUNCTION_MAX_DEPTH);
+        }
+        int i = functionStr.indexOf('(');
+        if(i == -1) {
+            ExceptionUtil.throwSqlIllegalException("sql不合法，在{}附近", functionStr);
+        }
+        String functionName = functionStr.substring(0, i).toUpperCase();
+
+        List<FuncArg> funcArgList = new LinkedList<>();
+        Byte resultType = null;
+        switch (functionName) {
+            case FuncConstant.FUNC_UUID:
+                return new FuncColumnExpr(FuncConstant.FUNC_UUID, null, DbTypeConstant.CHAR);
+            case FuncConstant.FUNC_NOW:
+                return new FuncColumnExpr(FuncConstant.FUNC_NOW, null, DbTypeConstant.INT_8);
+            case FuncConstant.NOW_TIMESTAMP:
+                return new FuncColumnExpr(FuncConstant.NOW_TIMESTAMP, null);
+            case FuncConstant.UNIX_TIMESTAMP:
+            case FuncConstant.TO_TIMESTAMP:
+                String argsStr = functionStr.substring(i + 1, functionStr.length() - 1);
+                // 字符串
+                if (argsStr.startsWith("'") && argsStr.endsWith("'")) {
+                    argsStr = argsStr.substring(1, argsStr.length() - 1);
+                    funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, argsStr));
+                } else if (isFunctionColumn(argsStr)) {
+                    // 函数
+                    FuncColumnExpr funcColumnExpr = parseFunction(columnInfo, argsStr, depth + 1);
+                    funcArgList.add(new FuncArg(0, FuncArg.FUNCTION, funcColumnExpr));
+                } else {
+                    ExceptionUtil.throwSqlIllegalException("函数{}参数不合法, 参数必须为字符串,参数{}", functionName, argsStr);
+                }
+                return new FuncColumnExpr(functionName, funcArgList, DbTypeConstant.INT_8);
+            case FuncConstant.FROM_UNIXTIME:
+                String timestampStr = getFunctionArg(functionStr);
+                if(timestampStr.startsWith("'") && timestampStr.endsWith("'")) {
+                    timestampStr = timestampStr.substring(1, timestampStr.length() - 1);
+                }
+                funcArgList.add(new FuncArg(0, FuncArg.CONSTANT, timestampStr));
+                return new FuncColumnExpr(FuncConstant.FROM_UNIXTIME, funcArgList, DbTypeConstant.TIMESTAMP);
+            default:
+                throw ExceptionUtil.buildSqlIllegalException("sql不合法，不支持函数{}", functionName);
+        }
+    }
+
+
 
 
 

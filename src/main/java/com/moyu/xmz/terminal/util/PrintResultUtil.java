@@ -80,9 +80,7 @@ public class PrintResultUtil {
 
     private static String getHorizontalRowStr(QueryResultDto queryResult, int currRowIndex) {
         StringBuilder rowBuilder = new StringBuilder("");
-        ColumnMetaDto[] columns = queryResult.getColumns();
         RowDto[] rows = queryResult.getRows();
-        int columnCount = columns.length;
         // 计算字段宽度
         int[] columnWidths = getColumnWidths(queryResult);
 

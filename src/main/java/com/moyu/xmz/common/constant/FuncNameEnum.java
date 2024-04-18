@@ -13,7 +13,9 @@ public enum FuncNameEnum {
     AVG(FuncConstant.FUNC_AVG),
     UUID(FuncConstant.FUNC_UUID),
     NOW(FuncConstant.FUNC_NOW),
+    NOW_TIMESTAMP(FuncConstant.NOW_TIMESTAMP),
     UNIX_TIMESTAMP(FuncConstant.UNIX_TIMESTAMP),
+    TO_TIMESTAMP(FuncConstant.TO_TIMESTAMP),
     FROM_UNIXTIME(FuncConstant.FROM_UNIXTIME)
     ;
     private String name;
